@@ -1,26 +1,22 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { ObjectiveSlot } from '@/domain/Objective';
-import { PlayerId } from '@/domain/Player';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
 import { ObjectiveCard } from './ObjectiveCard';
 
 type Props = {
-  side: 'left' | 'right';
   playerName: string;
-  playerId: PlayerId;
   slots: ReadonlyArray<ObjectiveSlot>;
+  testID?: string;
 };
 
-export function ObjectiveBlockedZone({ side, playerName, slots }: Props) {
+// Franja horizontal con los objetivos bloqueados por un jugador.
+export function ObjectiveBlockedZone({ playerName, slots, testID }: Props) {
   return (
-    <View style={[styles.zone, side === 'left' ? styles.left : styles.right]}>
-      <Text
-        style={[styles.title, side === 'right' && styles.titleRight]}
-        numberOfLines={1}
-      >
+    <View style={styles.zone} testID={testID}>
+      <Text style={styles.title} numberOfLines={2}>
         {playerName}
       </Text>
-      <View style={styles.column}>
+      <View style={styles.row}>
         {slots.length === 0 ? (
           <Text style={styles.empty}>—</Text>
         ) : (
@@ -35,21 +31,16 @@ export function ObjectiveBlockedZone({ side, playerName, slots }: Props) {
 
 const styles = StyleSheet.create({
   zone: {
-    width: 60,
-    minHeight: 240,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    alignItems: 'center',
-  },
-  left: {
-    marginRight: spacing.xs,
-  },
-  right: {
-    marginLeft: spacing.xs,
+    marginVertical: spacing.xs,
+    minHeight: 52,
   },
   title: {
     fontFamily: fonts.serif,
@@ -58,20 +49,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: spacing.sm,
-    maxWidth: 56,
-    textAlign: 'center',
+    width: 80,
+    marginRight: spacing.sm,
   },
-  titleRight: {
-    // Mantiene alineación visual cuando el contenedor está a la derecha del tablero.
-  },
-  column: {
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
+    columnGap: spacing.xs,
   },
   empty: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
     fontSize: 18,
-    paddingVertical: spacing.sm,
   },
 });
