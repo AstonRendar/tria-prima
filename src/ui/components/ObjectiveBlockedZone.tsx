@@ -13,7 +13,7 @@ type Props = {
 export function ObjectiveBlockedZone({ playerName, slots, testID }: Props) {
   return (
     <View style={styles.zone} testID={testID}>
-      <Text style={styles.title} numberOfLines={2}>
+      <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
         {playerName}
       </Text>
       <View style={styles.row}>
@@ -31,8 +31,6 @@ export function ObjectiveBlockedZone({ playerName, slots, testID }: Props) {
 
 const styles = StyleSheet.create({
   zone: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.md,
@@ -40,7 +38,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
     marginVertical: spacing.xs,
-    minHeight: 52,
   },
   title: {
     fontFamily: fonts.serif,
@@ -49,15 +46,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    width: 80,
-    marginRight: spacing.sm,
+    marginBottom: spacing.xs,
   },
   row: {
-    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     columnGap: spacing.xs,
+    minHeight: 38,
   },
   empty: {
     fontFamily: fonts.serif,
