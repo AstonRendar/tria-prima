@@ -318,7 +318,7 @@ export default function Play() {
           ))}
         </View>
         <View style={styles.availableColumn}>
-          <Text style={styles.availableTitle}>Disponibles</Text>
+          <Text style={styles.availableTitle}>Libres</Text>
           {availableSlots.length === 0 ? (
             <Text style={styles.empty}>—</Text>
           ) : (
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   availableColumn: {
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm,
     alignItems: 'center',
   },
   availableTitle: {
