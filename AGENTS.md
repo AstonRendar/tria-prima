@@ -147,6 +147,7 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 | Footer | `footer`, `footer/store` | — |
 | Audio (cabecera) | `audio/{music\|sfx}` | — |
 | Contadores por insignia | `sign-counter/{kind}:{value}` | `sign-counter/symbol:sulfur`, `sign-counter/color:rubedo` |
+| Zonas de bloqueo (duelo) | `blocked/{opponent\|me}` | — |
 
 ## Flujo del turno (modo Duelo)
 
