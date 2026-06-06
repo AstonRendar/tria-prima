@@ -10,9 +10,10 @@ export function HeaderBackButton({ onPress }: Props) {
     <Pressable
       onPress={onPress}
       testID="header/back"
+      accessibilityLabel="Volver al menú"
       style={({ pressed }) => [styles.btn, pressed && styles.pressed]}
     >
-      <Text style={styles.label}>← Menú</Text>
+      <Text style={styles.label}>←</Text>
     </Pressable>
   );
 }
@@ -28,7 +29,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fonts.serif,
     color: colors.text,
-    fontSize: 15,
+    fontSize: 22,
     fontWeight: '700',
   },
 });

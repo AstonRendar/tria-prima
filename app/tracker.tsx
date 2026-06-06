@@ -38,7 +38,7 @@ export default function Tracker() {
   useBeforeUnloadWarning(hasProgress);
 
   const goHome = useCallback(() => {
-    router.replace('/');
+    router.dismissTo('/');
   }, [router]);
 
   const requestExit = useCallback(() => {
@@ -96,7 +96,7 @@ export default function Tracker() {
         won={state.outcome === 'won'}
         word={fullWord}
         onRestart={onRestart}
-        onHome={() => router.replace('/')}
+        onHome={() => router.dismissTo('/')}
       />
     );
   }
