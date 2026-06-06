@@ -60,7 +60,7 @@ export default function SoloPlay() {
   useBeforeUnloadWarning(hasActiveGame);
 
   const goHome = useCallback(() => {
-    router.replace('/');
+    router.dismissTo('/');
   }, [router]);
 
   const requestExit = useCallback(() => {
@@ -222,7 +222,7 @@ export default function SoloPlay() {
         won={won}
         word={fullWord}
         onRestart={onRestart}
-        onHome={() => router.replace('/')}
+        onHome={() => router.dismissTo('/')}
       >
         <View style={styles.endStats}>
           <Text style={styles.endStat}>Turnos: {state.turn}</Text>
