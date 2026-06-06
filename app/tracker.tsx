@@ -29,20 +29,17 @@ export default function Tracker() {
   const [guess, setGuess] = useState('');
   const flash = useFlash();
 
-  // Hay progreso si la partida no ha terminado y se han generado marcadores
-  // o se ha revelado alguna letra. Si nada, la "salida" no destruye nada útil.
-  const hasProgress =
-    !state.finished &&
-    (state.declaredCount.size > 0 ||
-      state.secretWord.cards.some((c) => c.markers > 0 || c.revealed));
-  useBeforeUnloadWarning(hasProgress);
+  // Mismo criterio que duelo y solitario: partida sin terminar = confirmar
+  // la salida (al entrar ya hay una palabra escondida en juego).
+  const hasActiveGame = !state.finished;
+  useBeforeUnloadWarning(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
   }, [router]);
 
   const requestExit = useCallback(() => {
-    if (!hasProgress) {
+    if (!hasActiveGame) {
       goHome();
       return;
     }
@@ -53,7 +50,7 @@ export default function Tracker() {
       destructive: true,
       onConfirm: goHome,
     });
-  }, [confirm, goHome, hasProgress]);
+  }, [confirm, goHome, hasActiveGame]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
