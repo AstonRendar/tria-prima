@@ -378,7 +378,7 @@ export default function Play() {
         slots={mySlots}
         testID="blocked/me"
       />
-      <Text style={styles.opponentLine}>Tu palabra</Text>
+      <Text style={[styles.opponentLine, styles.myWordLine]}>Tu palabra</Text>
       <SignCounters word={state.players[me].secretWord} />
 
       {guessEligible && (
@@ -490,6 +490,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 4,
     marginTop: 2,
+    marginBottom: spacing.sm,
+  },
+  myWordLine: {
     marginBottom: spacing.sm,
   },
   phaseHint: {
