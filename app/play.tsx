@@ -263,8 +263,8 @@ export default function Play() {
 
   const guessEligible = canGuess(opponent.secretWord);
   const phaseHint = describePhase(phase, touched.size);
-  const p1Slots = state.objectives.filter((s) => s.blockedBy === 'p1');
-  const p2Slots = state.objectives.filter((s) => s.blockedBy === 'p2');
+  const mySlots = state.objectives.filter((s) => s.blockedBy === me);
+  const opponentSlots = state.objectives.filter((s) => s.blockedBy === opponent.id);
   const availableSlots = state.objectives.filter((s) => s.blockedBy === null);
 
   return (
@@ -279,9 +279,11 @@ export default function Play() {
         </View>
       </View>
 
-      <View style={styles.headerRow}>
-        <SignCounters word={opponent.secretWord} />
-      </View>
+      <ObjectiveBlockedZone
+        playerName={`Bloqueados de ${opponent.name}`}
+        slots={opponentSlots}
+        testID="blocked/opponent"
+      />
 
       <Text style={styles.opponentLine}>
         Palabra de {opponent.name}
@@ -297,12 +299,6 @@ export default function Play() {
       <Text style={styles.phaseHint}>{phaseHint}</Text>
 
       <View style={styles.boardRow}>
-        <ObjectiveBlockedZone
-          side="left"
-          playerName={state.players.p1.name}
-          playerId="p1"
-          slots={p1Slots}
-        />
         <View style={styles.grid}>
           {rows.map((row, ri) => (
             <View key={ri} style={styles.gridRow}>
@@ -321,12 +317,16 @@ export default function Play() {
             </View>
           ))}
         </View>
-        <ObjectiveBlockedZone
-          side="right"
-          playerName={state.players.p2.name}
-          playerId="p2"
-          slots={p2Slots}
-        />
+        <View style={styles.availableColumn}>
+          <Text style={styles.availableTitle}>Disponibles</Text>
+          {availableSlots.length === 0 ? (
+            <Text style={styles.empty}>—</Text>
+          ) : (
+            availableSlots.map((slot) => (
+              <ObjectiveCard key={slot.objective.id} slot={slot} compact />
+            ))
+          )}
+        </View>
       </View>
 
       {phase === 'choose-action' && (
@@ -373,20 +373,13 @@ export default function Play() {
         </View>
       )}
 
-      <Text style={styles.sectionTitle}>Objetivos disponibles</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.availableRow}
-      >
-        {availableSlots.length === 0 ? (
-          <Text style={styles.empty}>Todos los objetivos están bloqueados.</Text>
-        ) : (
-          availableSlots.map((slot) => (
-            <ObjectiveCard key={slot.objective.id} slot={slot} />
-          ))
-        )}
-      </ScrollView>
+      <ObjectiveBlockedZone
+        playerName={`Bloqueados de ${state.players[me].name}`}
+        slots={mySlots}
+        testID="blocked/me"
+      />
+      <Text style={styles.opponentLine}>Tu palabra</Text>
+      <SignCounters word={state.players[me].secretWord} />
 
       {guessEligible && (
         <GuessBox
@@ -481,11 +474,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     maxWidth: 180,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
   opponentLine: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
@@ -534,10 +522,17 @@ const styles = StyleSheet.create({
   gridRow: {
     flexDirection: 'row',
   },
-  availableRow: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.sm,
+  availableColumn: {
+    marginLeft: spacing.md,
+    alignItems: 'center',
+  },
+  availableTitle: {
+    fontFamily: fonts.serif,
+    color: colors.textMuted,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
   },
   actionPanel: {
     flexDirection: 'row',
@@ -567,16 +562,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.serif,
     color: colors.text,
     textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    textAlign: 'center',
-    marginTop: spacing.md,
     marginBottom: spacing.sm,
   },
   empty: {
