@@ -218,6 +218,16 @@ npm run test:watch  # modo watch
 npm run typecheck   # tsc --noEmit
 ```
 
+## Flujo de trabajo git
+
+Repositorio: <https://github.com/AstonRendar/tria-prima>. Se sigue **git flow**:
+
+- `main` — solo versiones estables (releases). No se hace commit directo.
+- `develop` — rama de integración; el trabajo diario se fusiona aquí.
+- `feature/<nombre>` — una rama por funcionalidad, sale de `develop` y vuelve a `develop`.
+- `release/<versión>` — preparación de release, de `develop` a `main` (+ merge de vuelta a `develop`).
+- `hotfix/<nombre>` — arreglos urgentes sobre `main` (+ merge de vuelta a `develop`).
+
 ## Principios de desarrollo
 - **Castellano** en mensajes de UI y textos al usuario. **Inglés** en código.
 - **SOLID + DDD + TDD + YAGNI + KISS**.
