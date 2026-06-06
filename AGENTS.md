@@ -1,0 +1,243 @@
+# Tria Prima — Contexto del proyecto
+
+## Identidad
+
+**Tria Prima** es una aplicación independiente para móvil (iOS y Android), inspirada en
+el juego de mesa físico **Kryptex** (autor: José Joaquín Bernal; editorial: Zacatrus). Las
+mecánicas son las del juego original; los textos, los iconos, la paleta y la presentación
+son obra propia para evitar uso indebido de propiedad intelectual ajena.
+
+### Reglas de propiedad intelectual que aplican
+1. **Nombre**: el proyecto **no** se llama "Kryptex". La app es "Tria Prima".
+2. **Gráficos**: no se incluyen logos, capturas, ilustraciones ni el arte de la caja del
+   juego original. Los iconos son símbolos alquímicos genéricos (🜍 ☿ 🜔) y la paleta
+   (nigredo, citrinitas, rubedo) viene de las fases clásicas de la Gran Obra.
+3. **Textos**: el manual y los textos de UI están redactados con vocabulario propio.
+4. **Atribución**: el footer incluye un enlace al juego original con un mensaje de
+   "apoya al autor". Está pensado como reconocimiento, no como afiliación.
+
+## Descripción
+
+App móvil con tres modos:
+
+1. **Duelo a dos** (`/play`) — dos personas comparten un dispositivo y juegan turnos
+   alternos. Cada una introduce su palabra clave de 6 letras al inicio y trata de
+   descifrar la del rival manipulando 9 cubos compartidos en una cuadrícula 3×3.
+2. **En soledad** (`/solo`) — un solo jugador contra la app. La app esconde una
+   palabra y gestiona todo el juego digitalmente: el jugador manipula los cubos en
+   pantalla, declara automáticamente al cerrar la fase de movimiento y la app
+   coloca los marcadores y calcula la puntuación final.
+3. **Con el juego físico** (`/tracker`) — *tracker* para jugar con el juego de mesa
+   en la mesa. La app esconde una palabra y lleva la cuenta de marcadores; el
+   jugador manipula los cubos en la mesa real y pulsa ＋/− por cada objetivo
+   cumplido o desecho.
+
+## Stack tecnológico
+
+### Framework
+- **React Native** + **TypeScript**
+- **Expo** (managed workflow)
+- **expo-router** — routing basado en ficheros (`app/`)
+
+### Plataformas
+- iOS (iPhone)
+- Android
+- Web (modo desarrollo / despliegue secundario)
+
+### Almacenamiento
+- 100 % offline. Sin backend ni red.
+
+## Arquitectura
+
+Arquitectura por capas inspirada en DDD, aplicada con criterio (KISS/YAGNI): funciones
+puras y tipos, sin clases ni patrones ceremoniales cuando no aportan.
+
+```
+ui ──▶ application ──▶ domain
+            │
+            └─▶ infrastructure (interfaces implementadas)
+```
+
+### `src/domain/` — Núcleo del juego (puro)
+Sin React, sin Math.random, sin I/O. Tipos `readonly`. Funciones devuelven nuevos objetos.
+
+- **Value objects:** `Symbol`, `Color`, `Face`, `Position`, `Player` (`PlayerId`).
+- **Entidades:** `Cube` (con `CubeOrientation`), `Board`, `Objective`, `ObjectiveSlot`,
+  `SecretWord` (con `PlayerCard`).
+- **Reglas puras:** rotaciones del cubo (`rollForward`, `rollBackward`, `spinClockwise`,
+  `spinCounterClockwise`), `swapPositions`, `findMatchedLine`, `addMarkerForObjective`,
+  `normalizeGuess`, `matchesGuess`.
+- **Datos fijos:** `CubeSet` declara la composición exacta de los 9 cubos.
+
+### `src/application/` — Casos de uso
+Orquestan el dominio. Cada caso de uso recibe el `state` (y `Dependencies` si necesita
+aleatoriedad o repositorios) y devuelve nuevo `state`.
+
+Modo duelo (2 jugadores):
+- `MatchState` (con dos `PlayerData`, currentPlayerId, board, objectives compartidos).
+- `StartMatch`, `RotateMatchCube`, `SwapMatchCubes`, `EndMatchTurn`,
+  `DeclareMatchObjectives`, `GuessMatchWord`.
+
+Modo solitario digital (1 jugador, todo en la app):
+- `SoloPlayState` (board, objectives, palabra elegida por la app, turno, puntuación).
+- `StartSoloPlay`, `RotateSoloCube`, `SwapSoloCubes`, `EndSoloTurn`,
+  `DeclareSoloObjectives`, `GuessSoloWord`.
+
+Modo tracker (jugando con el juego físico):
+- `TrackerState` (una palabra escondida, contador de declaraciones por objetivo).
+- `StartTracker`, `MarkObjective` (`markObjective` / `unmarkObjective`),
+  `TrackerActions` (`guessTracker`).
+
+Comunes:
+- `Dependencies` (`Random` + `WordRepository`).
+- `CubeFactory` — reparte los 9 cubos del `CubeSet` con orientación aleatoria.
+- `WordAssignment` — empareja las 6 letras de una palabra con los 6 faceSigns.
+
+### `src/infrastructure/`
+- `Random` — interfaz + `DefaultRandom`.
+- `WordRepository` — interfaz + `InMemoryWordRepository` (lista de palabras de 6 letras
+  en castellano).
+- `ProductionDependencies` — factoría del bundle real.
+
+### `src/ui/`
+- `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveCard`,
+  `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `ActionButton`,
+  `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `Footer`,
+  `SetupScreen`).
+- `hooks/` — `useMatch` (duelo), `useTracker` (solitario).
+- `audio/` — sonido sintético vía Web Audio API, sin assets. `sound.ts` (efectos, singleton
+  `audio`) y `music.ts` (música de fondo chiptune en bucle, singleton `music`). Los toggles
+  ♪ (música) y 🔊 (efectos) viven en `AudioControls`, montado como `headerRight` del Stack
+  para estar siempre visibles. Ambas preferencias se persisten en `localStorage`
+  (`tria-prima/music-enabled`, `tria-prima/sfx-enabled` vía `audio/preferences.ts`),
+  activadas por defecto; la música arranca en el primer gesto del usuario por la política
+  de autoplay. En iOS/Android ambos caen a implementación silenciosa hasta integrar
+  `expo-audio`.
+- `styles/tokens.ts` — paleta inspirada en la imagen *pergamino + tinta azul marino*,
+  tipografía serif (Georgia / serif).
+- `ConfirmProvider` — modal de confirmación accesible desde cualquier pantalla por hook
+  `useConfirm()`.
+
+### `app/` — Rutas (expo-router)
+- `_layout.tsx` — Stack con `ConfirmProvider`.
+- `index.tsx` — Home: cuatro botones (Duelo, En soledad, Con el juego físico, Reglas).
+- `instructions.tsx` — manual con vocabulario propio.
+- `play.tsx` — modo Duelo. Muestra `SetupScreen` si no hay partida.
+- `solo.tsx` — modo solitario digital.
+- `tracker.tsx` — modo tracker físico.
+
+## Convención de `testID`
+
+`testID` es el equivalente de `id` en React Native. En web se traduce a `data-testid`.
+Formato `dominio/identificador[/sub]` en minúsculas.
+
+| Zona | Patrón | Ejemplos |
+|---|---|---|
+| Home | `home/{destino}` | `home/play`, `home/tracker`, `home/instructions` |
+| Setup (Duelo) | `setup/{campo}` | `setup/p1`, `setup/p2`, `setup/start` |
+| Cuadrícula | `cube/{i}` | `cube/0`..`cube/8` |
+| Acciones turno | `action/{kind}` | `action/roll-forward`, `action/spin-cw`, `action/swap`, `action/cancel` |
+| Fin de turno | `turn/{declare\|end}` | `turn/declare`, `turn/end` |
+| Cartas de palabra | `word-card/{i}` | `word-card/0`..`word-card/5` |
+| Objetivo (tracker) | `objective/{objId}/{+\|-}` | `objective/sym:sulfur/+`, `objective/col:rubedo/-` |
+| Adivinanza | `guess/{input\|submit}` | — |
+| Cambio de turno | `handoff/continue` | — |
+| Pantalla final | `end/{restart\|home}` | — |
+| Modal confirmación | `confirm/{backdrop\|cancel\|ok}` | — |
+| Footer | `footer`, `footer/store` | — |
+| Audio (cabecera) | `audio/{music\|sfx}` | — |
+| Contadores por insignia | `sign-counter/{kind}:{value}` | `sign-counter/symbol:sulfur`, `sign-counter/color:rubedo` |
+
+## Flujo del turno (modo Duelo)
+
+1. **`select-cube`** — el jugador toca uno de los 9 dados.
+2. **`choose-action`** — aparece un panel con: Voltear hacia ti, Voltear al rival,
+   Rotar ↻, Rotar ↺, Intercambiar, Cancelar.
+3. **`select-second-cube`** — si elige intercambiar, espera el segundo dado en la misma
+   fila o columna.
+4. **`declare`** — los 2 dados están tocados. La declaración se ejecuta automáticamente
+   (libera bloqueos rotos, mantiene los vivos, añade nuevos, marca cartas del rival). La
+   cuadrícula deja de responder; solo queda *Acabar turno*.
+
+Tras *Acabar turno*: alterna currentPlayerId, los 2 dados pasan a `lockedThisTurn` del
+siguiente turno y se muestra un *handoff* ("Pasa el dispositivo a {nombre}") antes de que
+el rival pueda jugar.
+
+## Reglas del juego (resumen funcional)
+
+> El texto formal y narrativo está en `app/instructions.tsx`. Aquí solo el resumen
+> funcional para referencia rápida.
+
+- 9 cubos con 6 caras = (símbolo `sulfur/mercury/salt`, color `nigredo/citrinitas/rubedo`).
+- 6 objetivos fijos: 3 por símbolo + 3 por color.
+- Cada jugador escribe en secreto una palabra de 6 letras. La app le asigna a cada
+  letra una insignia (faceSign) única.
+- Por turno: o intercambias 2 cubos de una misma fila/columna, o giras 2 cubos
+  diferentes. Siempre 2 cubos.
+- Tras el turno, esos 2 cubos quedan bloqueados para el rival el turno siguiente.
+- Declarar objetivos cumplidos: alineaciones de 3 cubos con mismo símbolo o color en
+  fila o columna. Cada objetivo declarado pasa a tu zona de bloqueo.
+- Por cada objetivo declarado, se marca la carta del rival cuya insignia coincide.
+  2 marcadores en una carta → letra revelada.
+- En cada nueva declaración, el jugador conserva sus bloqueos que aún se cumplen en
+  el tablero, libera los que ya no, y añade los nuevos. Los del rival no se tocan.
+- La declaración se aplica automáticamente al cerrar la fase de movimiento (no hay
+  botón "declarar").
+- Con 4 o más letras del rival reveladas, en cualquier momento de su turno el jugador
+  puede intentar adivinar. Acierto → gana; fallo → gana el rival.
+- Primer turno del aprendiz inicial: solo manipulación, no se declara.
+
+### Modo solitario digital
+- Un solo jugador. La app esconde una palabra y gestiona todo en pantalla.
+- Mismo flujo de turno que el duelo (4 fases, dos dados, declaración automática).
+- Marcadores van sobre la palabra escondida del propio jugador.
+- Al adivinar, puntuación = turnos + objetivos en disposición inicial. Rango
+  según `domain/Score.ts` (Genio · Alumno supera al maestro · Sigue practicando · Vuelve a intentarlo).
+
+### Modo tracker (con el juego físico)
+- La app esconde una palabra clave. El jugador juega físicamente con el juego de mesa
+  y pulsa ＋ en el objetivo correspondiente cada vez que lo cumple en la mesa.
+- No hay puntuación digital ni contador de turnos: solo gestión de letras reveladas.
+
+## Testing
+
+### Stack
+- **Jest** + **ts-jest**. Tests en `__tests__/` junto al código.
+- Tipos vienen de `@types/jest`.
+
+### Política TDD
+- Toda regla del dominio o caso de uso lleva su test.
+- No se mockean las funciones del dominio; los tests de aplicación usan stubs solo de
+  `Random` y `WordRepository` (en `src/application/__tests__/testdoubles.ts`).
+- Convenciones: `Method.test.ts`, descripciones en inglés, estilo BDD.
+
+### Comandos
+```bash
+npm test            # toda la suite
+npm run test:watch  # modo watch
+npm run typecheck   # tsc --noEmit
+```
+
+## Principios de desarrollo
+- **Castellano** en mensajes de UI y textos al usuario. **Inglés** en código.
+- **SOLID + DDD + TDD + YAGNI + KISS**.
+- Sin comentarios obvios. El *porqué*, no el *qué*.
+- Sin documentación extra fuera de `AGENTS.md` / `CLAUDE.md` salvo que se pida.
+- Sin manejo de errores defensivo ni features no pedidas.
+
+## Lo que NO hacer
+- No mezclar lógica de juego en componentes UI (vive en `domain/` y `application/`).
+- No invocar `Math.random` desde dominio/aplicación; usar la interfaz `Random`.
+- No usar `expo eject`.
+- No incluir gráficos, logos, textos literales ni nombres del juego original más allá
+  de la atribución mínima del footer.
+- No introducir backend ni almacenamiento remoto.
+
+## Mantenimiento de AGENTS.md y CLAUDE.md
+
+Cuando aparezca información relevante (decisión de arquitectura, regla, dependencia,
+convención), actualiza `AGENTS.md` proactivamente.
+
+- `AGENTS.md` — contrato común entre agentes.
+- `CLAUDE.md` — solo lo específico de Claude Code; apunta a `AGENTS.md` para el resto.
+- No duplicar contenido.
