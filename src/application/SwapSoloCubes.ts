@@ -1,0 +1,16 @@
+import { swapPositions } from '@/domain/Board';
+import { Position } from '@/domain/Position';
+import { SoloPlayState } from './SoloPlayState';
+
+export type SwapSoloResult = { state: SoloPlayState; applied: boolean };
+
+export function swapSoloCubes(
+  state: SoloPlayState,
+  a: Position,
+  b: Position
+): SwapSoloResult {
+  if (state.finished) return { state, applied: false };
+  const board = swapPositions(state.board, a, b);
+  if (board === state.board) return { state, applied: false };
+  return { state: { ...state, board }, applied: true };
+}
