@@ -29,7 +29,7 @@ const WORDS_6: ReadonlyArray<string> = [
   'TARDES', 'TAREAS', 'TARIFA', 'TECHOS', 'TEMPLO', 'TERROR',
   'TESORO', 'TIGRES', 'TIMBAL', 'TOCADO', 'TOMATE', 'TORERO',
   'TORNEO', 'TRENES', 'TROFEO', 'TURNOS', 'UNIDAD', 'VECINO',
-  'VECTOR', 'VEINTE', 'VENENO', 'VERANO', 'VERDAD', 'VEREDA',
+  'VECTOR', 'VEINTE', 'VENENO', 'VERDAD', 'VEREDA',
   'VIEJOS', 'VOLCAN', 'VUELOS', 'ZAPATO', 'ZAGUAN',
 ].filter((w) => w.length === 6);
 
