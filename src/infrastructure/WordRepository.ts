@@ -2,6 +2,7 @@ import { Random } from './Random';
 
 export interface WordRepository {
   randomWord(): string;
+  allWords(): ReadonlyArray<string>;
 }
 
 const WORDS_6: ReadonlyArray<string> = [
@@ -37,5 +38,8 @@ export class InMemoryWordRepository implements WordRepository {
   constructor(private readonly random: Random) {}
   randomWord(): string {
     return this.random.pick(WORDS_6);
+  }
+  allWords(): ReadonlyArray<string> {
+    return WORDS_6;
   }
 }
