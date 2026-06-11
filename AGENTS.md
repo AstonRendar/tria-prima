@@ -18,16 +18,21 @@ son obra propia para evitar uso indebido de propiedad intelectual ajena.
 
 ## Descripción
 
-App móvil con tres modos:
+App móvil con cuatro modos:
 
 1. **Duelo a dos** (`/play`) — dos personas comparten un dispositivo y juegan turnos
    alternos. Cada una introduce su palabra clave de 6 letras al inicio y trata de
    descifrar la del rival manipulando 9 cubos compartidos en una cuadrícula 3×3.
-2. **En soledad** (`/solo`) — un solo jugador contra la app. La app esconde una
+2. **Contra el maestro** (`/versus`) — duelo contra la app. El humano es p1 y la app
+   (p2, "El maestro") esconde una palabra de la lista y juega sus turnos sola:
+   planifica con búsqueda voraz, declara y adivina usando solo información pública
+   (letras reveladas + lista de palabras). Sin handoff: los pasos de la app se
+   reproducen con retardo para que se vea la jugada.
+3. **En soledad** (`/solo`) — un solo jugador contra la app. La app esconde una
    palabra y gestiona todo el juego digitalmente: el jugador manipula los cubos en
    pantalla, declara automáticamente al cerrar la fase de movimiento y la app
    coloca los marcadores y calcula la puntuación final.
-3. **Con el juego físico** (`/tracker`) — *tracker* para jugar con el juego de mesa
+4. **Con el juego físico** (`/tracker`) — *tracker* para jugar con el juego de mesa
    en la mesa. La app esconde una palabra y lleva la cuenta de marcadores; el
    jugador manipula los cubos en la mesa real y pulsa ＋/− por cada objetivo
    cumplido o desecho.
@@ -78,6 +83,15 @@ Modo duelo (2 jugadores):
 - `StartMatch`, `RotateMatchCube`, `SwapMatchCubes`, `EndMatchTurn`,
   `DeclareMatchObjectives`, `GuessMatchWord`.
 
+Modo contra el maestro (humano vs app, reutiliza `MatchState` y los casos de uso del duelo):
+- `StartVersus` — `startVersusMatch`: p1 humano, p2 la app con palabra del repositorio.
+- `AppOpponent` — `planAppTurn` (búsqueda voraz sobre todos los turnos legales,
+  +1 por objetivo declarable y +1 si revela letra; empata al azar) y `chooseAppGuess`
+  (solo información pública: 6 reveladas → palabra exacta; 1 candidata → la arriesga;
+  5 reveladas y varias → una al azar; si no, sigue jugando).
+- `PlayAppTurn` — `buildAppTurnSteps` / `applyAppStep` / `playAppTurn`: el turno de la
+  app como lista de pasos que la UI reproduce con retardo.
+
 Modo solitario digital (1 jugador, todo en la app):
 - `SoloPlayState` (board, objectives, palabra elegida por la app, turno, puntuación).
 - `StartSoloPlay`, `RotateSoloCube`, `SwapSoloCubes`, `EndSoloTurn`,
@@ -95,8 +109,8 @@ Comunes:
 
 ### `src/infrastructure/`
 - `Random` — interfaz + `DefaultRandom`.
-- `WordRepository` — interfaz + `InMemoryWordRepository` (lista de palabras de 6 letras
-  en castellano).
+- `WordRepository` — interfaz (`randomWord` + `allWords`) + `InMemoryWordRepository`
+  (lista de palabras de 6 letras en castellano).
 - `ProductionDependencies` — factoría del bundle real.
 
 ### `src/ui/`
@@ -104,7 +118,9 @@ Comunes:
   `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `ActionButton`,
   `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `Footer`,
   `SetupScreen`).
-- `hooks/` — `useMatch` (duelo), `useTracker` (solitario).
+- `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
+  más la reproducción automática y retardada del turno de la app), `useSoloPlay`
+  (solitario digital), `useTracker` (tracker físico).
 - `audio/` — sonido sintético vía Web Audio API, sin assets. `sound.ts` (efectos, singleton
   `audio`) y `music.ts` (música de fondo chiptune en bucle, singleton `music`). Los toggles
   ♪ (música) y 🔊 (efectos) viven en `AudioControls`, montado como `headerRight` del Stack
@@ -123,6 +139,7 @@ Comunes:
 - `index.tsx` — Home: cuatro botones (Duelo, En soledad, Con el juego físico, Reglas).
 - `instructions.tsx` — manual con vocabulario propio.
 - `play.tsx` — modo Duelo. Muestra `SetupScreen` si no hay partida.
+- `versus.tsx` — modo contra el maestro. Setup propio (solo la palabra del jugador).
 - `solo.tsx` — modo solitario digital.
 - `tracker.tsx` — modo tracker físico.
 
@@ -133,7 +150,9 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 
 | Zona | Patrón | Ejemplos |
 |---|---|---|
-| Home | `home/{destino}` | `home/play`, `home/tracker`, `home/instructions` |
+| Home | `home/{destino}` | `home/play`, `home/versus`, `home/tracker`, `home/instructions` |
+| Setup (Versus) | `setup/{word\|start}` | — |
+| Turno (Versus) | `versus/turn-name` | — |
 | Setup (Duelo) | `setup/{campo}` | `setup/p1`, `setup/p2`, `setup/start` |
 | Cuadrícula | `cube/{i}` | `cube/0`..`cube/8` |
 | Acciones turno | `action/{kind}` | `action/roll-forward`, `action/spin-cw`, `action/swap`, `action/cancel` |
