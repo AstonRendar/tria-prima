@@ -45,6 +45,11 @@
     "testMatch": [
       "**/__tests__/**/*.test.ts",
       "**/__tests__/**/*.test.tsx"
+    ],
+    "collectCoverageFrom": [
+      "src/domain/**/*.ts",
+      "src/application/**/*.ts",
+      "!**/__tests__/**"
     ]
   },
   "private": true
