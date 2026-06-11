@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
+import { TOUCHES_PER_TURN } from '@/domain/Board';
 import { RotationKind } from '@/domain/Cube';
 import { GRID_SIZE, Position } from '@/domain/Position';
 import { rankFor } from '@/domain/Score';
@@ -21,23 +22,11 @@ import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
 import { useSoloPlay } from '@/ui/hooks/useSoloPlay';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
 
 const dependencies = buildProductionDependencies();
 
-type TurnPhase =
-  | 'select-cube'
-  | 'choose-action'
-  | 'select-second-cube'
-  | 'declare';
-
-const ROTATIONS: ReadonlyArray<{ label: string; kind: RotationKind }> = [
-  { label: 'Voltear hacia ti', kind: 'roll-backward' },
-  { label: 'Voltear al maestro', kind: 'roll-forward' },
-  { label: 'Rotar ↻', kind: 'spin-cw' },
-  { label: 'Rotar ↺', kind: 'spin-ccw' },
-];
-
-const TOUCHES_PER_TURN = 2;
+const ROTATIONS = rotationActions('al maestro');
 
 export default function SoloPlay() {
   const router = useRouter();
@@ -372,29 +361,6 @@ export default function SoloPlay() {
       <FlashMessage message={flash.message} />
     </ScrollView>
   );
-}
-
-function describeDeclareResult(declared: number, released: number, revealed: number): string | null {
-  const parts: string[] = [];
-  if (declared > 0) parts.push(`Declarados ${declared}`);
-  if (released > 0) parts.push(`Liberados ${released}`);
-  if (revealed > 0) parts.push('Letra revelada');
-  return parts.length > 0 ? parts.join(' · ') : null;
-}
-
-function describePhase(phase: TurnPhase, touchedCount: number): string {
-  if (phase === 'declare') {
-    return 'Objetivos declarados. Pulsa "Acabar turno" cuando estés listo.';
-  }
-  if (phase === 'choose-action') {
-    return 'Elige qué hacer con el dado seleccionado.';
-  }
-  if (phase === 'select-second-cube') {
-    return 'Selecciona otro dado en la misma fila o columna.';
-  }
-  return touchedCount === 0
-    ? 'Selecciona un dado para empezar tu jugada.'
-    : 'Selecciona un segundo dado.';
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
