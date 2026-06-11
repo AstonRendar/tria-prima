@@ -17,6 +17,9 @@ export function ActionButton({ label, onPress, disabled, variant = 'secondary', 
       onPress={onPress}
       testID={testID}
       disabled={disabled || !onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: disabled || !onPress }}
       style={({ pressed }) => [
         styles.btn,
         variant === 'primary' && styles.primary,

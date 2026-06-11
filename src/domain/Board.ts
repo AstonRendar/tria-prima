@@ -7,6 +7,14 @@ export type Board = {
   readonly lockedNextTurn: ReadonlyArray<Position>;
 };
 
+// Regla del juego: cada turno toca exactamente 2 dados distintos
+// (un intercambio o dos giros).
+export const TOUCHES_PER_TURN = 2;
+
+export function isValidTurnTouch(touched: ReadonlyArray<Position>): boolean {
+  return new Set(touched).size === TOUCHES_PER_TURN;
+}
+
 export function isLocked(board: Board, position: Position): boolean {
   return board.lockedThisTurn.includes(position);
 }
