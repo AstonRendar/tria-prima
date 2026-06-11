@@ -23,6 +23,12 @@ export default function Home() {
         />
         <View style={{ height: spacing.md }} />
         <ActionButton
+          label="Contra el maestro"
+          onPress={() => router.push('/versus')}
+          testID="home/versus"
+        />
+        <View style={{ height: spacing.md }} />
+        <ActionButton
           label="En soledad"
           onPress={() => router.push('/solo')}
           testID="home/solo"
