@@ -1,4 +1,4 @@
-import { advanceLocks, lockTouchedCubes } from '@/domain/Board';
+import { advanceLocks, isValidTurnTouch, lockTouchedCubes } from '@/domain/Board';
 import { Position } from '@/domain/Position';
 import { otherPlayer } from '@/domain/Player';
 import { MatchState } from './MatchState';
@@ -8,6 +8,7 @@ export function endMatchTurn(
   touched: ReadonlyArray<Position>
 ): MatchState {
   if (state.finished) return state;
+  if (!isValidTurnTouch(touched)) return state;
   const locked = lockTouchedCubes(state.board, touched);
   const advanced = advanceLocks(locked);
   return {

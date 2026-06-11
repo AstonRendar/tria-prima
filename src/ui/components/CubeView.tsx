@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Cube, RotationKind, visibleFaces } from '@/domain/Cube';
-import { colors, radius, spacing } from '@/ui/styles/tokens';
+import { colors, cubeColorLabel, cubeSymbolLabel, radius, spacing } from '@/ui/styles/tokens';
 import { FaceTile } from './FaceTile';
 
 export type CubeAnimationKind = RotationKind | 'swap';
@@ -147,6 +147,9 @@ export function CubeView({
       onPress={onPress}
       testID={testID}
       disabled={locked || !onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Dado con ${cubeSymbolLabel[top.symbol]} ${cubeColorLabel[top.color]} arriba${locked ? ', bloqueado' : ''}`}
+      accessibilityState={{ disabled: locked || !onPress, selected: !!selected }}
       style={({ pressed }) => [
         styles.outer,
         selected && styles.selected,

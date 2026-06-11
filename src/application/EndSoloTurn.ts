@@ -1,4 +1,4 @@
-import { advanceLocks, lockTouchedCubes } from '@/domain/Board';
+import { advanceLocks, isValidTurnTouch, lockTouchedCubes } from '@/domain/Board';
 import { Position } from '@/domain/Position';
 import { SoloPlayState } from './SoloPlayState';
 
@@ -7,6 +7,7 @@ export function endSoloTurn(
   touched: ReadonlyArray<Position>
 ): SoloPlayState {
   if (state.finished) return state;
+  if (!isValidTurnTouch(touched)) return state;
   const locked = lockTouchedCubes(state.board, touched);
   const advanced = advanceLocks(locked);
   return {

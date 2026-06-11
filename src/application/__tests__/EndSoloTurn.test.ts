@@ -12,17 +12,13 @@ function buildState() {
 describe('endSoloTurn', () => {
   it('increments the turn counter', () => {
     const state = buildState();
-    expect(endSoloTurn(state, []).turn).toBe(state.turn + 1);
+    expect(endSoloTurn(state, [2, 5]).turn).toBe(state.turn + 1);
   });
 
   it('locks the touched cubes for the next turn', () => {
     const next = endSoloTurn(buildState(), [1, 4]);
     expect(next.board.lockedThisTurn).toEqual([1, 4]);
     expect(next.board.lockedNextTurn).toEqual([]);
-  });
-
-  it('deduplicates touched positions before locking', () => {
-    expect(endSoloTurn(buildState(), [3, 3]).board.lockedThisTurn).toEqual([3]);
   });
 
   it('releases the previous turn locks', () => {
@@ -34,16 +30,24 @@ describe('endSoloTurn', () => {
   it('opens the declaration window for the next turn', () => {
     const state = buildState();
     expect(state.canDeclareThisTurn).toBe(false);
-    expect(endSoloTurn(state, [0]).canDeclareThisTurn).toBe(true);
+    expect(endSoloTurn(state, [0, 4]).canDeclareThisTurn).toBe(true);
   });
 
   it('resets revealedThisTurn', () => {
     const state = { ...buildState(), revealedThisTurn: true };
-    expect(endSoloTurn(state, []).revealedThisTurn).toBe(false);
+    expect(endSoloTurn(state, [1, 2]).revealedThisTurn).toBe(false);
+  });
+
+  it('refuses to end the turn without exactly 2 distinct touched cubes', () => {
+    const state = buildState();
+    expect(endSoloTurn(state, [])).toBe(state);
+    expect(endSoloTurn(state, [3])).toBe(state);
+    expect(endSoloTurn(state, [3, 3])).toBe(state);
+    expect(endSoloTurn(state, [3, 4, 5])).toBe(state);
   });
 
   it('is a no-op when the game is finished', () => {
     const state = { ...buildState(), finished: true };
-    expect(endSoloTurn(state, [0])).toBe(state);
+    expect(endSoloTurn(state, [0, 1])).toBe(state);
   });
 });
