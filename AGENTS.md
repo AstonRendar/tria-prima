@@ -203,8 +203,28 @@ el rival pueda jugar.
 ## Testing
 
 ### Stack
-- **Jest** + **ts-jest**. Tests en `__tests__/` junto al código.
-- Tipos vienen de `@types/jest`.
+- **Jest** en configuración multi-proyecto (`package.json`):
+  - Proyecto **logic** — `ts-jest` + entorno node. Tests de `domain`, `application`
+    e `infrastructure` en `__tests__/` junto al código.
+  - Proyecto **ui** — preset `jest-expo` + `@testing-library/react-native` (v14).
+    Tests en `src/ui/__tests__/*.test.tsx`.
+- Tipos vienen de `@types/jest` (v29, alineado con jest 29 que exige `jest-expo`).
+- Cobertura: `collectCoverageFrom` cubre todo `domain` y `application`.
+
+### Tipos de test
+- **Unitarios** — toda regla del dominio o caso de uso lleva su test.
+- **Funcionales** — `src/application/__tests__/functional/`: partidas guiadas por modo
+  que encadenan los casos de uso reales con tablero determinista (`StubRandom([0])`
+  deja el `CUBE_SET` en orden y sin girar: fila superior de azufres y fila inferior rubedo).
+- **Smoke de UI** — `src/ui/__tests__/Screens.smoke.test.tsx`: un único render que
+  recorre todas las pantallas con navegación imperativa.
+
+### Particularidades de los tests de UI
+- El `render` de RNTL 14 es **asíncrono**: `await renderRouter(...)` siempre.
+- El store de navegación de expo-router es global al fichero de test y `renderRouter`
+  no lo reinicia: usar un solo render por fichero y navegar con `router.navigate`
+  dentro de `act`. Tras cada salto, la primera aserción debe ser `findBy*`.
+- `renderRouter` activa fake timers: restaurar con `jest.useRealTimers()` en `afterEach`.
 
 ### Política TDD
 - Toda regla del dominio o caso de uso lleva su test.
