@@ -21,8 +21,9 @@ describe('app smoke', () => {
   it('walks through every main screen', async () => {
     await renderRouter('./app', { initialUrl: '/' });
 
-    // Home: los cuatro accesos.
+    // Home: los cinco accesos.
     expect(await screen.findByTestId('home/play')).toBeTruthy();
+    expect(screen.getByTestId('home/versus')).toBeTruthy();
     expect(screen.getByTestId('home/solo')).toBeTruthy();
     expect(screen.getByTestId('home/tracker')).toBeTruthy();
     expect(screen.getByTestId('home/instructions')).toBeTruthy();
@@ -54,5 +55,10 @@ describe('app smoke', () => {
     // Duelo: arranca en la pantalla de preparación.
     await goTo('/play');
     expect(await screen.findByTestId('setup/p1')).toBeTruthy();
+
+    // Contra el maestro: pide la palabra del jugador.
+    await goTo('/versus');
+    expect(await screen.findByTestId('setup/word')).toBeTruthy();
+    expect(screen.getByTestId('setup/start')).toBeTruthy();
   });
 });
