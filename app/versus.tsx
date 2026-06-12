@@ -23,6 +23,7 @@ import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
 import { SignCounters } from '@/ui/components/SignCounters';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useVersus } from '@/ui/hooks/useVersus';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
 import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
@@ -50,6 +51,7 @@ export default function Versus() {
 
   const hasActiveGame = state !== null && !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
