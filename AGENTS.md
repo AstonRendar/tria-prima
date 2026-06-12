@@ -82,6 +82,9 @@ Modo duelo (2 jugadores):
 - `MatchState` (con dos `PlayerData`, currentPlayerId, board, objectives compartidos).
 - `StartMatch`, `RotateMatchCube`, `SwapMatchCubes`, `EndMatchTurn`,
   `DeclareMatchObjectives`, `GuessMatchWord`.
+- El setup permite elegir quién empieza (`firstPlayer: 'p1' | 'p2' | 'random'`,
+  por defecto `random`). Aplica al duelo y al modo contra el maestro (vía
+  `VersusSetup`); en solitario y tracker no hay rival, no aplica.
 
 Modo contra el maestro (humano vs app, reutiliza `MatchState` y los casos de uso del duelo):
 - `StartVersus` — `startVersusMatch`: p1 humano, p2 la app con palabra del repositorio.
@@ -165,9 +168,9 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 | Zona | Patrón | Ejemplos |
 |---|---|---|
 | Home | `home/{destino}` | `home/play`, `home/versus`, `home/tracker`, `home/instructions` |
-| Setup (Versus) | `setup/{word\|start\|level-apprentice\|level-master}` | — |
+| Setup (Versus) | `setup/{word\|start\|level-apprentice\|level-master\|first-p1\|first-p2\|first-random}` | — |
 | Turno (Versus) | `versus/turn-name` | — |
-| Setup (Duelo) | `setup/{campo}` | `setup/p1`, `setup/p2`, `setup/start` |
+| Setup (Duelo) | `setup/{campo}` | `setup/p1`, `setup/p2`, `setup/first-random`, `setup/start` |
 | Cuadrícula | `cube/{i}` | `cube/0`..`cube/8` |
 | Acciones turno | `action/{kind}` | `action/roll-forward`, `action/spin-cw`, `action/swap`, `action/cancel` |
 | Fin de turno | `turn/{declare\|end}` | `turn/declare`, `turn/end` |

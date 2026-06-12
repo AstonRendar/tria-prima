@@ -28,4 +28,12 @@ describe('startVersusMatch', () => {
     expect(state.finished).toBe(false);
     expect(state.canDeclareThisTurn).toBe(false);
   });
+
+  it('honors the chosen first player', () => {
+    const state = startVersusMatch(
+      { random: new StubRandom([0]), wordRepository: new StubWordRepository('PUERTA') },
+      { playerName: 'Alice', playerWord: 'CAMINO', level: 'master', firstPlayer: 'p2' }
+    );
+    expect(state.currentPlayerId).toBe('p2');
+  });
 });

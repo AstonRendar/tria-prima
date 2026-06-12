@@ -6,7 +6,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { MatchSetup } from '@/application/StartMatch';
+import { FirstPlayerChoice, MatchSetup } from '@/application/StartMatch';
 import { isValidSecretWord, normalizeGuess, WORD_LENGTH } from '@/domain/SecretWord';
 import { ActionButton } from './ActionButton';
 import { Footer } from './Footer';
@@ -24,6 +24,7 @@ export function SetupScreen({ onStart }: Props) {
   const [p2Name, setP2Name] = useState('');
   const [p1Word, setP1Word] = useState('');
   const [p2Word, setP2Word] = useState('');
+  const [firstPlayer, setFirstPlayer] = useState<FirstPlayerChoice>('random');
 
   const namesValid = p1Name.trim().length > 0 && p2Name.trim().length > 0;
 
@@ -44,6 +45,7 @@ export function SetupScreen({ onStart }: Props) {
       p2Name: p2Name.trim(),
       p1Word: normalizeGuess(p1Word),
       p2Word: normalizeGuess(p2Word),
+      firstPlayer,
     });
   };
 
@@ -54,6 +56,8 @@ export function SetupScreen({ onStart }: Props) {
         p2={p2Name}
         onChangeP1={setP1Name}
         onChangeP2={setP2Name}
+        firstPlayer={firstPlayer}
+        onChangeFirstPlayer={setFirstPlayer}
         valid={namesValid}
         onContinue={confirmNames}
       />
@@ -108,6 +112,8 @@ function NamesStep({
   p2,
   onChangeP1,
   onChangeP2,
+  firstPlayer,
+  onChangeFirstPlayer,
   valid,
   onContinue,
 }: {
@@ -115,6 +121,8 @@ function NamesStep({
   p2: string;
   onChangeP1: (s: string) => void;
   onChangeP2: (s: string) => void;
+  firstPlayer: FirstPlayerChoice;
+  onChangeFirstPlayer: (choice: FirstPlayerChoice) => void;
   valid: boolean;
   onContinue: () => void;
 }) {
@@ -165,6 +173,30 @@ function NamesStep({
           style={styles.input}
           testID="setup/p2"
         />
+      </View>
+
+      <View style={styles.field}>
+        <Text style={styles.label}>¿Quién empieza?</Text>
+        <View style={styles.firstPlayerRow}>
+          <ActionButton
+            label={p1.trim() || 'Aprendiz 1'}
+            variant={firstPlayer === 'p1' ? 'primary' : 'secondary'}
+            onPress={() => onChangeFirstPlayer('p1')}
+            testID="setup/first-p1"
+          />
+          <ActionButton
+            label={p2.trim() || 'Aprendiz 2'}
+            variant={firstPlayer === 'p2' ? 'primary' : 'secondary'}
+            onPress={() => onChangeFirstPlayer('p2')}
+            testID="setup/first-p2"
+          />
+          <ActionButton
+            label="Al azar"
+            variant={firstPlayer === 'random' ? 'primary' : 'secondary'}
+            onPress={() => onChangeFirstPlayer('random')}
+            testID="setup/first-random"
+          />
+        </View>
       </View>
 
       <View style={styles.action}>
@@ -344,6 +376,12 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     marginTop: spacing.md,
+  },
+  firstPlayerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    rowGap: spacing.xs,
   },
   handoffBox: {
     width: '100%',

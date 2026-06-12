@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
 import { AppLevel } from '@/application/AppOpponent';
+import { FirstPlayerChoice } from '@/application/StartMatch';
 import { APP_PLAYER_NAME } from '@/application/StartVersus';
 import { TOUCHES_PER_TURN } from '@/domain/Board';
 import { RotationKind } from '@/domain/Cube';
@@ -148,7 +149,9 @@ export default function Versus() {
   if (!state) {
     return (
       <VersusSetup
-        onStart={(word, level) => versus.start({ playerName: 'Tú', playerWord: word, level })}
+        onStart={(word, level, firstPlayer) =>
+          versus.start({ playerName: 'Tú', playerWord: word, level, firstPlayer })
+        }
       />
     );
   }
@@ -396,9 +399,14 @@ export default function Versus() {
   );
 }
 
-function VersusSetup({ onStart }: { onStart: (word: string, level: AppLevel) => void }) {
+function VersusSetup({
+  onStart,
+}: {
+  onStart: (word: string, level: AppLevel, firstPlayer: FirstPlayerChoice) => void;
+}) {
   const [word, setWord] = useState('');
   const [level, setLevel] = useState<AppLevel>('apprentice');
+  const [firstPlayer, setFirstPlayer] = useState<FirstPlayerChoice>('random');
   const normalized = normalizeGuess(word);
   const valid = normalized.length === WORD_LENGTH;
   const tooLong = normalized.length > WORD_LENGTH;
@@ -422,7 +430,7 @@ function VersusSetup({ onStart }: { onStart: (word: string, level: AppLevel) => 
           autoFocus
           maxLength={12}
           returnKeyType="done"
-          onSubmitEditing={valid ? () => onStart(normalized, level) : undefined}
+          onSubmitEditing={valid ? () => onStart(normalized, level, firstPlayer) : undefined}
           style={styles.setupInput}
           testID="setup/word"
         />
@@ -454,11 +462,34 @@ function VersusSetup({ onStart }: { onStart: (word: string, level: AppLevel) => 
             : 'Juega siempre su mejor jugada y arriesga en cuanto puede.'}
         </Text>
       </View>
+      <View style={styles.setupField}>
+        <Text style={styles.setupLabel}>¿Quién empieza?</Text>
+        <View style={styles.levelRow}>
+          <ActionButton
+            label="Tú"
+            variant={firstPlayer === 'p1' ? 'primary' : 'secondary'}
+            onPress={() => setFirstPlayer('p1')}
+            testID="setup/first-p1"
+          />
+          <ActionButton
+            label={APP_PLAYER_NAME}
+            variant={firstPlayer === 'p2' ? 'primary' : 'secondary'}
+            onPress={() => setFirstPlayer('p2')}
+            testID="setup/first-p2"
+          />
+          <ActionButton
+            label="Al azar"
+            variant={firstPlayer === 'random' ? 'primary' : 'secondary'}
+            onPress={() => setFirstPlayer('random')}
+            testID="setup/first-random"
+          />
+        </View>
+      </View>
       <View style={styles.setupAction}>
         <ActionButton
           label="Empezar el duelo"
           variant="primary"
-          onPress={() => onStart(normalized, level)}
+          onPress={() => onStart(normalized, level, firstPlayer)}
           disabled={!valid}
           testID="setup/start"
         />
@@ -656,6 +687,8 @@ const styles = StyleSheet.create({
   },
   levelRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
+    rowGap: spacing.xs,
   },
 });
