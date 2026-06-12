@@ -29,7 +29,7 @@ export default function Home() {
         />
         <View style={{ height: spacing.md }} />
         <ActionButton
-          label="En soledad"
+          label="Desafío"
           onPress={() => router.push('/solo')}
           testID="home/solo"
         />

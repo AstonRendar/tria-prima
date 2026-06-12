@@ -37,8 +37,8 @@ export default function RootLayout() {
         <Stack.Screen name="instructions" options={{ title: 'Reglas' }} />
         <Stack.Screen name="play" options={{ title: 'Duelo' }} />
         <Stack.Screen name="versus" options={{ title: 'Contra el maestro' }} />
-        <Stack.Screen name="solo" options={{ title: 'En soledad · digital' }} />
-        <Stack.Screen name="tracker" options={{ title: 'En soledad · físico' }} />
+        <Stack.Screen name="solo" options={{ title: 'Desafío · digital' }} />
+        <Stack.Screen name="tracker" options={{ title: 'Desafío · físico' }} />
       </Stack>
     </ConfirmProvider>
   );

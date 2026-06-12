@@ -46,7 +46,7 @@ const SECTIONS: Section[] = [
       'Cuando hayas conseguido revelar cuatro o más letras de la palabra del rival, al final de un turno donde acabes de descubrir una letra nueva puedes intentar adivinarla. Solo se puede intentar una vez:\n\n· Si aciertas, ganas el duelo.\n· Si fallas, el rival gana.\n\nSi no te ves con confianza, no es obligatorio adivinar; pasa el turno y sigue jugando.',
   },
   {
-    title: 'Modo «En soledad» (digital)',
+    title: 'Modo «Desafío» (digital)',
     body:
       'Sin rival, frente al athanor de Paracelso. La app esconde la palabra, gestiona los cubos en pantalla y aplica los marcadores conforme cumples objetivos. Tu meta: descifrar la palabra antes de quedarte sin paciencia. Al final se cuenta una puntuación (turnos jugados + objetivos cumplidos en la disposición inicial). Cuanto menor, mejor — el maestro te juzgará en consecuencia.',
   },
