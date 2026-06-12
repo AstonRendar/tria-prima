@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+import { colors, fonts, radius, shadows, spacing } from '@/ui/styles/tokens';
 
 type Variant = 'primary' | 'secondary' | 'danger';
 
@@ -48,24 +48,26 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xs,
     borderRadius: radius.md,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: colors.gold,
     minWidth: 96,
     alignItems: 'center',
+    ...shadows.card,
   },
   primary: {
     backgroundColor: colors.accent,
-    borderColor: colors.accent,
+    borderColor: colors.goldBright,
   },
   danger: {
     backgroundColor: colors.danger,
-    borderColor: colors.danger,
+    borderColor: colors.goldBright,
   },
   disabled: {
     opacity: 0.4,
   },
   pressed: {
     transform: [{ scale: 0.97 }],
+    opacity: 0.92,
   },
   label: {
     fontFamily: fonts.serif,
