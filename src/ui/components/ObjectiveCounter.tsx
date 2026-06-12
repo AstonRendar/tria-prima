@@ -1,11 +1,14 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Objective } from '@/domain/Objective';
-import { AlchemicalSigil, ColorSeal, OrnateFrame } from '@/ui/ornaments';
+import { OrnateFrame } from '@/ui/ornaments';
+import { SignGlyph, SignVariant } from './SignGlyph';
 import {
   colors,
   cubeColorLabel,
   cubeSymbolLabel,
   fonts,
+  physicalColorLabel,
+  physicalSymbolLabel,
   radius,
   shadows,
   spacing,
@@ -16,22 +19,26 @@ type Props = {
   count: number;
   onIncrement: () => void;
   onDecrement: () => void;
+  variant?: SignVariant;
 };
 
-export function ObjectiveCounter({ objective, count, onIncrement, onDecrement }: Props) {
-  const isColor = objective.kind === 'color';
-  const label = isColor
-    ? cubeColorLabel[objective.value]
-    : cubeSymbolLabel[objective.value];
+export function ObjectiveCounter({
+  objective,
+  count,
+  onIncrement,
+  onDecrement,
+  variant = 'alchemy',
+}: Props) {
+  const physical = variant === 'physical';
+  const label =
+    objective.kind === 'color'
+      ? (physical ? physicalColorLabel : cubeColorLabel)[objective.value]
+      : (physical ? physicalSymbolLabel : cubeSymbolLabel)[objective.value];
 
   return (
     <OrnateFrame padding={spacing.sm + 2} cornerScale={0.55} style={[styles.row, shadows.card]}>
       <View style={styles.sign}>
-        {isColor ? (
-          <ColorSeal color={objective.value} size={36} />
-        ) : (
-          <AlchemicalSigil symbol={objective.value} size={34} color={colors.text} />
-        )}
+        <SignGlyph sign={objective} size={36} variant={variant} />
       </View>
       <View style={styles.middle}>
         <Text style={styles.label}>{label}</Text>

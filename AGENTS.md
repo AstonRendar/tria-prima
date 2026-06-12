@@ -129,7 +129,7 @@ Comunes:
 
 ### `src/ui/`
 - `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveCard`,
-  `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `RevealFlip`, `ActionButton`,
+  `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
   `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `Footer`,
   `SetupScreen`).
 - `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
@@ -169,7 +169,9 @@ Comunes:
 - `styles/tokens.ts` — paleta inspirada en la imagen *pergamino + tinta azul marino*,
   tipografía serif (Georgia / serif). El rediseño añade oro envejecido (`gold`,
   `goldBright`), `sepia`, `parchmentLight`, `gradients` y `shadows` (boxShadow en
-  web / shadow+elevation en nativo).
+  web / shadow+elevation en nativo). Incluye además los tokens `physical*`
+  (`physicalColorHex/Contrast/Label`, `physicalSymbolGlyph/Label`) de la variante
+  visual `physical` (ver modo tracker).
 - `ConfirmProvider` — modal de confirmación accesible desde cualquier pantalla por hook
   `useConfirm()`.
 
@@ -257,6 +259,11 @@ el rival pueda jugar.
 - La app esconde una palabra clave. El jugador juega físicamente con el juego de mesa
   y pulsa ＋ en el objetivo correspondiente cada vez que lo cumple en la mesa.
 - No hay puntuación digital ni contador de turnos: solo gestión de letras reveladas.
+- Las insignias usan la variante visual `physical` (componente `SignGlyph` +
+  tokens `physical*`): colores planos turquesa/blanco/naranja y letras griegas
+  Δ Θ Ξ para que coincidan con los componentes del juego de mesa real. Solo
+  letras y colores planos — sin arte copiado del juego original. El resto de
+  modos sigue con la variante `alchemy` (sigilos y sellos del grimorio).
 
 ## Testing
 
