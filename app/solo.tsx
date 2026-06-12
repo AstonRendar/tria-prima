@@ -23,7 +23,7 @@ import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
 import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useSoloPlay } from '@/ui/hooks/useSoloPlay';
 import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
-import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+import { colors, fonts, spacing } from '@/ui/styles/tokens';
 import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
 
 const dependencies = buildProductionDependencies();
@@ -282,7 +282,7 @@ export default function SoloPlay() {
       </View>
 
       {phase === 'choose-action' && (
-        <View style={styles.actionPanel}>
+        <OrnateFrame padding={spacing.sm} cornerScale={0.7} style={styles.actionPanel}>
           {ROTATIONS.map((r) => (
             <View key={r.kind} style={styles.actionBtn}>
               <ActionButton
@@ -298,7 +298,7 @@ export default function SoloPlay() {
           <View style={styles.actionBtn}>
             <ActionButton label="Cancelar" onPress={onCancelAction} testID="action/cancel" />
           </View>
-        </View>
+        </OrnateFrame>
       )}
 
       {phase === 'select-second-cube' && (
@@ -377,10 +377,10 @@ export default function SoloPlay() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.stat}>
+    <OrnateFrame padding={spacing.sm} cornerScale={0.5} style={styles.stat}>
       <Text style={styles.statLabel}>{label}</Text>
       <Text style={styles.statValue}>{value}</Text>
-    </View>
+    </OrnateFrame>
   );
 }
 
@@ -405,12 +405,7 @@ const styles = StyleSheet.create({
   stat: {
     flex: 1,
     alignItems: 'center',
-    padding: spacing.sm,
     marginHorizontal: spacing.xs,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   statLabel: {
     fontFamily: fonts.serif,

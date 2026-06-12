@@ -327,7 +327,7 @@ export default function Play() {
       </View>
 
       {phase === 'choose-action' && (
-        <View style={styles.actionPanel}>
+        <OrnateFrame padding={spacing.sm} cornerScale={0.7} style={styles.actionPanel}>
           {ROTATIONS.map((r) => (
             <View key={r.kind} style={styles.actionBtn}>
               <ActionButton
@@ -343,7 +343,7 @@ export default function Play() {
           <View style={styles.actionBtn}>
             <ActionButton label="Cancelar" onPress={onCancelAction} testID="action/cancel" />
           </View>
-        </View>
+        </OrnateFrame>
       )}
 
       {phase === 'select-second-cube' && (
