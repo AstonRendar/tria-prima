@@ -8,16 +8,12 @@ export type TurnPhase =
   | 'select-second-cube'
   | 'declare';
 
-// El único texto que varía entre modos es hacia quién se voltea el dado
-// ("al rival" en duelo, "al maestro" en solitario).
-export function rotationActions(
-  forwardTarget: string
-): ReadonlyArray<{ label: string; kind: RotationKind }> {
+// Los dados tienen caras opuestas idénticas (ver CUBE_SET), así que voltear
+// adelante/atrás y rotar ↻/↺ son equivalentes: basta un botón por movimiento.
+export function rotationActions(): ReadonlyArray<{ label: string; kind: RotationKind }> {
   return [
-    { label: 'Voltear hacia ti', kind: 'roll-backward' },
-    { label: `Voltear ${forwardTarget}`, kind: 'roll-forward' },
+    { label: 'Voltear ↷', kind: 'roll-forward' },
     { label: 'Rotar ↻', kind: 'spin-cw' },
-    { label: 'Rotar ↺', kind: 'spin-ccw' },
   ];
 }
 
