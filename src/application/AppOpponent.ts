@@ -1,6 +1,6 @@
 import { Board, isLocked, rotateCubeAt, swapPositions } from '@/domain/Board';
 import { RotationKind } from '@/domain/Cube';
-import { findMatchedLine } from '@/domain/Objective';
+import { findMatchedLine, Objective } from '@/domain/Objective';
 import { BOARD_CELLS, Position, sameRowOrColumn } from '@/domain/Position';
 import {
   MARKERS_TO_REVEAL,
@@ -39,7 +39,8 @@ const ROTATION_KINDS: ReadonlyArray<RotationKind> = [
 // Elige el turno de la app por búsqueda voraz: evalúa todos los turnos
 // legales (un intercambio, o dos giros sobre dados distintos) y se queda con
 // el que más objetivos declarables deja en el tablero, con bonus por los que
-// revelarían una letra del rival. Empata al azar para no ser predecible.
+// revelarían una letra del rival y penalización por dejar formadas las líneas
+// que el rival mantiene bloqueadas. Empata al azar para no ser predecible.
 export function planAppTurn(
   state: MatchState,
   random: Random,
@@ -93,25 +94,32 @@ export function planAppTurn(
 
 // Puntúa un tablero hipotético desde el punto de vista del jugador en turno:
 // +1 por objetivo que declararía (cumplido y no bloqueado por el rival),
-// +1 extra si esa declaración revelaría una letra del rival.
+// +1 extra si esa declaración revelaría una letra del rival. Las líneas que
+// el rival mantiene bloqueadas puntúan en negativo mientras sigan formadas
+// (el rival las re-declara cada turno y gana un marcador), con -1 extra si
+// esa re-declaración revelaría una letra propia: romperlas vale tanto como
+// declarar.
 function scoreBoard(board: Board, state: MatchState): number {
   const me = state.currentPlayerId;
   const opponentWord = currentOpponent(state).secretWord;
+  const myWord = state.players[me].secretWord;
   let score = 0;
   for (const slot of state.objectives) {
-    if (slot.blockedBy !== null && slot.blockedBy !== me) continue;
     if (findMatchedLine(board, slot.objective) === null) continue;
-    score += 1;
-    const card = opponentWord.cards.find(
-      (c) =>
-        c.faceSign.kind === slot.objective.kind &&
-        c.faceSign.value === slot.objective.value
-    );
-    if (card && !card.revealed && card.markers === MARKERS_TO_REVEAL - 1) {
-      score += 1;
+    if (slot.blockedBy !== null && slot.blockedBy !== me) {
+      score -= wouldRevealLetter(myWord, slot.objective) ? 2 : 1;
+    } else {
+      score += wouldRevealLetter(opponentWord, slot.objective) ? 2 : 1;
     }
   }
   return score;
+}
+
+function wouldRevealLetter(word: SecretWord, objective: Objective): boolean {
+  const card = word.cards.find(
+    (c) => c.faceSign.kind === objective.kind && c.faceSign.value === objective.value
+  );
+  return card !== undefined && !card.revealed && card.markers === MARKERS_TO_REVEAL - 1;
 }
 
 // Decide si la app intenta adivinar. Juega limpio: solo usa las letras
