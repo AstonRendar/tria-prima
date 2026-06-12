@@ -95,7 +95,9 @@ Modo contra el maestro (humano vs app, reutiliza `MatchState` y los casos de uso
   aleatoria; solo arriesga la única candidata con 5+ letras). El nivel se elige en el
   setup y viaja en `VersusSetup`.
 - `PlayAppTurn` — `buildAppTurnSteps` / `applyAppStep` / `playAppTurn`: el turno de la
-  app como lista de pasos que la UI reproduce con retardo.
+  app como lista de pasos que la UI reproduce con retardo. Cada acción va precedida
+  de un paso `select` (no-op en el estado) que la UI remarca y anima como si el dado
+  lo hubiera tocado un humano.
 
 Modo solitario digital (1 jugador, todo en la app):
 - `SoloPlayState` (board, objectives, palabra elegida por la app, turno, puntuación).
