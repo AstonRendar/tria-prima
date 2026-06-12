@@ -1,14 +1,14 @@
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { CubeSymbol } from '@/domain/Symbol';
 
-type Props = {
+type GlyphProps = {
   symbol: CubeSymbol;
-  size: number;
   color: string;
   strokeWidth?: number;
 };
 
-export function AlchemicalSigil({ symbol, size, color, strokeWidth = 1.8 }: Props) {
+// Trazos del sigilo en un lienzo de 24×24, sin <Svg>: incrustable en otros SVG.
+export function SigilGlyph({ symbol, color, strokeWidth = 1.8 }: GlyphProps) {
   const stroke = {
     stroke: color,
     strokeWidth,
@@ -16,7 +16,7 @@ export function AlchemicalSigil({ symbol, size, color, strokeWidth = 1.8 }: Prop
     fill: 'none' as const,
   };
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" pointerEvents="none">
+    <>
       {symbol === 'sulfur' && (
         <>
           <Path d="M12 3 L17.5 11.5 L6.5 11.5 Z" {...stroke} strokeLinejoin="round" />
@@ -38,6 +38,18 @@ export function AlchemicalSigil({ symbol, size, color, strokeWidth = 1.8 }: Prop
           <Line x1={4} y1={12} x2={20} y2={12} {...stroke} />
         </>
       )}
+    </>
+  );
+}
+
+type Props = GlyphProps & {
+  size: number;
+};
+
+export function AlchemicalSigil({ symbol, size, color, strokeWidth = 1.8 }: Props) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" pointerEvents="none">
+      <SigilGlyph symbol={symbol} color={color} strokeWidth={strokeWidth} />
     </Svg>
   );
 }

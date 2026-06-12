@@ -152,7 +152,8 @@ Comunes:
   (`src/ui/audio/__mocks__/expo-audio.ts`).
 - `ornaments/` — biblioteca decorativa SVG (estilo grimorio: interior de los libros de
   D&D 5.5 + motivos alquímicos, todo obra propia): `ParchmentBackground` (fondo de
-  pergamino con gradiente radial, moteado y viñeta), `OrnateFrame` (marco de doble
+  pergamino con gradiente radial, moteado, viñeta y marca de agua: el emblema
+  `OuroborosGlyph` enorme en la mitad derecha, sepia al 7 %), `OrnateFrame` (marco de doble
   línea oro+tinta con volutas en las esquinas; mide con `onLayout`; la prop
   `cornerScale` reduce las volutas para paneles compactos — es el marco estándar de
   todo panel: modales, zonas de bloqueo, panel de acciones, contadores del tracker,
