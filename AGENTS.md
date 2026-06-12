@@ -153,7 +153,10 @@ Comunes:
 - `ornaments/` — biblioteca decorativa SVG (estilo grimorio: interior de los libros de
   D&D 5.5 + motivos alquímicos, todo obra propia): `ParchmentBackground` (fondo de
   pergamino con gradiente radial, moteado y viñeta), `OrnateFrame` (marco de doble
-  línea oro+tinta con volutas en las esquinas; mide con `onLayout`), `FiligreeDivider`
+  línea oro+tinta con volutas en las esquinas; mide con `onLayout`; la prop
+  `cornerScale` reduce las volutas para paneles compactos — es el marco estándar de
+  todo panel: modales, zonas de bloqueo, panel de acciones, contadores del tracker,
+  estadísticas del solitario y secciones de las reglas), `FiligreeDivider`
   (filete con remates; variantes `line`/`fleuron`), `AlchemicalSigil` (azufre, mercurio
   y sal a trazo), `ColorSeal` (sello circular por color de fase), `Ouroboros` (emblema
   hero) y `DropCap` (capitular de instrucciones). Son funciones puras de props, sin

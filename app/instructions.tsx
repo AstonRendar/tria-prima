@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Footer } from '@/ui/components/Footer';
-import { DropCap, FiligreeDivider, Ouroboros, ParchmentBackground } from '@/ui/ornaments';
+import { DropCap, FiligreeDivider, OrnateFrame, Ouroboros, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, shadows, spacing } from '@/ui/styles/tokens';
 
 const startsWithLetter = (body: string) => /^[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(body);
@@ -80,7 +80,7 @@ export default function Instructions() {
         </View>
 
         {SECTIONS.map((s) => (
-          <View key={s.title} style={styles.section}>
+          <OrnateFrame key={s.title} padding={spacing.lg} style={[styles.section, shadows.card]}>
             <Text style={styles.sectionTitle}>{s.title}</Text>
             <View style={styles.sectionRule}>
               <FiligreeDivider width={150} />
@@ -95,7 +95,7 @@ export default function Instructions() {
             ) : (
               <Text style={styles.sectionBody}>{s.body}</Text>
             )}
-          </View>
+          </OrnateFrame>
         ))}
 
         <View style={styles.flourish}>
@@ -139,14 +139,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   section: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.gold,
-    borderRadius: 6,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
     marginBottom: 16,
-    ...shadows.card,
   },
   sectionTitle: {
     fontFamily: fonts.serif,

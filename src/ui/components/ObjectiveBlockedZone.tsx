@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { ObjectiveSlot } from '@/domain/Objective';
-import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+import { OrnateFrame } from '@/ui/ornaments';
+import { colors, fonts, spacing } from '@/ui/styles/tokens';
 import { ObjectiveCard } from './ObjectiveCard';
 
 type Props = {
@@ -13,30 +14,26 @@ type Props = {
 export function ObjectiveBlockedZone({ playerName, slots, testID }: Props) {
   return (
     <View style={styles.zone} testID={testID}>
-      <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-        {playerName}
-      </Text>
-      <View style={styles.row}>
-        {slots.length === 0 ? (
-          <Text style={styles.empty}>—</Text>
-        ) : (
-          slots.map((slot) => (
-            <ObjectiveCard key={slot.objective.id} slot={slot} compact />
-          ))
-        )}
-      </View>
+      <OrnateFrame padding={spacing.sm} cornerScale={0.6}>
+        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+          {playerName}
+        </Text>
+        <View style={styles.row}>
+          {slots.length === 0 ? (
+            <Text style={styles.empty}>—</Text>
+          ) : (
+            slots.map((slot) => (
+              <ObjectiveCard key={slot.objective.id} slot={slot} compact />
+            ))
+          )}
+        </View>
+      </OrnateFrame>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   zone: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.gold,
-    backgroundColor: colors.surface,
     marginVertical: spacing.xs,
   },
   title: {
@@ -46,12 +43,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    textAlign: 'center',
     marginBottom: spacing.xs,
   },
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
+    justifyContent: 'center',
     columnGap: spacing.xs,
     minHeight: 38,
   },
