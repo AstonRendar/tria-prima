@@ -303,10 +303,10 @@ function WordStep({
           onSubmitEditing={valid ? onContinue : undefined}
           testID="setup/word"
         />
-        <Text style={styles.hint}>
+        <Text style={[styles.hint, !valid && styles.hintInvalid]}>
           {tooLong
             ? `Demasiado larga: solo ${WORD_LENGTH} letras (sin acentos ni espacios).`
-            : `Sustantivo común singular. Letras útiles: ${normalized.length} / ${WORD_LENGTH}.`}
+            : `Sustantivo común, en singular o plural. Letras útiles: ${normalized.length} / ${WORD_LENGTH}.`}
         </Text>
       </View>
 
@@ -395,6 +395,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontStyle: 'italic',
     marginTop: spacing.xs,
+  },
+  hintInvalid: {
+    color: colors.danger,
   },
   action: {
     width: '100%',
