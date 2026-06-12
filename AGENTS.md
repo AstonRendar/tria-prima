@@ -262,6 +262,10 @@ npm run typecheck   # tsc --noEmit
 
 Repositorio: <https://github.com/AstonRendar/tria-prima>. Se sigue **git flow**:
 
+> **Autoría**: ningún agente (Claude, Antigravity, etc.) firma commits, PRs, documentos
+> ni ningún otro artefacto como autor o coautor. Nada de `Co-Authored-By` ni pies tipo
+> "Generated with…". La autoría es siempre del usuario.
+
 - `main` — solo versiones estables (releases). No se hace commit directo.
 - `develop` — rama de integración; el trabajo diario se fusiona aquí.
 - `feature/<nombre>` — una rama por funcionalidad, sale de `develop` y vuelve a `develop`.
