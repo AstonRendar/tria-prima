@@ -455,7 +455,7 @@ function VersusSetup({
         </Text>
       </View>
       <View style={styles.setupField}>
-        <Text style={styles.setupLabel}>Nivel del maestro</Text>
+        <Text style={styles.setupLabel}>Nivel del alquimista</Text>
         <View style={styles.levelRow}>
           <ActionButton
             label="Aprendiz"
