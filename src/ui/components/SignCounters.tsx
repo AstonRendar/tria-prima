@@ -3,6 +3,7 @@ import { ALL_COLORS } from '@/domain/Color';
 import { PlayerCard, SecretWord } from '@/domain/SecretWord';
 import { ALL_SYMBOLS } from '@/domain/Symbol';
 import { colors, cubeColorHex, cubeSymbolGlyph, fonts, radius } from '@/ui/styles/tokens';
+import { RevealFlip } from './RevealFlip';
 
 type Props = {
   word: SecretWord;
@@ -28,29 +29,31 @@ export function SignCounters({ word }: Props) {
         const sign = `${card.faceSign.kind}:${card.faceSign.value}`;
         return (
           <View key={sign} style={styles.cell} testID={`sign-counter/${sign}`}>
-            <View
-              style={[
-                styles.signBox,
-                isColor && { backgroundColor: cubeColorHex[card.faceSign.value] },
-                card.revealed && styles.signRevealed,
-              ]}
-            >
-              {!isColor && (
-                <Text style={styles.signGlyph}>
-                  {cubeSymbolGlyph[card.faceSign.value]}
-                </Text>
-              )}
-            </View>
-            <View style={styles.markerRow}>
-              {card.revealed ? (
-                <Text style={styles.letter}>{card.letter}</Text>
-              ) : (
-                <>
-                  <View style={[styles.dot, card.markers >= 1 && styles.dotOn]} />
-                  <View style={[styles.dot, card.markers >= 2 && styles.dotOn]} />
-                </>
-              )}
-            </View>
+            <RevealFlip revealed={card.revealed} style={styles.cellContent}>
+              <View
+                style={[
+                  styles.signBox,
+                  isColor && { backgroundColor: cubeColorHex[card.faceSign.value] },
+                  card.revealed && styles.signRevealed,
+                ]}
+              >
+                {!isColor && (
+                  <Text style={styles.signGlyph}>
+                    {cubeSymbolGlyph[card.faceSign.value]}
+                  </Text>
+                )}
+              </View>
+              <View style={styles.markerRow}>
+                {card.revealed ? (
+                  <Text style={styles.letter}>{card.letter}</Text>
+                ) : (
+                  <>
+                    <View style={[styles.dot, card.markers >= 1 && styles.dotOn]} />
+                    <View style={[styles.dot, card.markers >= 2 && styles.dotOn]} />
+                  </>
+                )}
+              </View>
+            </RevealFlip>
           </View>
         );
       })}
@@ -64,8 +67,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cell: {
-    alignItems: 'center',
     marginHorizontal: 4,
+  },
+  cellContent: {
+    alignItems: 'center',
   },
   signBox: {
     width: 28,
