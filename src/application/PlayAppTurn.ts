@@ -10,6 +10,7 @@ import { swapMatchCubes } from './SwapMatchCubes';
 
 export type AppTurnStep =
   | { kind: 'guess'; input: string }
+  | { kind: 'select'; position: Position }
   | { kind: 'action'; action: AppAction }
   | { kind: 'declare' }
   | { kind: 'end-turn'; touched: Position[] };
@@ -27,7 +28,15 @@ export function buildAppTurnSteps(
   if (guess) return [{ kind: 'guess', input: guess }];
   const plan = planAppTurn(state, deps.random, level);
   return [
-    ...plan.actions.map((action): AppTurnStep => ({ kind: 'action', action })),
+    // Antes de cada acción, un paso de selección del dado que va a mover:
+    // la UI lo remarca como cuando lo toca el humano.
+    ...plan.actions.flatMap((action): AppTurnStep[] => [
+      {
+        kind: 'select',
+        position: action.kind === 'swap' ? action.a : action.position,
+      },
+      { kind: 'action', action },
+    ]),
     { kind: 'declare' },
     { kind: 'end-turn', touched: plan.touched },
   ];
@@ -37,6 +46,8 @@ export function applyAppStep(state: MatchState, step: AppTurnStep): MatchState {
   switch (step.kind) {
     case 'guess':
       return guessMatchWord(state, step.input);
+    case 'select':
+      return state;
     case 'action':
       return step.action.kind === 'swap'
         ? swapMatchCubes(state, step.action.a, step.action.b).state

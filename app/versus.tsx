@@ -79,21 +79,29 @@ export default function Versus() {
 
   const isMyTurn = state !== null && !state.finished && state.currentPlayerId === 'p1';
 
-  // Las jugadas de la app se narran y se animan según llegan.
+  // Las jugadas de la app se narran según llegan. La selección y la animación
+  // se derivan del paso en el propio render: así CubeView recibe el
+  // animationKind en el mismo commit en que cambia el tablero y el giro se ve
+  // igual que cuando mueve el humano.
   const lastStep = versus.lastAppStep;
+  const appSelected = lastStep?.kind === 'select' ? lastStep.position : null;
+  const appAnimation: { positions: ReadonlySet<Position>; kind: CubeAnimationKind } | null =
+    lastStep?.kind === 'action'
+      ? lastStep.action.kind === 'swap'
+        ? { positions: new Set([lastStep.action.a, lastStep.action.b]), kind: 'swap' }
+        : { positions: new Set([lastStep.action.position]), kind: lastStep.action.rotation }
+      : null;
   useEffect(() => {
     if (!lastStep) return;
+    if (lastStep.kind === 'select') {
+      flash.show('El maestro escoge un dado…');
+    }
     if (lastStep.kind === 'action') {
       if (lastStep.action.kind === 'swap') {
         audio.play('swap');
-        setLastAnimation({
-          positions: new Set([lastStep.action.a, lastStep.action.b]),
-          kind: 'swap',
-        });
       } else {
         const r = lastStep.action.rotation;
         audio.play(r === 'spin-cw' || r === 'spin-ccw' ? 'cube-spin' : 'cube-roll');
-        setLastAnimation({ positions: new Set([lastStep.action.position]), kind: r });
       }
       flash.show('El maestro mueve…');
     }
@@ -255,6 +263,7 @@ export default function Versus() {
   }
 
   const opponent = state.players.p2;
+  const animation = appAnimation ?? lastAnimation;
   const guessEligible = isMyTurn && canGuess(opponent.secretWord);
   const phaseHint = isMyTurn
     ? describePhase(phase, touched.size)
@@ -300,10 +309,10 @@ export default function Versus() {
                 <CubeView
                   key={i}
                   cube={state.board.cubes[i]}
-                  selected={selected === i}
+                  selected={selected === i || appSelected === i}
                   locked={state.board.lockedThisTurn.includes(i)}
                   touched={touched.has(i)}
-                  animationKind={lastAnimation?.positions.has(i) ? lastAnimation.kind : null}
+                  animationKind={animation?.positions.has(i) ? animation.kind : null}
                   onPress={isMyTurn ? () => onPressCube(i) : undefined}
                   testID={`cube/${i}`}
                 />
