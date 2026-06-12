@@ -329,11 +329,7 @@ export default function SoloPlay() {
         <FiligreeDivider width={170} />
       </View>
       <Text style={styles.sectionTitle}>Objetivos disponibles</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.availableRow}
-      >
+      <View style={styles.objectiveRow}>
         {availableSlots.length === 0 ? (
           <Text style={styles.empty}>Todos los objetivos están bloqueados.</Text>
         ) : (
@@ -341,14 +337,10 @@ export default function SoloPlay() {
             <ObjectiveCard key={slot.objective.id} slot={slot} />
           ))
         )}
-      </ScrollView>
+      </View>
 
       <Text style={styles.sectionTitle}>Tu zona de bloqueo</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.availableRow}
-      >
+      <View style={styles.objectiveRow}>
         {myBlocked.length === 0 ? (
           <Text style={styles.empty}>Sin objetivos bloqueados.</Text>
         ) : (
@@ -356,7 +348,7 @@ export default function SoloPlay() {
             <ObjectiveCard key={slot.objective.id} slot={slot} />
           ))
         )}
-      </ScrollView>
+      </View>
 
       {guessEligible && (
         <GuessBox
@@ -499,9 +491,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
-  availableRow: {
-    flexGrow: 1,
+  objectiveRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
+    rowGap: spacing.sm,
     paddingHorizontal: spacing.sm,
   },
   empty: {
