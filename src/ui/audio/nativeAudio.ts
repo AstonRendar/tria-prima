@@ -1,6 +1,6 @@
 import { AudioPlayer, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { readFlag, writeFlag } from './preferences';
-import { ARP_PATTERN, BAR_CHORD, BARS, BEAT, CHORDS, LOOP_DURATION, MELODY, midiToFreq } from './score';
+import { beatOf, loopDurationOf, midiToFreq, MusicTrack, Score, SCORES } from './score';
 import { sfxDuration, SFX_SPECS, SoundKey } from './sfxSpecs';
 import { renderWavDataUri, ToneSpec } from './synth';
 
@@ -56,7 +56,8 @@ export class NativeAudioBus {
 
 export class NativeMusicPlayer {
   private enabled = readFlag(MUSIC_STORAGE_KEY);
-  private player: AudioPlayer | null = null;
+  private players = new Map<MusicTrack, AudioPlayer>();
+  private track: MusicTrack = 'menu';
   private playing = false;
 
   isEnabled(): boolean {
@@ -75,68 +76,88 @@ export class NativeMusicPlayer {
     return this.enabled;
   }
 
+  setTrack(track: MusicTrack): void {
+    if (this.track === track) return;
+    const wasPlaying = this.playing;
+    if (wasPlaying) this.pauseCurrent();
+    this.track = track;
+    if (wasPlaying) this.playCurrent();
+  }
+
   start(): void {
     this.enabled = true;
     writeFlag(MUSIC_STORAGE_KEY, true);
     if (this.playing) return;
-    try {
-      ensureAudioMode();
-      if (!this.player) {
-        this.player = createAudioPlayer({ uri: renderLoopWav() });
-        this.player.loop = true;
-      }
-      void this.player.seekTo(0).catch(() => {});
-      this.player.play();
-      this.playing = true;
-    } catch {
-      // Sin módulo nativo disponible: queda en silencio.
-    }
+    this.playCurrent();
   }
 
   stop(): void {
     this.enabled = false;
     writeFlag(MUSIC_STORAGE_KEY, false);
     if (!this.playing) return;
+    this.pauseCurrent();
+  }
+
+  private playCurrent(): void {
+    try {
+      ensureAudioMode();
+      let player = this.players.get(this.track);
+      if (!player) {
+        player = createAudioPlayer({ uri: renderLoopWav(SCORES[this.track]) });
+        player.loop = true;
+        this.players.set(this.track, player);
+      }
+      void player.seekTo(0).catch(() => {});
+      player.play();
+      this.playing = true;
+    } catch {
+      // Sin módulo nativo disponible: queda en silencio.
+    }
+  }
+
+  private pauseCurrent(): void {
     this.playing = false;
     try {
-      this.player?.pause();
+      this.players.get(this.track)?.pause();
     } catch {
       // Nada que parar.
     }
   }
 }
 
-// Renderiza el loop completo (8 compases). La melodía usa triángulo en lugar
-// de la cuadrada filtrada de la web, y el eco se hornea como una repetición
-// atenuada un pulso después.
-function renderLoopWav(): string {
+// Renderiza el loop completo de una partitura. La melodía usa triángulo en
+// lugar de la cuadrada filtrada de la web, y el eco se hornea como una
+// repetición atenuada un pulso después.
+function renderLoopWav(score: Score): string {
   const tones: ToneSpec[] = [];
+  const beat = beatOf(score);
+  const loopDuration = loopDurationOf(score);
 
-  for (let bar = 0; bar < BARS; bar++) {
-    const chord = CHORDS[BAR_CHORD[bar]];
-    const barStart = bar * 4 * BEAT;
+  for (let bar = 0; bar < score.bars; bar++) {
+    const chord = score.chords[score.barChord[bar]];
+    const barStart = bar * 4 * beat;
 
     const root = midiToFreq(chord[0] - 12);
-    tones.push(note(root, barStart, 2 * BEAT, 'triangle', 0.07));
-    tones.push(note(root, barStart + 2 * BEAT, 2 * BEAT, 'triangle', 0.05));
+    tones.push(note(root, barStart, 2 * beat, 'triangle', 0.07));
+    tones.push(note(root, barStart + 2 * beat, 2 * beat, 'triangle', 0.05));
 
-    ARP_PATTERN.forEach((degree, i) => {
+    score.arpPattern.forEach((degree, i) => {
       const freq = midiToFreq(chord[degree] + 12);
-      tones.push(note(freq, barStart + i * BEAT * 0.5, BEAT * 0.45, 'sine', 0.025));
+      tones.push(note(freq, barStart + i * beat * 0.5, beat * 0.45, 'sine', 0.025));
     });
   }
 
-  for (const [midi, beat, dur] of MELODY) {
+  for (const [midi, beatStart, dur] of score.melody) {
     const freq = midiToFreq(midi);
-    const start = beat * BEAT;
-    tones.push(note(freq, start, dur * BEAT, 'triangle', 0.06));
-    const echoStart = start + BEAT;
-    if (echoStart + dur * BEAT < LOOP_DURATION) {
-      tones.push(note(freq, echoStart, dur * BEAT, 'triangle', 0.018));
+    const start = beatStart * beat;
+    tones.push(note(freq, start, dur * beat, 'triangle', 0.06));
+    const echoStart = start + beat;
+    if (echoStart + dur * beat < loopDuration) {
+      tones.push(note(freq, echoStart, dur * beat, 'triangle', 0.018));
     }
   }
 
-  return renderWavDataUri(tones, LOOP_DURATION);
+  return renderWavDataUri(tones, loopDuration);
 }
 
 function note(

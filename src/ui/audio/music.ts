@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { NativeMusicPlayer } from './nativeAudio';
 import { readFlag, writeFlag } from './preferences';
-import { ARP_PATTERN, BAR_CHORD, BARS, BEAT, CHORDS, LOOP_DURATION, MELODY, midiToFreq } from './score';
+import { beatOf, loopDurationOf, midiToFreq, MusicTrack, Score, SCORES } from './score';
 
 export interface MusicPlayer {
   // Arranca la música en el primer gesto del usuario si la preferencia está activa.
@@ -10,6 +10,8 @@ export interface MusicPlayer {
   stop(): void;
   toggle(): boolean;
   isEnabled(): boolean;
+  // Cambia de pista (menú / partida) respetando la preferencia de encendido.
+  setTrack(track: MusicTrack): void;
 }
 
 const STORAGE_KEY = 'tria-prima/music-enabled';
@@ -23,6 +25,7 @@ class WebMusicPlayer implements MusicPlayer {
   private leadBus: AudioNode | null = null;
   private loopTimer: ReturnType<typeof setTimeout> | null = null;
   private playing = false;
+  private track: MusicTrack = 'menu';
   private enabled = readFlag(STORAGE_KEY);
 
   isEnabled(): boolean {
@@ -47,12 +50,31 @@ class WebMusicPlayer implements MusicPlayer {
     return this.enabled;
   }
 
+  setTrack(track: MusicTrack): void {
+    if (this.track === track) return;
+    this.track = track;
+    if (!this.playing) return;
+    this.halt();
+    this.begin();
+  }
+
   start(): void {
     this.enabled = true;
     writeFlag(STORAGE_KEY, true);
     if (this.playing) return;
+    this.begin();
+  }
+
+  stop(): void {
+    this.enabled = false;
+    writeFlag(STORAGE_KEY, false);
+    this.halt();
+  }
+
+  private begin(): void {
     const ctx = this.getCtx();
     if (!ctx) return;
+    const score = SCORES[this.track];
 
     const master = ctx.createGain();
     master.gain.setValueAtTime(0, ctx.currentTime);
@@ -61,7 +83,7 @@ class WebMusicPlayer implements MusicPlayer {
 
     // Eco suave para la atmósfera de laboratorio.
     const delay = ctx.createDelay(1);
-    delay.delayTime.value = BEAT;
+    delay.delayTime.value = beatOf(score);
     const feedback = ctx.createGain();
     feedback.gain.value = 0.3;
     const wet = ctx.createGain();
@@ -81,12 +103,10 @@ class WebMusicPlayer implements MusicPlayer {
     this.master = master;
     this.leadBus = leadFilter;
     this.playing = true;
-    this.scheduleLoop(ctx, ctx.currentTime + 0.1);
+    this.scheduleLoop(ctx, score, ctx.currentTime + 0.1);
   }
 
-  stop(): void {
-    this.enabled = false;
-    writeFlag(STORAGE_KEY, false);
+  private halt(): void {
     if (!this.playing) return;
     this.playing = false;
     if (this.loopTimer) {
@@ -105,35 +125,37 @@ class WebMusicPlayer implements MusicPlayer {
     this.leadBus = null;
   }
 
-  private scheduleLoop(ctx: AudioContext, loopStart: number): void {
+  private scheduleLoop(ctx: AudioContext, score: Score, loopStart: number): void {
     const master = this.master;
     const leadBus = this.leadBus;
     if (!this.playing || !master || !leadBus) return;
+    const beat = beatOf(score);
 
-    for (let bar = 0; bar < BARS; bar++) {
-      const chord = CHORDS[BAR_CHORD[bar]];
-      const barStart = loopStart + bar * 4 * BEAT;
+    for (let bar = 0; bar < score.bars; bar++) {
+      const chord = score.chords[score.barChord[bar]];
+      const barStart = loopStart + bar * 4 * beat;
 
       // Bajo: fundamental en blancas.
       const root = midiToFreq(chord[0] - 12);
-      this.note(ctx, master, root, barStart, 2 * BEAT, 'triangle', 0.07);
-      this.note(ctx, master, root, barStart + 2 * BEAT, 2 * BEAT, 'triangle', 0.05);
+      this.note(ctx, master, root, barStart, 2 * beat, 'triangle', 0.07);
+      this.note(ctx, master, root, barStart + 2 * beat, 2 * beat, 'triangle', 0.05);
 
       // Arpegio: corcheas suaves una octava arriba.
-      ARP_PATTERN.forEach((degree, i) => {
+      score.arpPattern.forEach((degree, i) => {
         const freq = midiToFreq(chord[degree] + 12);
-        this.note(ctx, master, freq, barStart + i * BEAT * 0.5, BEAT * 0.45, 'sine', 0.025);
+        this.note(ctx, master, freq, barStart + i * beat * 0.5, beat * 0.45, 'sine', 0.025);
       });
     }
 
     // Melodía: onda cuadrada filtrada, con eco.
-    for (const [midi, beat, dur] of MELODY) {
-      this.note(ctx, leadBus, midiToFreq(midi), loopStart + beat * BEAT, dur * BEAT, 'square', 0.045);
+    for (const [midi, beatStart, dur] of score.melody) {
+      this.note(ctx, leadBus, midiToFreq(midi), loopStart + beatStart * beat, dur * beat, 'square', 0.045);
     }
 
-    const msUntilNextSchedule = (loopStart + LOOP_DURATION - ctx.currentTime - 1.5) * 1000;
+    const loopDuration = loopDurationOf(score);
+    const msUntilNextSchedule = (loopStart + loopDuration - ctx.currentTime - 1.5) * 1000;
     this.loopTimer = setTimeout(
-      () => this.scheduleLoop(ctx, loopStart + LOOP_DURATION),
+      () => this.scheduleLoop(ctx, score, loopStart + loopDuration),
       Math.max(0, msUntilNextSchedule)
     );
   }
