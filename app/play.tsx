@@ -32,7 +32,7 @@ import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from
 
 const dependencies = buildProductionDependencies();
 
-const ROTATIONS = rotationActions('al rival');
+const ROTATIONS = rotationActions();
 
 export default function Play() {
   const router = useRouter();

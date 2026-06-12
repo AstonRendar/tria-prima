@@ -28,7 +28,7 @@ import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from
 
 const dependencies = buildProductionDependencies();
 
-const ROTATIONS = rotationActions('al maestro');
+const ROTATIONS = rotationActions();
 
 export default function SoloPlay() {
   const router = useRouter();

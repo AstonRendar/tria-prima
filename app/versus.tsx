@@ -32,7 +32,7 @@ import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from
 
 const dependencies = buildProductionDependencies();
 
-const ROTATIONS = rotationActions('al maestro');
+const ROTATIONS = rotationActions();
 
 export default function Versus() {
   const router = useRouter();
