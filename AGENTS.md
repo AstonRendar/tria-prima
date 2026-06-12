@@ -120,7 +120,10 @@ Comunes:
 ### `src/infrastructure/`
 - `Random` — interfaz + `DefaultRandom`.
 - `WordRepository` — interfaz (`randomWord` + `allWords`) + `InMemoryWordRepository`
-  (lista de palabras de 6 letras en castellano).
+  (lista de palabras de 6 letras en castellano). **Norma de contenido**: el vocabulario
+  debe ser apto para todos los públicos — prohibido añadir insultos, palabras malsonantes,
+  sexuales o inapropiadas. Las palabras se guardan ya normalizadas (mayúsculas, sin
+  tildes, solo A–Z y Ñ) y ordenadas alfabéticamente.
 - `ProductionDependencies` — factoría del bundle real.
 
 ### `src/ui/`
