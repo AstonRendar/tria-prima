@@ -124,14 +124,17 @@ Comunes:
 - `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
   más la reproducción automática y retardada del turno de la app), `useSoloPlay`
   (solitario digital), `useTracker` (tracker físico).
-- `audio/` — sonido sintético vía Web Audio API, sin assets. `sound.ts` (efectos, singleton
-  `audio`) y `music.ts` (música de fondo chiptune en bucle, singleton `music`). Los toggles
-  ♪ (música) y 🔊 (efectos) viven en `AudioControls`, montado como `headerRight` del Stack
-  para estar siempre visibles. Ambas preferencias se persisten en `localStorage`
-  (`tria-prima/music-enabled`, `tria-prima/sfx-enabled` vía `audio/preferences.ts`),
-  activadas por defecto; la música arranca en el primer gesto del usuario por la política
-  de autoplay. En iOS/Android ambos caen a implementación silenciosa hasta integrar
-  `expo-audio`.
+- `audio/` — sonido sintético, sin assets. La fuente de verdad son los specs compartidos:
+  `sfxSpecs.ts` (efectos) y `score.ts` (partitura del loop). En **web**, `sound.ts` y
+  `music.ts` los tocan en vivo con la Web Audio API. En **iOS/Android**, `nativeAudio.ts`
+  los pre-renderiza a WAV (PCM 16 bits mono, data URI) con `synth.ts` y los reproduce con
+  `expo-audio`; la melodía nativa usa triángulo y un eco horneado en lugar del filtro+delay
+  de la web. En nativo no hay política de autoplay: la música arranca con la app si la
+  preferencia está activa. Los toggles ♪ / 🔊 viven en `AudioControls` (headerRight del
+  Stack). Preferencias en `localStorage` vía `audio/preferences.ts` (en nativo no hay
+  `localStorage`: el try/catch deja el valor por defecto, activado, sin persistir).
+  En jest, `expo-audio` está mockeado vía `moduleNameMapper` del proyecto ui
+  (`src/ui/audio/__mocks__/expo-audio.ts`).
 - `styles/tokens.ts` — paleta inspirada en la imagen *pergamino + tinta azul marino*,
   tipografía serif (Georgia / serif).
 - `ConfirmProvider` — modal de confirmación accesible desde cualquier pantalla por hook
