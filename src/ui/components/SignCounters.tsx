@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { SecretWord } from '@/domain/SecretWord';
-import { colors, cubeColorHex, cubeSymbolGlyph, fonts, radius } from '@/ui/styles/tokens';
+import { AlchemicalSigil, ColorSeal } from '@/ui/ornaments';
+import { colors, fonts, radius } from '@/ui/styles/tokens';
 import { RevealFlip } from './RevealFlip';
 
 type Props = {
@@ -19,17 +20,16 @@ export function SignCounters({ word }: Props) {
         return (
           <View key={sign} style={styles.cell} testID={`sign-counter/${sign}`}>
             <RevealFlip revealed={card.revealed} style={styles.cellContent}>
-              <View
-                style={[
-                  styles.signBox,
-                  isColor && { backgroundColor: cubeColorHex[card.faceSign.value] },
-                  card.revealed && styles.signRevealed,
-                ]}
-              >
-                {!isColor && (
-                  <Text style={styles.signGlyph}>
-                    {cubeSymbolGlyph[card.faceSign.value]}
-                  </Text>
+              <View style={[styles.signBox, card.revealed && styles.signRevealed]}>
+                {isColor ? (
+                  <ColorSeal color={card.faceSign.value} size={22} />
+                ) : (
+                  <AlchemicalSigil
+                    symbol={card.faceSign.value}
+                    size={20}
+                    color={colors.text}
+                    strokeWidth={2}
+                  />
                 )}
               </View>
               <View style={styles.markerRow}>
@@ -72,18 +72,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   signRevealed: {
-    borderColor: colors.accent,
+    borderColor: colors.gold,
     borderWidth: 2,
-  },
-  signGlyph: {
-    fontFamily: fonts.serif,
-    fontSize: 16,
-    lineHeight: 18,
-    fontWeight: '800',
-    color: colors.text,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    includeFontPadding: false,
   },
   markerRow: {
     flexDirection: 'row',

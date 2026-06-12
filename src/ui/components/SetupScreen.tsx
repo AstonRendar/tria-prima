@@ -1,16 +1,31 @@
-import { useRef, useState } from 'react';
+import { Ref, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TextInputProps,
   View,
 } from 'react-native';
 import { FirstPlayerChoice, MatchSetup } from '@/application/StartMatch';
 import { isValidSecretWord, normalizeGuess, WORD_LENGTH } from '@/domain/SecretWord';
+import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { ActionButton } from './ActionButton';
 import { Footer } from './Footer';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+
+function FieldInput({ ref, ...props }: TextInputProps & { ref?: Ref<TextInput> }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <TextInput
+      {...props}
+      ref={ref}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={[styles.input, focused && styles.inputFocused]}
+    />
+  );
+}
 
 type Props = {
   onStart: (setup: MatchSetup) => void;
@@ -137,14 +152,18 @@ function NamesStep({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={styles.page}>
-      <Text style={styles.flourish}>⚜</Text>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.flourish}>
+        <FiligreeDivider width={160} variant="fleuron" />
+      </View>
       <Text style={styles.title}>Aprendices de Paracelso</Text>
       <Text style={styles.subtitle}>Indicad vuestros nombres antes de comenzar la Obra.</Text>
 
       <View style={styles.field}>
         <Text style={styles.label}>Aprendiz 1</Text>
-        <TextInput
+        <FieldInput
           value={p1}
           onChangeText={onChangeP1}
           placeholder="Nombre del primer aprendiz"
@@ -154,14 +173,13 @@ function NamesStep({
           returnKeyType="next"
           onSubmitEditing={onSubmitP1}
           blurOnSubmit={false}
-          style={styles.input}
           testID="setup/p1"
         />
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>Aprendiz 2</Text>
-        <TextInput
+        <FieldInput
           ref={p2Ref}
           value={p2}
           onChangeText={onChangeP2}
@@ -170,7 +188,6 @@ function NamesStep({
           maxLength={24}
           returnKeyType="done"
           onSubmitEditing={onSubmitP2}
-          style={styles.input}
           testID="setup/p2"
         />
       </View>
@@ -210,7 +227,8 @@ function NamesStep({
       </View>
 
       <Footer />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -227,7 +245,8 @@ function Handoff({
 }) {
   return (
     <View style={[styles.page, styles.centered]}>
-      <View style={styles.handoffBox}>
+      <ParchmentBackground />
+      <OrnateFrame padding={spacing.xl} style={styles.handoffBox}>
         <Text style={styles.handoffTitle}>{title}</Text>
         <Text style={styles.handoffName}>{name}</Text>
         <Text style={styles.handoffBody}>{message}</Text>
@@ -237,7 +256,7 @@ function Handoff({
           onPress={onContinue}
           testID="setup/handoff-continue"
         />
-      </View>
+      </OrnateFrame>
     </View>
   );
 }
@@ -257,8 +276,12 @@ function WordStep({
   const valid = normalized.length === WORD_LENGTH;
   const tooLong = normalized.length > WORD_LENGTH;
   return (
-    <ScrollView contentContainerStyle={styles.container} style={styles.page}>
-      <Text style={styles.flourish}>⚜</Text>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.flourish}>
+        <FiligreeDivider width={160} variant="fleuron" />
+      </View>
       <Text style={styles.title}>{playerName}</Text>
       <Text style={styles.subtitle}>
         Escribe tu palabra clave. Solo tú debes verla.
@@ -266,7 +289,7 @@ function WordStep({
 
       <View style={styles.field}>
         <Text style={styles.label}>Palabra clave (6 letras)</Text>
-        <TextInput
+        <FieldInput
           value={value}
           onChangeText={(text) => onChange(text.toUpperCase())}
           placeholder="ESCRIBE AQUI"
@@ -278,7 +301,6 @@ function WordStep({
           maxLength={12}
           returnKeyType="done"
           onSubmitEditing={valid ? onContinue : undefined}
-          style={styles.input}
           testID="setup/word"
         />
         <Text style={styles.hint}>
@@ -299,13 +321,13 @@ function WordStep({
       </View>
 
       <Footer />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: colors.background,
     flex: 1,
   },
   container: {
@@ -319,9 +341,8 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   flourish: {
-    color: colors.danger,
-    fontSize: 32,
-    marginBottom: spacing.xs,
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   title: {
     fontFamily: fonts.serif,
@@ -365,6 +386,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 2,
   },
+  inputFocused: {
+    borderColor: colors.gold,
+  },
   hint: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
@@ -386,11 +410,6 @@ const styles = StyleSheet.create({
   handoffBox: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xl,
     alignItems: 'center',
   },
   handoffTitle: {

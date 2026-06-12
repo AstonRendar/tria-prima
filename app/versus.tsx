@@ -26,6 +26,7 @@ import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
 import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useVersus } from '@/ui/hooks/useVersus';
+import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
 import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
 
@@ -255,13 +256,16 @@ export default function Versus() {
     const won = state.outcome === 'p1-wins';
     const appWord = state.players.p2.secretWord.cards.map((c) => c.letter).join('');
     return (
-      <EndScreen won={won} word={appWord} onRestart={onRestart} onHome={goHome}>
-        <View style={styles.endStats}>
-          <Text style={styles.endStat}>
-            {won ? 'Has vencido al maestro' : 'El maestro descifró tu palabra antes'}
-          </Text>
-        </View>
-      </EndScreen>
+      <View style={styles.page}>
+        <ParchmentBackground />
+        <EndScreen won={won} word={appWord} onRestart={onRestart} onHome={goHome}>
+          <View style={styles.endStats}>
+            <Text style={styles.endStat}>
+              {won ? 'Has vencido al maestro' : 'El maestro descifró tu palabra antes'}
+            </Text>
+          </View>
+        </EndScreen>
+      </View>
     );
   }
 
@@ -276,7 +280,9 @@ export default function Versus() {
   const availableSlots = state.objectives.filter((s) => s.blockedBy === null);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.topRow}>
         <NewGameButton onConfirm={onRestart} />
         <View style={[styles.turnBadge, !isMyTurn && styles.turnBadgeApp]}>
@@ -356,7 +362,7 @@ export default function Versus() {
       )}
 
       {isMyTurn && phase === 'select-second-cube' && (
-        <View style={styles.swapNotice}>
+        <OrnateFrame padding={spacing.md} style={styles.swapNotice}>
           <Text style={styles.swapText}>
             Toca otro dado en la misma fila o columna para intercambiarlos.
           </Text>
@@ -365,7 +371,7 @@ export default function Versus() {
             onPress={() => setPhase('choose-action')}
             testID="action/cancel-swap"
           />
-        </View>
+        </OrnateFrame>
       )}
 
       {isMyTurn && phase === 'declare' && (
@@ -379,6 +385,9 @@ export default function Versus() {
         </View>
       )}
 
+      <View style={styles.divider}>
+        <FiligreeDivider width={170} />
+      </View>
       <ObjectiveBlockedZone playerName="Tus bloqueados" slots={mySlots} testID="blocked/me" />
       <Text style={[styles.opponentLine, styles.myWordLine]}>Tu palabra</Text>
       <SignCounters word={state.players.p1.secretWord} />
@@ -395,7 +404,8 @@ export default function Versus() {
       <Footer />
 
       <FlashMessage message={flash.message} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -411,8 +421,12 @@ function VersusSetup({
   const valid = normalized.length === WORD_LENGTH;
   const tooLong = normalized.length > WORD_LENGTH;
   return (
-    <ScrollView contentContainerStyle={styles.setupContainer}>
-      <Text style={styles.setupFlourish}>⚜</Text>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.setupContainer}>
+      <View style={styles.setupFlourish}>
+        <FiligreeDivider width={160} variant="fleuron" />
+      </View>
       <Text style={styles.setupTitle}>Contra el maestro</Text>
       <Text style={styles.setupSubtitle}>
         El maestro esconderá una palabra y moverá los dados por su cuenta. Escribe la tuya:
@@ -495,14 +509,23 @@ function VersusSetup({
         />
       </View>
       <Footer />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+  },
   container: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  divider: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+    opacity: 0.8,
   },
   topRow: {
     flexDirection: 'row',
@@ -629,10 +652,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   setupFlourish: {
-    fontFamily: fonts.serif,
-    color: colors.danger,
-    fontSize: 28,
-    marginBottom: spacing.xs,
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   setupTitle: {
     fontFamily: fonts.serif,
