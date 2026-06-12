@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Objective } from '@/domain/Objective';
-import { AlchemicalSigil, ColorSeal } from '@/ui/ornaments';
+import { AlchemicalSigil, ColorSeal, OrnateFrame } from '@/ui/ornaments';
 import {
   colors,
   cubeColorLabel,
@@ -25,7 +25,7 @@ export function ObjectiveCounter({ objective, count, onIncrement, onDecrement }:
     : cubeSymbolLabel[objective.value];
 
   return (
-    <View style={styles.row}>
+    <OrnateFrame padding={spacing.sm + 2} cornerScale={0.55} style={[styles.row, shadows.card]}>
       <View style={styles.sign}>
         {isColor ? (
           <ColorSeal color={objective.value} size={36} />
@@ -53,7 +53,7 @@ export function ObjectiveCounter({ objective, count, onIncrement, onDecrement }:
           <Text style={[styles.btnText, styles.btnTextPrimary]}>＋</Text>
         </Pressable>
       </View>
-    </View>
+    </OrnateFrame>
   );
 }
 
@@ -61,13 +61,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.gold,
-    borderRadius: radius.md,
-    padding: spacing.sm,
     marginBottom: spacing.sm,
-    ...shadows.card,
   },
   sign: {
     width: 44,

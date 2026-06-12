@@ -9,6 +9,8 @@ type Props = {
   accent?: string;
   padding?: number;
   fill?: boolean;
+  // Reduce las volutas de las esquinas para paneles pequeños (1 = tamaño del modal).
+  cornerScale?: number;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -33,6 +35,7 @@ export function OrnateFrame({
   accent = colors.text,
   padding = spacing.lg,
   fill = true,
+  cornerScale = 1,
   style,
 }: Props) {
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -90,10 +93,10 @@ export function OrnateFrame({
             strokeOpacity={0.7}
             fill="none"
           />
-          <Corner color={color} accent={accent} />
-          <Corner color={color} accent={accent} transform={`translate(${size.w}, 0) scale(-1, 1)`} />
-          <Corner color={color} accent={accent} transform={`translate(0, ${size.h}) scale(1, -1)`} />
-          <Corner color={color} accent={accent} transform={`translate(${size.w}, ${size.h}) scale(-1, -1)`} />
+          <Corner color={color} accent={accent} transform={`scale(${cornerScale})`} />
+          <Corner color={color} accent={accent} transform={`translate(${size.w}, 0) scale(${-cornerScale}, ${cornerScale})`} />
+          <Corner color={color} accent={accent} transform={`translate(0, ${size.h}) scale(${cornerScale}, ${-cornerScale})`} />
+          <Corner color={color} accent={accent} transform={`translate(${size.w}, ${size.h}) scale(${-cornerScale}, ${-cornerScale})`} />
         </Svg>
       )}
       {children}
