@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
+import { NativeMusicPlayer } from './nativeAudio';
 import { readFlag, writeFlag } from './preferences';
+import { ARP_PATTERN, BAR_CHORD, BARS, BEAT, CHORDS, LOOP_DURATION, MELODY, midiToFreq } from './score';
 
 export interface MusicPlayer {
   // Arranca la música en el primer gesto del usuario si la preferencia está activa.
@@ -11,35 +13,6 @@ export interface MusicPlayer {
 }
 
 const STORAGE_KEY = 'tria-prima/music-enabled';
-
-const BPM = 76;
-const BEAT = 60 / BPM;
-const BARS = 8;
-const LOOP_BEATS = BARS * 4;
-const LOOP_DURATION = LOOP_BEATS * BEAT;
-
-// Cadencia andaluza en Re menor: Dm — C — B♭ — A. Tríadas en midi (octava 3).
-const CHORDS: ReadonlyArray<readonly number[]> = [
-  [50, 53, 57], // Dm
-  [48, 52, 55], // C
-  [46, 50, 53], // B♭
-  [45, 49, 52], // A
-];
-const BAR_CHORD = [0, 0, 1, 1, 2, 2, 3, 3];
-
-// Melodía: [midi, pulso de inicio, duración en pulsos].
-const MELODY: ReadonlyArray<readonly [number, number, number]> = [
-  [69, 0, 2], [74, 2, 1.5], [76, 3.5, 0.5], [77, 4, 2], [76, 6, 1], [74, 7, 1],
-  [76, 8, 2], [79, 10, 1.5], [76, 11.5, 0.5], [74, 12, 3],
-  [74, 16, 2], [77, 18, 1.5], [76, 19.5, 0.5], [74, 20, 2], [72, 22, 2],
-  [73, 24, 2], [76, 26, 1], [74, 27, 1], [69, 28, 4],
-];
-
-const ARP_PATTERN = [0, 1, 2, 1, 0, 1, 2, 1];
-
-function midiToFreq(midi: number): number {
-  return 440 * Math.pow(2, (midi - 69) / 12);
-}
 
 type WebAudioCtor = new () => AudioContext;
 type LegacyWindow = Window & { webkitAudioContext?: WebAudioCtor };
@@ -207,17 +180,5 @@ class WebMusicPlayer implements MusicPlayer {
   }
 }
 
-class SilentMusicPlayer implements MusicPlayer {
-  init(): void {}
-  start(): void {}
-  stop(): void {}
-  toggle(): boolean {
-    return false;
-  }
-  isEnabled(): boolean {
-    return false;
-  }
-}
-
 export const music: MusicPlayer =
-  Platform.OS === 'web' ? new WebMusicPlayer() : new SilentMusicPlayer();
+  Platform.OS === 'web' ? new WebMusicPlayer() : new NativeMusicPlayer();
