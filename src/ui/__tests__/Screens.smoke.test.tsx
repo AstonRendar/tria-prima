@@ -56,9 +56,11 @@ describe('app smoke', () => {
     await goTo('/play');
     expect(await screen.findByTestId('setup/p1')).toBeTruthy();
 
-    // Contra el maestro: pide la palabra del jugador.
+    // Contra el maestro: pide la palabra del jugador y el nivel.
     await goTo('/versus');
     expect(await screen.findByTestId('setup/word')).toBeTruthy();
+    expect(screen.getByTestId('setup/level-apprentice')).toBeTruthy();
+    expect(screen.getByTestId('setup/level-master')).toBeTruthy();
     expect(screen.getByTestId('setup/start')).toBeTruthy();
   });
 });

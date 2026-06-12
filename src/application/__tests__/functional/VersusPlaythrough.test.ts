@@ -21,7 +21,7 @@ describe('versus playthrough', () => {
 
   it('lets the app play a complete legal turn after the human', () => {
     const dependencies = deps();
-    let state = startVersusMatch(dependencies, { playerName: 'Alice', playerWord: 'CAMINO' });
+    let state = startVersusMatch(dependencies, { playerName: 'Alice', playerWord: 'CAMINO', level: 'master' });
     expect(state.currentPlayerId).toBe('p1');
 
     // Turno del humano: dos giros y fin de turno.
@@ -53,13 +53,13 @@ describe('versus playthrough', () => {
 
   it('does nothing when it is not the app turn', () => {
     const dependencies = deps();
-    const state = startVersusMatch(dependencies, { playerName: 'Alice', playerWord: 'CAMINO' });
+    const state = startVersusMatch(dependencies, { playerName: 'Alice', playerWord: 'CAMINO', level: 'master' });
     expect(buildAppTurnSteps(state, dependencies)).toEqual([]);
   });
 
   it('guesses and wins when only one candidate fits the revealed letters', () => {
     const dependencies = deps();
-    let state = startVersusMatch(dependencies, { playerName: 'Alice', playerWord: 'CAMINO' });
+    let state = startVersusMatch(dependencies, { playerName: 'Alice', playerWord: 'CAMINO', level: 'master' });
     state = {
       ...state,
       currentPlayerId: 'p2',

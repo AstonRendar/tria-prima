@@ -1,5 +1,5 @@
 import { Position } from '@/domain/Position';
-import { AppAction, chooseAppGuess, planAppTurn } from './AppOpponent';
+import { AppAction, AppLevel, chooseAppGuess, planAppTurn } from './AppOpponent';
 import { declareMatchObjectives } from './DeclareMatchObjectives';
 import { Dependencies } from './Dependencies';
 import { endMatchTurn } from './EndMatchTurn';
@@ -17,11 +17,15 @@ export type AppTurnStep =
 // Construye el turno completo de la app como una lista de pasos. La UI los
 // reproduce uno a uno (con retardo para que se vea la jugada) aplicando
 // applyAppStep; los tests pueden plegarlos de una vez.
-export function buildAppTurnSteps(state: MatchState, deps: Dependencies): AppTurnStep[] {
+export function buildAppTurnSteps(
+  state: MatchState,
+  deps: Dependencies,
+  level: AppLevel = 'master'
+): AppTurnStep[] {
   if (state.finished || state.currentPlayerId !== 'p2') return [];
-  const guess = chooseAppGuess(state, deps.wordRepository.allWords(), deps.random);
+  const guess = chooseAppGuess(state, deps.wordRepository.allWords(), deps.random, level);
   if (guess) return [{ kind: 'guess', input: guess }];
-  const plan = planAppTurn(state, deps.random);
+  const plan = planAppTurn(state, deps.random, level);
   return [
     ...plan.actions.map((action): AppTurnStep => ({ kind: 'action', action })),
     { kind: 'declare' },
@@ -46,8 +50,9 @@ export function applyAppStep(state: MatchState, step: AppTurnStep): MatchState {
 
 export function playAppTurn(
   state: MatchState,
-  deps: Dependencies
+  deps: Dependencies,
+  level: AppLevel = 'master'
 ): { state: MatchState; steps: AppTurnStep[] } {
-  const steps = buildAppTurnSteps(state, deps);
+  const steps = buildAppTurnSteps(state, deps, level);
   return { state: steps.reduce(applyAppStep, state), steps };
 }

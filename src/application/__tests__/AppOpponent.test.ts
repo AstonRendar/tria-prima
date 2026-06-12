@@ -127,6 +127,19 @@ describe('planAppTurn', () => {
       expect(plan.touched).not.toContain(2);
     }
   });
+
+  it('lets the apprentice blunder into a random yet legal move', () => {
+    // Primer next() < 0.5 → despiste: jugada cualquiera, pero siempre legal.
+    const plan = planAppTurn(buildState(), new StubRandom([0.1, 0.6]), 'apprentice');
+    expect(new Set(plan.touched).size).toBe(2);
+  });
+
+  it('makes the apprentice play its best move when focused', () => {
+    // Primer next() >= 0.5 → juega como el maestro.
+    const state = buildState();
+    const plan = planAppTurn(state, new StubRandom([0.9, 0.2]), 'apprentice');
+    expect(findMatchedLine(applyPlan(state.board, plan), SULFUR_OBJECTIVE)).not.toBeNull();
+  });
 });
 
 describe('chooseAppGuess', () => {
@@ -167,5 +180,21 @@ describe('chooseAppGuess', () => {
   it('knows the word when all 6 letters are revealed, even outside the list', () => {
     const state = stateWithRevealed([0, 1, 2, 3, 4, 5]);
     expect(chooseAppGuess(state, [], new StubRandom([0]))).toBe('CAMINO');
+  });
+
+  it('keeps the apprentice from risking a single candidate with only 4 letters', () => {
+    const state = stateWithRevealed([0, 1, 2, 3]);
+    expect(chooseAppGuess(state, ['CAMINO'], new StubRandom([0]), 'apprentice')).toBe(null);
+  });
+
+  it('lets the apprentice guess the single candidate with 5 letters revealed', () => {
+    const state = stateWithRevealed([0, 1, 2, 3, 4]);
+    expect(chooseAppGuess(state, ['CAMINO'], new StubRandom([0]), 'apprentice')).toBe('CAMINO');
+  });
+
+  it('keeps the apprentice from gambling among several candidates', () => {
+    const state = stateWithRevealed([0, 1, 2, 3, 4]);
+    const words = ['CAMINO', 'CAMINA'];
+    expect(chooseAppGuess(state, words, new StubRandom([0]), 'apprentice')).toBe(null);
   });
 });

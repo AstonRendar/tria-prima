@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
+import { AppLevel } from '@/application/AppOpponent';
 import { APP_PLAYER_NAME } from '@/application/StartVersus';
 import { TOUCHES_PER_TURN } from '@/domain/Board';
 import { RotationKind } from '@/domain/Cube';
@@ -135,7 +136,11 @@ export default function Versus() {
   }, [state?.finished, state?.outcome]);
 
   if (!state) {
-    return <VersusSetup onStart={(word) => versus.start({ playerName: 'Tú', playerWord: word })} />;
+    return (
+      <VersusSetup
+        onStart={(word, level) => versus.start({ playerName: 'Tú', playerWord: word, level })}
+      />
+    );
   }
 
   const onPressCube = (i: Position) => {
@@ -380,8 +385,9 @@ export default function Versus() {
   );
 }
 
-function VersusSetup({ onStart }: { onStart: (word: string) => void }) {
+function VersusSetup({ onStart }: { onStart: (word: string, level: AppLevel) => void }) {
   const [word, setWord] = useState('');
+  const [level, setLevel] = useState<AppLevel>('apprentice');
   const normalized = normalizeGuess(word);
   const valid = normalized.length === WORD_LENGTH;
   const tooLong = normalized.length > WORD_LENGTH;
@@ -405,7 +411,7 @@ function VersusSetup({ onStart }: { onStart: (word: string) => void }) {
           autoFocus
           maxLength={12}
           returnKeyType="done"
-          onSubmitEditing={valid ? () => onStart(normalized) : undefined}
+          onSubmitEditing={valid ? () => onStart(normalized, level) : undefined}
           style={styles.setupInput}
           testID="setup/word"
         />
@@ -415,11 +421,33 @@ function VersusSetup({ onStart }: { onStart: (word: string) => void }) {
             : `Sustantivo común singular. Letras útiles: ${normalized.length} / ${WORD_LENGTH}.`}
         </Text>
       </View>
+      <View style={styles.setupField}>
+        <Text style={styles.setupLabel}>Nivel del maestro</Text>
+        <View style={styles.levelRow}>
+          <ActionButton
+            label="Aprendiz"
+            variant={level === 'apprentice' ? 'primary' : 'secondary'}
+            onPress={() => setLevel('apprentice')}
+            testID="setup/level-apprentice"
+          />
+          <ActionButton
+            label="Maestro"
+            variant={level === 'master' ? 'primary' : 'secondary'}
+            onPress={() => setLevel('master')}
+            testID="setup/level-master"
+          />
+        </View>
+        <Text style={styles.setupHint}>
+          {level === 'apprentice'
+            ? 'Se despista a menudo y solo arriesga adivinanzas casi seguras.'
+            : 'Juega siempre su mejor jugada y arriesga en cuanto puede.'}
+        </Text>
+      </View>
       <View style={styles.setupAction}>
         <ActionButton
           label="Empezar el duelo"
           variant="primary"
-          onPress={() => onStart(normalized)}
+          onPress={() => onStart(normalized, level)}
           disabled={!valid}
           testID="setup/start"
         />
@@ -614,5 +642,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     alignItems: 'center',
+  },
+  levelRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
 });
