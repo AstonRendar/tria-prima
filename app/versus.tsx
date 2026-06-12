@@ -102,7 +102,7 @@ export default function Versus() {
       audio.play('turn-end');
       flash.show('Tu turno');
     }
-  }, [lastStep, flash]);
+  }, [lastStep, flash.show]);
 
   // Al cerrar la fase de movimiento del humano, declara automáticamente.
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function Versus() {
     }
     const msg = describeDeclareResult(result.declared, result.released, result.revealedCardIndices.length);
     if (msg) flash.show(msg);
-  }, [phase, state, isMyTurn, versus, flash]);
+  }, [phase, state, isMyTurn, versus, flash.show]);
 
   const rows = useMemo(() => {
     const r: number[][] = [];

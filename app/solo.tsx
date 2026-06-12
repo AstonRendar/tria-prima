@@ -91,7 +91,7 @@ export default function SoloPlay() {
       result.revealedCardIndices.length
     );
     if (msg) flash.show(msg);
-  }, [phase, state.canDeclareThisTurn, solo, flash]);
+  }, [phase, state.canDeclareThisTurn, solo, flash.show]);
 
   const onPressCube = (i: Position) => {
     if (state.finished) return;
