@@ -7,11 +7,14 @@ import { Dependencies } from './Dependencies';
 import { MatchState, PlayerData } from './MatchState';
 import { buildAssignments } from './WordAssignment';
 
+export type FirstPlayerChoice = PlayerId | 'random';
+
 export type MatchSetup = {
   readonly p1Name: string;
   readonly p2Name: string;
   readonly p1Word: string;
   readonly p2Word: string;
+  readonly firstPlayer?: FirstPlayerChoice;
 };
 
 export function startMatch(deps: Dependencies, setup: MatchSetup): MatchState {
@@ -22,7 +25,7 @@ export function startMatch(deps: Dependencies, setup: MatchSetup): MatchState {
   };
   const p1 = buildPlayerData('p1', setup.p1Name, setup.p1Word, deps);
   const p2 = buildPlayerData('p2', setup.p2Name, setup.p2Word, deps);
-  const firstPlayerId: PlayerId = deps.random.pickIndex(2) === 0 ? 'p1' : 'p2';
+  const firstPlayerId = resolveFirstPlayer(setup.firstPlayer ?? 'random', deps);
 
   return {
     players: { p1, p2 },
@@ -36,6 +39,11 @@ export function startMatch(deps: Dependencies, setup: MatchSetup): MatchState {
     finished: false,
     outcome: null,
   };
+}
+
+function resolveFirstPlayer(choice: FirstPlayerChoice, deps: Dependencies): PlayerId {
+  if (choice !== 'random') return choice;
+  return deps.random.pickIndex(2) === 0 ? 'p1' : 'p2';
 }
 
 function buildPlayerData(
