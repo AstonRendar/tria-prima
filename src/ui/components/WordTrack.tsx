@@ -1,26 +1,22 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { SecretWord } from '@/domain/SecretWord';
-import { AlchemicalSigil, ColorSeal } from '@/ui/ornaments';
 import { RevealFlip } from './RevealFlip';
+import { SignGlyph, SignVariant } from './SignGlyph';
 import { colors, fonts, radius } from '@/ui/styles/tokens';
 
 type Props = {
   word: SecretWord;
+  variant?: SignVariant;
 };
 
-export function WordTrack({ word }: Props) {
+export function WordTrack({ word, variant }: Props) {
   return (
     <View style={styles.row}>
       {word.cards.map((card, i) => {
-        const isColor = card.faceSign.kind === 'color';
         return (
           <View key={i} style={styles.cell} testID={`word-card/${i}`}>
             <View style={styles.signBox}>
-              {isColor ? (
-                <ColorSeal color={card.faceSign.value} size={32} />
-              ) : (
-                <AlchemicalSigil symbol={card.faceSign.value} size={30} color={colors.text} />
-              )}
+              <SignGlyph sign={card.faceSign} size={32} variant={variant} />
             </View>
             <RevealFlip
               revealed={card.revealed}
