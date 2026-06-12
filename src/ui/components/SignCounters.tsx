@@ -42,8 +42,14 @@ export function SignCounters({ word }: Props) {
               )}
             </View>
             <View style={styles.markerRow}>
-              <View style={[styles.dot, card.markers >= 1 && styles.dotOn]} />
-              <View style={[styles.dot, card.markers >= 2 && styles.dotOn]} />
+              {card.revealed ? (
+                <Text style={styles.letter}>{card.letter}</Text>
+              ) : (
+                <>
+                  <View style={[styles.dot, card.markers >= 1 && styles.dotOn]} />
+                  <View style={[styles.dot, card.markers >= 2 && styles.dotOn]} />
+                </>
+              )}
             </View>
           </View>
         );
@@ -87,7 +93,17 @@ const styles = StyleSheet.create({
   },
   markerRow: {
     flexDirection: 'row',
-    marginTop: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 16,
+    marginTop: 2,
+  },
+  letter: {
+    fontFamily: fonts.serif,
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: colors.accent,
   },
   dot: {
     width: 6,
