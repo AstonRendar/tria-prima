@@ -125,7 +125,11 @@ Comunes:
   más la reproducción automática y retardada del turno de la app), `useSoloPlay`
   (solitario digital), `useTracker` (tracker físico).
 - `audio/` — sonido sintético, sin assets. La fuente de verdad son los specs compartidos:
-  `sfxSpecs.ts` (efectos) y `score.ts` (partitura del loop). En **web**, `sound.ts` y
+  `sfxSpecs.ts` (efectos) y `score.ts` (partituras). Hay dos pistas de música (`MusicTrack`):
+  `menu` y `game` (misma cadencia andaluza en Re menor; la de partida con pulso más vivo y
+  melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia; el hook
+  `useGameMusic(hasActiveGame)` (en las 4 pantallas de juego) pone `game` mientras hay
+  partida activa y devuelve `menu` al salir o terminar. En **web**, `sound.ts` y
   `music.ts` los tocan en vivo con la Web Audio API. En **iOS/Android**, `nativeAudio.ts`
   los pre-renderiza a WAV (PCM 16 bits mono, data URI) con `synth.ts` y los reproduce con
   `expo-audio`; la melodía nativa usa triángulo y un eco horneado en lugar del filtro+delay

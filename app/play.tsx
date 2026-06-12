@@ -24,6 +24,7 @@ import { SetupScreen } from '@/ui/components/SetupScreen';
 import { SignCounters } from '@/ui/components/SignCounters';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useMatch } from '@/ui/hooks/useMatch';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
 import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
@@ -52,6 +53,7 @@ export default function Play() {
 
   const hasActiveGame = match.state !== null && !match.state.finished;
   useBeforeUnloadWarning(hasActiveGame);
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');

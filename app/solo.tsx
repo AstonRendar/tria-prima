@@ -20,6 +20,7 @@ import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useSoloPlay } from '@/ui/hooks/useSoloPlay';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
 import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
@@ -47,6 +48,7 @@ export default function SoloPlay() {
 
   const hasActiveGame = !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
