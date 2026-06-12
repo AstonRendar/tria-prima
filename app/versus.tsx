@@ -448,10 +448,10 @@ function VersusSetup({
           style={styles.setupInput}
           testID="setup/word"
         />
-        <Text style={styles.setupHint}>
+        <Text style={[styles.setupHint, !valid && styles.setupHintInvalid]}>
           {tooLong
             ? `Demasiado larga: solo ${WORD_LENGTH} letras (sin acentos ni espacios).`
-            : `Sustantivo común singular. Letras útiles: ${normalized.length} / ${WORD_LENGTH}.`}
+            : `Sustantivo común, en singular o plural. Letras útiles: ${normalized.length} / ${WORD_LENGTH}.`}
         </Text>
       </View>
       <View style={styles.setupField}>
@@ -699,6 +699,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 12,
     marginTop: spacing.xs,
+  },
+  setupHintInvalid: {
+    color: colors.danger,
   },
   setupAction: {
     marginTop: spacing.lg,

@@ -21,7 +21,7 @@ const SECTIONS: Section[] = [
   {
     title: 'Antes de empezar',
     body:
-      '1. Tirad los nueve cubos sobre el centro de la mesa y disponedlos formando una cuadrícula de 3×3.\n\n2. Colocad las seis cartas de objetivo donde ambos aprendices puedan verlas.\n\n3. Pensad cada uno una palabra clave: un sustantivo común singular, de seis letras exactas, sin nombres propios.\n\n4. Sin que el rival lo vea, escribid vuestra palabra en el dorso de vuestras seis cartas de jugador, una letra por carta.\n\n5. Colocad esas seis cartas boca abajo frente al rival, ordenadas en su sentido de lectura. La insignia de cada carta queda a la vista de ambos; la letra queda oculta.\n\n6. Coged vuestros seis marcadores y dejadlos a mano.\n\n7. Por mandato del maestro, empieza el aprendiz que haya leído algo nuevo más recientemente. Su primer turno será un poco distinto, como veréis.',
+      '1. Tirad los nueve cubos sobre el centro de la mesa y disponedlos formando una cuadrícula de 3×3.\n\n2. Colocad las seis cartas de objetivo donde ambos aprendices puedan verlas.\n\n3. Pensad cada uno una palabra clave: un sustantivo común, en singular o en plural, de seis letras exactas, sin nombres propios.\n\n4. Sin que el rival lo vea, escribid vuestra palabra en el dorso de vuestras seis cartas de jugador, una letra por carta.\n\n5. Colocad esas seis cartas boca abajo frente al rival, ordenadas en su sentido de lectura. La insignia de cada carta queda a la vista de ambos; la letra queda oculta.\n\n6. Coged vuestros seis marcadores y dejadlos a mano.\n\n7. Por mandato del maestro, empieza el aprendiz que haya leído algo nuevo más recientemente. Su primer turno será un poco distinto, como veréis.',
   },
   {
     title: 'Cómo se juega un turno',
