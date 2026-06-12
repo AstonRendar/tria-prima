@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { SecretWord } from '@/domain/SecretWord';
+import { RevealFlip } from './RevealFlip';
 import {
   colors,
   cubeColorContrast,
@@ -31,11 +32,14 @@ export function WordTrack({ word }: Props) {
                 </Text>
               )}
             </View>
-            <View style={[styles.letterBox, card.revealed && styles.letterRevealed]}>
+            <RevealFlip
+              revealed={card.revealed}
+              style={[styles.letterBox, card.revealed && styles.letterRevealed]}
+            >
               <Text style={[styles.letter, card.revealed && styles.letterRevealedText]}>
                 {card.revealed ? card.letter : '·'}
               </Text>
-            </View>
+            </RevealFlip>
             <View style={styles.markerRow}>
               <View style={[styles.dot, card.markers >= 1 && styles.dotOn]} />
               <View style={[styles.dot, card.markers >= 2 && styles.dotOn]} />
