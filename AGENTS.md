@@ -18,16 +18,17 @@ son obra propia para evitar uso indebido de propiedad intelectual ajena.
 
 ## Descripción
 
-App móvil con cuatro modos:
+App móvil con cuatro modos. **Contra el maestro** es el modo principal: va primero y
+destacado en la home.
 
-1. **Duelo a dos** (`/play`) — dos personas comparten un dispositivo y juegan turnos
-   alternos. Cada una introduce su palabra clave de 6 letras al inicio y trata de
-   descifrar la del rival manipulando 9 cubos compartidos en una cuadrícula 3×3.
-2. **Contra el maestro** (`/versus`) — duelo contra la app. El humano es p1 y la app
+1. **Contra el maestro** (`/versus`) — duelo contra la app. El humano es p1 y la app
    (p2, "El maestro") esconde una palabra de la lista y juega sus turnos sola:
    planifica con búsqueda voraz, declara y adivina usando solo información pública
    (letras reveladas + lista de palabras). Sin handoff: los pasos de la app se
    reproducen con retardo para que se vea la jugada.
+2. **Duelo a dos** (`/play`) — dos personas comparten un dispositivo y juegan turnos
+   alternos. Cada una introduce su palabra clave de 6 letras al inicio y trata de
+   descifrar la del rival manipulando 9 cubos compartidos en una cuadrícula 3×3.
 3. **Desafío** (`/solo`) — un solo jugador contra la app. La app esconde una
    palabra y gestiona todo el juego digitalmente: el jugador manipula los cubos en
    pantalla, declara automáticamente al cerrar la fase de movimiento y la app
@@ -177,7 +178,7 @@ Comunes:
 
 ### `app/` — Rutas (expo-router)
 - `_layout.tsx` — Stack con `ConfirmProvider`.
-- `index.tsx` — Home: cinco botones (Duelo, Contra el maestro, Desafío, Con el juego físico, Reglas).
+- `index.tsx` — Home: cinco botones (Contra el maestro —principal, destacado—, Duelo, Desafío, Con el juego físico, Reglas).
 - `instructions.tsx` — manual con vocabulario propio.
 - `play.tsx` — modo Duelo. Muestra `SetupScreen` si no hay partida.
 - `versus.tsx` — modo contra el maestro. Setup propio (solo la palabra del jugador).

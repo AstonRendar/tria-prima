@@ -22,16 +22,16 @@ export default function Home() {
       </View>
       <View style={styles.actions}>
         <ActionButton
-          label="Duelo a dos"
+          label="Contra el maestro"
           variant="primary"
-          onPress={() => router.push('/play')}
-          testID="home/play"
+          onPress={() => router.push('/versus')}
+          testID="home/versus"
         />
         <View style={{ height: spacing.md }} />
         <ActionButton
-          label="Contra el maestro"
-          onPress={() => router.push('/versus')}
-          testID="home/versus"
+          label="Duelo a dos"
+          onPress={() => router.push('/play')}
+          testID="home/play"
         />
         <View style={{ height: spacing.md }} />
         <ActionButton
