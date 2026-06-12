@@ -43,6 +43,7 @@ App móvil con cuatro modos:
 - **React Native** + **TypeScript**
 - **Expo** (managed workflow)
 - **expo-router** — routing basado en ficheros (`app/`)
+- **react-native-svg** — arte vectorial de la capa de ornamentos (`src/ui/ornaments/`)
 
 ### Plataformas
 - iOS (iPhone)
@@ -149,8 +150,22 @@ Comunes:
   `localStorage`: el try/catch deja el valor por defecto, activado, sin persistir).
   En jest, `expo-audio` está mockeado vía `moduleNameMapper` del proyecto ui
   (`src/ui/audio/__mocks__/expo-audio.ts`).
+- `ornaments/` — biblioteca decorativa SVG (estilo grimorio: interior de los libros de
+  D&D 5.5 + motivos alquímicos, todo obra propia): `ParchmentBackground` (fondo de
+  pergamino con gradiente radial, moteado y viñeta), `OrnateFrame` (marco de doble
+  línea oro+tinta con volutas en las esquinas; mide con `onLayout`), `FiligreeDivider`
+  (filete con remates; variantes `line`/`fleuron`), `AlchemicalSigil` (azufre, mercurio
+  y sal a trazo), `ColorSeal` (sello circular por color de fase), `Ouroboros` (emblema
+  hero) y `DropCap` (capitular de instrucciones). Son funciones puras de props, sin
+  estado ni testID y con `pointerEvents="none"`. react-native-svg no soporta filtros
+  SVG en nativo: la textura se logra con gradientes y un moteado determinista
+  (PRNG mulberry32 con semilla fija en `scatter.ts`, nunca `Math.random`). Los glifos
+  unicode 🜍 ☿ 🜔 se conservan solo en `FaceTile` (45 caras: texto es más barato que
+  45 SVGs); en cubos no se mete SVG dentro del nodo animado de `CubeView`.
 - `styles/tokens.ts` — paleta inspirada en la imagen *pergamino + tinta azul marino*,
-  tipografía serif (Georgia / serif).
+  tipografía serif (Georgia / serif). El rediseño añade oro envejecido (`gold`,
+  `goldBright`), `sepia`, `parchmentLight`, `gradients` y `shadows` (boxShadow en
+  web / shadow+elevation en nativo).
 - `ConfirmProvider` — modal de confirmación accesible desde cualquier pantalla por hook
   `useConfirm()`.
 

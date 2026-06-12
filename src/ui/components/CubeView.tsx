@@ -9,7 +9,14 @@ import {
   View,
 } from 'react-native';
 import { Cube, RotationKind, visibleFaces } from '@/domain/Cube';
-import { colors, cubeColorLabel, cubeSymbolLabel, radius, spacing } from '@/ui/styles/tokens';
+import {
+  colors,
+  cubeColorLabel,
+  cubeSymbolLabel,
+  radius,
+  shadows,
+  spacing,
+} from '@/ui/styles/tokens';
 import { FaceTile } from './FaceTile';
 
 export type CubeAnimationKind = RotationKind | 'swap';
@@ -207,6 +214,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    ...shadows.card,
   },
   selected: {
     borderColor: colors.accent,

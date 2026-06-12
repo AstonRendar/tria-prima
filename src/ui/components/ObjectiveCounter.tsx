@@ -1,14 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Objective } from '@/domain/Objective';
+import { AlchemicalSigil, ColorSeal } from '@/ui/ornaments';
 import {
   colors,
-  cubeColorContrast,
-  cubeColorHex,
   cubeColorLabel,
-  cubeSymbolGlyph,
   cubeSymbolLabel,
   fonts,
   radius,
+  shadows,
   spacing,
 } from '@/ui/styles/tokens';
 
@@ -21,17 +20,18 @@ type Props = {
 
 export function ObjectiveCounter({ objective, count, onIncrement, onDecrement }: Props) {
   const isColor = objective.kind === 'color';
-  const glyph = isColor ? '' : cubeSymbolGlyph[objective.value];
-  const tint = isColor ? cubeColorHex[objective.value] : colors.parchment;
-  const textColor = isColor ? cubeColorContrast[objective.value] : colors.text;
   const label = isColor
     ? cubeColorLabel[objective.value]
     : cubeSymbolLabel[objective.value];
 
   return (
     <View style={styles.row}>
-      <View style={[styles.sign, { backgroundColor: tint }]}>
-        {!isColor && <Text style={[styles.glyph, { color: textColor }]}>{glyph}</Text>}
+      <View style={styles.sign}>
+        {isColor ? (
+          <ColorSeal color={objective.value} size={36} />
+        ) : (
+          <AlchemicalSigil symbol={objective.value} size={34} color={colors.text} />
+        )}
       </View>
       <View style={styles.middle}>
         <Text style={styles.label}>{label}</Text>
@@ -63,26 +63,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.gold,
     borderRadius: radius.md,
     padding: spacing.sm,
     marginBottom: spacing.sm,
+    ...shadows.card,
   },
   sign: {
     width: 44,
     height: 44,
     borderRadius: radius.sm,
+    backgroundColor: colors.parchment,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  glyph: {
-    fontFamily: fonts.serif,
-    fontSize: 24,
-    lineHeight: 26,
-    fontWeight: '800',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    includeFontPadding: false,
   },
   middle: {
     flex: 1,

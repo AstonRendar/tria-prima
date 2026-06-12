@@ -1,4 +1,5 @@
 import { Linking, StyleSheet, Text, View } from 'react-native';
+import { FiligreeDivider } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
 
 const STORE_URL = 'https://zacatrus.es/kryptex.html';
@@ -9,6 +10,9 @@ export function Footer() {
   };
   return (
     <View style={styles.footer} testID="footer">
+      <View style={styles.rule}>
+        <FiligreeDivider width={150} />
+      </View>
       <Text style={styles.text}>
         Inspirado en el juego de mesa Kryptex.{' '}
         <Text style={styles.link} onPress={openStore} testID="footer/store">
@@ -25,6 +29,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     alignItems: 'center',
+  },
+  rule: {
+    marginBottom: spacing.xs,
+    opacity: 0.7,
   },
   text: {
     fontFamily: fonts.serif,

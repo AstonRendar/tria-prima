@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { useConfirm } from '@/ui/ConfirmProvider';
-import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+import { colors, fonts, radius, shadows, spacing } from '@/ui/styles/tokens';
 
 type Props = {
   onConfirm: () => void;
@@ -39,8 +39,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.gold,
     marginBottom: spacing.sm,
+    ...shadows.card,
   },
   pressed: {
     transform: [{ scale: 0.97 }],

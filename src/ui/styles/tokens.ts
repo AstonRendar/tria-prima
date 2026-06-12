@@ -18,6 +18,39 @@ export const colors = {
   locked: '#A89572',
   parchment: '#D4BB7A',
   parchmentDark: '#C9A968',
+  parchmentLight: '#F4E6BC',
+  gold: '#A87E2F',
+  goldBright: '#C9A14A',
+  sepia: '#5A4630',
+};
+
+export const gradients = {
+  parchment: ['#F4E6BC', '#E5D4A3', '#CDB179'],
+  surface: ['#F4E6BC', '#EAD8A8'],
+  gold: ['#C9A14A', '#A87E2F'],
+} as const;
+
+export const shadows = {
+  card: Platform.select<object>({
+    web: { boxShadow: '0 2px 6px rgba(43, 32, 16, 0.25)' },
+    default: {
+      shadowColor: '#2B2010',
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+  }) as object,
+  raised: Platform.select<object>({
+    web: { boxShadow: '0 6px 18px rgba(43, 32, 16, 0.4)' },
+    default: {
+      shadowColor: '#2B2010',
+      shadowOpacity: 0.4,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 8,
+    },
+  }) as object,
 };
 
 export const cubeColorHex: Record<CubeColor, string> = {

@@ -37,7 +37,9 @@ const styles = StyleSheet.create({
     right: spacing.lg,
     padding: spacing.sm,
     backgroundColor: colors.accent,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.goldBright,
   },
   text: {
     fontFamily: fonts.serif,

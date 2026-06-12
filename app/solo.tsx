@@ -22,6 +22,7 @@ import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
 import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useSoloPlay } from '@/ui/hooks/useSoloPlay';
+import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
 import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
 
@@ -209,21 +210,24 @@ export default function SoloPlay() {
     const won = state.outcome === 'won';
     const fullWord = state.secretWord.cards.map((c) => c.letter).join('');
     return (
-      <EndScreen
-        won={won}
-        word={fullWord}
-        onRestart={onRestart}
-        onHome={() => router.dismissTo('/')}
-      >
-        <View style={styles.endStats}>
-          <Text style={styles.endStat}>Turnos: {state.turn}</Text>
-          <Text style={styles.endStat}>
-            Objetivos iniciales: {state.initialFreeObjectives}
-          </Text>
-          <Text style={styles.endStat}>Puntuación: {score}</Text>
-          <Text style={styles.endRank}>{info.label}</Text>
-        </View>
-      </EndScreen>
+      <View style={styles.page}>
+        <ParchmentBackground />
+        <EndScreen
+          won={won}
+          word={fullWord}
+          onRestart={onRestart}
+          onHome={() => router.dismissTo('/')}
+        >
+          <View style={styles.endStats}>
+            <Text style={styles.endStat}>Turnos: {state.turn}</Text>
+            <Text style={styles.endStat}>
+              Objetivos iniciales: {state.initialFreeObjectives}
+            </Text>
+            <Text style={styles.endStat}>Puntuación: {score}</Text>
+            <Text style={styles.endRank}>{info.label}</Text>
+          </View>
+        </EndScreen>
+      </View>
     );
   }
 
@@ -233,7 +237,9 @@ export default function SoloPlay() {
   const availableSlots = state.objectives.filter((s) => s.blockedBy === null);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
       <NewGameButton onConfirm={onRestart} />
 
       <View style={styles.headerRow}>
@@ -296,7 +302,7 @@ export default function SoloPlay() {
       )}
 
       {phase === 'select-second-cube' && (
-        <View style={styles.swapNotice}>
+        <OrnateFrame padding={spacing.md} style={styles.swapNotice}>
           <Text style={styles.swapText}>
             Toca otro dado en la misma fila o columna para intercambiarlos.
           </Text>
@@ -305,7 +311,7 @@ export default function SoloPlay() {
             onPress={() => setPhase('choose-action')}
             testID="action/cancel-swap"
           />
-        </View>
+        </OrnateFrame>
       )}
 
       {phase === 'declare' && (
@@ -319,6 +325,9 @@ export default function SoloPlay() {
         </View>
       )}
 
+      <View style={styles.divider}>
+        <FiligreeDivider width={170} />
+      </View>
       <Text style={styles.sectionTitle}>Objetivos disponibles</Text>
       <ScrollView
         horizontal
@@ -361,7 +370,8 @@ export default function SoloPlay() {
       <Footer />
 
       <FlashMessage message={flash.message} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -375,9 +385,17 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+  },
   container: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  divider: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+    opacity: 0.8,
   },
   headerRow: {
     flexDirection: 'row',
@@ -467,11 +485,6 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   swapNotice: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    padding: spacing.md,
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
