@@ -1,6 +1,9 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Footer } from '@/ui/components/Footer';
-import { colors, fonts, spacing } from '@/ui/styles/tokens';
+import { DropCap, FiligreeDivider, OrnateFrame, Ouroboros, ParchmentBackground } from '@/ui/ornaments';
+import { colors, fonts, shadows, spacing } from '@/ui/styles/tokens';
+
+const startsWithLetter = (body: string) => /^[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(body);
 
 type Section = { title: string; body: string };
 
@@ -18,7 +21,7 @@ const SECTIONS: Section[] = [
   {
     title: 'Antes de empezar',
     body:
-      '1. Tirad los nueve cubos sobre el centro de la mesa y disponedlos formando una cuadrícula de 3×3.\n\n2. Colocad las seis cartas de objetivo donde ambos aprendices puedan verlas.\n\n3. Pensad cada uno una palabra clave: un sustantivo común singular, de seis letras exactas, sin nombres propios.\n\n4. Sin que el rival lo vea, escribid vuestra palabra en el dorso de vuestras seis cartas de jugador, una letra por carta.\n\n5. Colocad esas seis cartas boca abajo frente al rival, ordenadas en su sentido de lectura. La insignia de cada carta queda a la vista de ambos; la letra queda oculta.\n\n6. Coged vuestros seis marcadores y dejadlos a mano.\n\n7. Por mandato del maestro, empieza el aprendiz que haya leído algo nuevo más recientemente. Su primer turno será un poco distinto, como veréis.',
+      '1. Tirad los nueve cubos sobre el centro de la mesa y disponedlos formando una cuadrícula de 3×3.\n\n2. Colocad las seis cartas de objetivo donde ambos aprendices puedan verlas.\n\n3. Pensad cada uno una palabra clave: un sustantivo común, en singular o en plural, de seis letras exactas, sin nombres propios.\n\n4. Sin que el rival lo vea, escribid vuestra palabra en el dorso de vuestras seis cartas de jugador, una letra por carta.\n\n5. Colocad esas seis cartas boca abajo frente al rival, ordenadas en su sentido de lectura. La insignia de cada carta queda a la vista de ambos; la letra queda oculta.\n\n6. Coged vuestros seis marcadores y dejadlos a mano.\n\n7. Por mandato del maestro, empieza el aprendiz que haya leído algo nuevo más recientemente. Su primer turno será un poco distinto, como veréis.',
   },
   {
     title: 'Cómo se juega un turno',
@@ -46,7 +49,7 @@ const SECTIONS: Section[] = [
       'Cuando hayas conseguido revelar cuatro o más letras de la palabra del rival, al final de un turno donde acabes de descubrir una letra nueva puedes intentar adivinarla. Solo se puede intentar una vez:\n\n· Si aciertas, ganas el duelo.\n· Si fallas, el rival gana.\n\nSi no te ves con confianza, no es obligatorio adivinar; pasa el turno y sigue jugando.',
   },
   {
-    title: 'Modo «En soledad» (digital)',
+    title: 'Modo «Desafío» (digital)',
     body:
       'Sin rival, frente al athanor de Paracelso. La app esconde la palabra, gestiona los cubos en pantalla y aplica los marcadores conforme cumples objetivos. Tu meta: descifrar la palabra antes de quedarte sin paciencia. Al final se cuenta una puntuación (turnos jugados + objetivos cumplidos en la disposición inicial). Cuanto menor, mejor — el maestro te juzgará en consecuencia.',
   },
@@ -64,46 +67,58 @@ const SECTIONS: Section[] = [
 
 export default function Instructions() {
   return (
-    <ScrollView contentContainerStyle={styles.container} style={styles.page}>
-      <View style={styles.hero}>
-        <Text style={styles.heroDecor}>⚜</Text>
-        <Text style={styles.heroTitle}>Tria Prima</Text>
-        <Text style={styles.heroSubtitle}>Reglas del cifrado</Text>
-        <View style={styles.heroRule} />
-      </View>
-
-      {SECTIONS.map((s) => (
-        <View key={s.title} style={styles.section}>
-          <Text style={styles.sectionTitle}>{s.title}</Text>
-          <View style={styles.sectionRule} />
-          <Text style={styles.sectionBody}>{s.body}</Text>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.hero}>
+          <Ouroboros size={84} color={colors.text} accent={colors.gold} />
+          <Text style={styles.heroTitle}>Tria Prima</Text>
+          <Text style={styles.heroSubtitle}>Reglas del cifrado</Text>
+          <View style={styles.heroRule}>
+            <FiligreeDivider width={180} variant="fleuron" />
+          </View>
         </View>
-      ))}
 
-      <Text style={styles.flourish}>⁂</Text>
-      <Footer />
-    </ScrollView>
+        {SECTIONS.map((s) => (
+          <OrnateFrame key={s.title} padding={spacing.lg} style={[styles.section, shadows.card]}>
+            <Text style={styles.sectionTitle}>{s.title}</Text>
+            <View style={styles.sectionRule}>
+              <FiligreeDivider width={150} />
+            </View>
+            {startsWithLetter(s.body) ? (
+              <View style={styles.bodyRow}>
+                <DropCap letter={s.body[0]} />
+                <Text style={[styles.sectionBody, styles.bodyAfterCap]}>
+                  {s.body.slice(1)}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.sectionBody}>{s.body}</Text>
+            )}
+          </OrnateFrame>
+        ))}
+
+        <View style={styles.flourish}>
+          <FiligreeDivider width={180} variant="fleuron" />
+        </View>
+        <Footer />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: colors.background,
+    flex: 1,
   },
   container: {
     padding: 20,
     paddingBottom: 60,
-    backgroundColor: colors.background,
   },
   hero: {
     alignItems: 'center',
     paddingVertical: 24,
     marginBottom: 16,
-  },
-  heroDecor: {
-    color: colors.danger,
-    fontSize: 28,
-    marginBottom: 4,
   },
   heroTitle: {
     fontFamily: fonts.serif,
@@ -111,6 +126,7 @@ const styles = StyleSheet.create({
     fontSize: 42,
     fontWeight: '800',
     letterSpacing: 3,
+    marginTop: spacing.md,
   },
   heroSubtitle: {
     fontFamily: fonts.serif,
@@ -121,19 +137,9 @@ const styles = StyleSheet.create({
   },
   heroRule: {
     marginTop: 14,
-    width: 120,
-    height: 1,
-    backgroundColor: colors.parchmentDark,
   },
   section: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 4,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
     marginBottom: 16,
-    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
   },
   sectionTitle: {
     fontFamily: fonts.serif,
@@ -143,10 +149,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   sectionRule: {
-    marginTop: 6,
-    marginBottom: 12,
-    height: 1,
-    backgroundColor: colors.parchmentDark,
+    marginTop: 4,
+    marginBottom: 10,
+    opacity: 0.8,
   },
   sectionBody: {
     fontFamily: fonts.serif,
@@ -154,10 +159,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 26,
   },
+  bodyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  bodyAfterCap: {
+    flex: 1,
+    marginLeft: spacing.sm,
+  },
   flourish: {
-    color: colors.danger,
-    textAlign: 'center',
-    fontSize: 28,
+    alignItems: 'center',
     marginTop: 8,
   },
 });

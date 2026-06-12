@@ -1,5 +1,6 @@
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput } from 'react-native';
 import { useConfirm } from '@/ui/ConfirmProvider';
+import { OrnateFrame } from '@/ui/ornaments';
 import { ActionButton } from './ActionButton';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
 
@@ -22,7 +23,7 @@ export function GuessBox({
 }: Props) {
   const confirm = useConfirm();
   return (
-    <View style={styles.box}>
+    <OrnateFrame padding={spacing.md} style={styles.box}>
       <Text style={styles.title}>Adivina la palabra (6 letras)</Text>
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       <TextInput
@@ -52,18 +53,13 @@ export function GuessBox({
         disabled={submitDisabled || value.trim().length === 0}
         testID="guess/submit"
       />
-    </View>
+    </OrnateFrame>
   );
 }
 
 const styles = StyleSheet.create({
   box: {
     marginTop: spacing.xl,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.accent,
   },
   title: {
     fontFamily: fonts.serif,

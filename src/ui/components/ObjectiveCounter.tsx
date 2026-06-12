@@ -1,14 +1,16 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Objective } from '@/domain/Objective';
+import { OrnateFrame } from '@/ui/ornaments';
+import { SignGlyph, SignVariant } from './SignGlyph';
 import {
   colors,
-  cubeColorContrast,
-  cubeColorHex,
   cubeColorLabel,
-  cubeSymbolGlyph,
   cubeSymbolLabel,
   fonts,
+  physicalColorLabel,
+  physicalSymbolLabel,
   radius,
+  shadows,
   spacing,
 } from '@/ui/styles/tokens';
 
@@ -17,21 +19,26 @@ type Props = {
   count: number;
   onIncrement: () => void;
   onDecrement: () => void;
+  variant?: SignVariant;
 };
 
-export function ObjectiveCounter({ objective, count, onIncrement, onDecrement }: Props) {
-  const isColor = objective.kind === 'color';
-  const glyph = isColor ? '' : cubeSymbolGlyph[objective.value];
-  const tint = isColor ? cubeColorHex[objective.value] : colors.parchment;
-  const textColor = isColor ? cubeColorContrast[objective.value] : colors.text;
-  const label = isColor
-    ? cubeColorLabel[objective.value]
-    : cubeSymbolLabel[objective.value];
+export function ObjectiveCounter({
+  objective,
+  count,
+  onIncrement,
+  onDecrement,
+  variant = 'alchemy',
+}: Props) {
+  const physical = variant === 'physical';
+  const label =
+    objective.kind === 'color'
+      ? (physical ? physicalColorLabel : cubeColorLabel)[objective.value]
+      : (physical ? physicalSymbolLabel : cubeSymbolLabel)[objective.value];
 
   return (
-    <View style={styles.row}>
-      <View style={[styles.sign, { backgroundColor: tint }]}>
-        {!isColor && <Text style={[styles.glyph, { color: textColor }]}>{glyph}</Text>}
+    <OrnateFrame padding={spacing.sm + 2} cornerScale={0.55} style={[styles.row, shadows.card]}>
+      <View style={styles.sign}>
+        <SignGlyph sign={objective} size={36} variant={variant} />
       </View>
       <View style={styles.middle}>
         <Text style={styles.label}>{label}</Text>
@@ -53,7 +60,7 @@ export function ObjectiveCounter({ objective, count, onIncrement, onDecrement }:
           <Text style={[styles.btnText, styles.btnTextPrimary]}>＋</Text>
         </Pressable>
       </View>
-    </View>
+    </OrnateFrame>
   );
 }
 
@@ -61,28 +68,15 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: spacing.sm,
     marginBottom: spacing.sm,
   },
   sign: {
     width: 44,
     height: 44,
     borderRadius: radius.sm,
+    backgroundColor: colors.parchment,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  glyph: {
-    fontFamily: fonts.serif,
-    fontSize: 24,
-    lineHeight: 26,
-    fontWeight: '800',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    includeFontPadding: false,
   },
   middle: {
     flex: 1,

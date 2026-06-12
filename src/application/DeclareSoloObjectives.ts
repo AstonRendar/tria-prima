@@ -1,6 +1,5 @@
-import { findMatchedLine, ObjectiveSlot } from '@/domain/Objective';
-import { addMarkerForObjective, SecretWord } from '@/domain/SecretWord';
 import { SoloPlayState } from './SoloPlayState';
+import { declareOnBoard } from './TurnRules';
 
 export type DeclareSoloResult = {
   state: SoloPlayState;
@@ -11,55 +10,33 @@ export type DeclareSoloResult = {
 
 const SOLO_OWNER = 'p1' as const;
 
-// Misma regla que en duelo: los objetivos cumplidos en el tablero (sean nuevos
-// o mantenidos) cuentan como declaración y aplican marcador a la propia
-// palabra. Mantener uno varios turnos suma marcadores repetidos.
+// Misma regla que en duelo, aplicada con el algoritmo común de TurnRules:
+// los marcadores caen sobre la propia palabra y no hay slots de rival.
 export function declareSoloObjectives(state: SoloPlayState): DeclareSoloResult {
-  if (state.finished) {
-    return { state, declared: 0, released: 0, revealedCardIndices: [] };
-  }
-  if (!state.canDeclareThisTurn) {
+  if (state.finished || !state.canDeclareThisTurn) {
     return { state, declared: 0, released: 0, revealedCardIndices: [] };
   }
 
-  let released = 0;
-  const matched: ObjectiveSlot[] = [];
-  const objectives: ObjectiveSlot[] = state.objectives.map((slot) => {
-    const isFulfilled = findMatchedLine(state.board, slot.objective) !== null;
-    if (slot.blockedBy === SOLO_OWNER && !isFulfilled) {
-      released++;
-      return { ...slot, blockedBy: null };
-    }
-    if (isFulfilled) {
-      const next: ObjectiveSlot = { ...slot, blockedBy: SOLO_OWNER };
-      matched.push(next);
-      return next;
-    }
-    return slot;
-  });
-
-  let word: SecretWord = state.secretWord;
-  const revealed: number[] = [];
-  for (const m of matched) {
-    const result = addMarkerForObjective(word, m.objective);
-    if (result) {
-      word = result.word;
-      if (result.revealed) revealed.push(result.cardIndex);
-    }
-  }
+  const outcome = declareOnBoard(
+    state.board,
+    state.objectives,
+    SOLO_OWNER,
+    state.secretWord,
+    () => true
+  );
 
   const nextState: SoloPlayState = {
     ...state,
-    objectives,
-    secretWord: word,
+    objectives: outcome.objectives,
+    secretWord: outcome.word,
     canDeclareThisTurn: false,
-    revealedThisTurn: state.revealedThisTurn || revealed.length > 0,
+    revealedThisTurn: state.revealedThisTurn || outcome.revealedCardIndices.length > 0,
   };
 
   return {
     state: nextState,
-    declared: matched.length,
-    released,
-    revealedCardIndices: revealed,
+    declared: outcome.declared,
+    released: outcome.released,
+    revealedCardIndices: outcome.revealedCardIndices,
   };
 }

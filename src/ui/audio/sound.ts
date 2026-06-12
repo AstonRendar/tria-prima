@@ -1,15 +1,10 @@
 import { Platform } from 'react-native';
+import { NativeAudioBus } from './nativeAudio';
 import { readFlag, writeFlag } from './preferences';
+import { SFX_SPECS, SoundKey } from './sfxSpecs';
+import { ToneSpec } from './synth';
 
-export type SoundKey =
-  | 'cube-roll'
-  | 'cube-spin'
-  | 'swap'
-  | 'objective'
-  | 'reveal'
-  | 'turn-end'
-  | 'win'
-  | 'lose';
+export type { SoundKey };
 
 export interface AudioBus {
   play(key: SoundKey): void;
@@ -38,41 +33,8 @@ class WebAudioBus implements AudioBus {
   play(key: SoundKey): void {
     const ctx = this.getCtx();
     if (!ctx) return;
-
-    switch (key) {
-      case 'cube-roll':
-        this.tone(ctx, 240, 0.09, 'triangle', 0.12);
-        return;
-      case 'cube-spin':
-        this.sweep(ctx, 380, 520, 0.08, 0.10);
-        return;
-      case 'swap':
-        this.sweep(ctx, 180, 360, 0.18, 0.14);
-        return;
-      case 'objective':
-        // Acorde alegre breve: dos tonos.
-        this.tone(ctx, 660, 0.14, 'sine', 0.16);
-        this.scheduleTone(ctx, 990, 0.16, 'sine', 0.14, 0.06);
-        return;
-      case 'reveal':
-        // Tres tonos ascendentes — descubrimiento.
-        this.tone(ctx, 880, 0.10, 'sine', 0.18);
-        this.scheduleTone(ctx, 1175, 0.10, 'sine', 0.18, 0.08);
-        this.scheduleTone(ctx, 1760, 0.18, 'sine', 0.20, 0.16);
-        return;
-      case 'turn-end':
-        this.tone(ctx, 180, 0.10, 'square', 0.10);
-        return;
-      case 'win':
-        [523, 659, 784, 1047].forEach((f, i) => {
-          this.scheduleTone(ctx, f, 0.20, 'sine', 0.22, i * 0.10);
-        });
-        return;
-      case 'lose':
-        [392, 330, 247].forEach((f, i) => {
-          this.scheduleTone(ctx, f, 0.30, 'sawtooth', 0.16, i * 0.15);
-        });
-        return;
+    for (const spec of SFX_SPECS[key]) {
+      this.scheduleSpec(ctx, spec);
     }
   }
 
@@ -96,71 +58,24 @@ class WebAudioBus implements AudioBus {
     return this.ctx;
   }
 
-  private tone(
-    ctx: AudioContext,
-    frequency: number,
-    duration: number,
-    type: OscillatorType,
-    gain: number
-  ): void {
-    this.scheduleTone(ctx, frequency, duration, type, gain, 0);
-  }
-
-  private scheduleTone(
-    ctx: AudioContext,
-    frequency: number,
-    duration: number,
-    type: OscillatorType,
-    gain: number,
-    delay: number
-  ): void {
-    const start = ctx.currentTime + delay;
+  private scheduleSpec(ctx: AudioContext, spec: ToneSpec): void {
+    const start = ctx.currentTime + spec.start;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(frequency, start);
+    osc.type = spec.wave;
+    osc.frequency.setValueAtTime(spec.frequency, start);
+    if (spec.toFrequency !== undefined) {
+      osc.frequency.linearRampToValueAtTime(spec.toFrequency, start + spec.duration);
+    }
     g.gain.setValueAtTime(0, start);
-    g.gain.linearRampToValueAtTime(gain, start + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    g.gain.linearRampToValueAtTime(spec.gain, start + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + spec.duration);
     osc.connect(g);
     g.connect(ctx.destination);
     osc.start(start);
-    osc.stop(start + duration + 0.05);
-  }
-
-  private sweep(
-    ctx: AudioContext,
-    from: number,
-    to: number,
-    duration: number,
-    gain: number
-  ): void {
-    const start = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(from, start);
-    osc.frequency.linearRampToValueAtTime(to, start + duration);
-    g.gain.setValueAtTime(0, start);
-    g.gain.linearRampToValueAtTime(gain, start + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-    osc.connect(g);
-    g.connect(ctx.destination);
-    osc.start(start);
-    osc.stop(start + duration + 0.05);
-  }
-}
-
-class SilentAudioBus implements AudioBus {
-  private enabled = false;
-  play(): void {}
-  setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
-  }
-  isEnabled(): boolean {
-    return this.enabled;
+    osc.stop(start + spec.duration + 0.05);
   }
 }
 
 export const audio: AudioBus =
-  Platform.OS === 'web' ? new WebAudioBus() : new SilentAudioBus();
+  Platform.OS === 'web' ? new WebAudioBus() : new NativeAudioBus();

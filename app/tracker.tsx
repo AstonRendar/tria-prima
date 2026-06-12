@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
 import { ALL_OBJECTIVES, Objective } from '@/domain/Objective';
 import { canGuess, maskedText, revealedCount } from '@/domain/SecretWord';
@@ -15,7 +15,9 @@ import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCounter } from '@/ui/components/ObjectiveCounter';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useTracker } from '@/ui/hooks/useTracker';
+import { FiligreeDivider, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
 
 const dependencies = buildProductionDependencies();
@@ -29,20 +31,18 @@ export default function Tracker() {
   const [guess, setGuess] = useState('');
   const flash = useFlash();
 
-  // Hay progreso si la partida no ha terminado y se han generado marcadores
-  // o se ha revelado alguna letra. Si nada, la "salida" no destruye nada útil.
-  const hasProgress =
-    !state.finished &&
-    (state.declaredCount.size > 0 ||
-      state.secretWord.cards.some((c) => c.markers > 0 || c.revealed));
-  useBeforeUnloadWarning(hasProgress);
+  // Mismo criterio que duelo y solitario: partida sin terminar = confirmar
+  // la salida (al entrar ya hay una palabra escondida en juego).
+  const hasActiveGame = !state.finished;
+  useBeforeUnloadWarning(hasActiveGame);
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
-    router.replace('/');
+    router.dismissTo('/');
   }, [router]);
 
   const requestExit = useCallback(() => {
-    if (!hasProgress) {
+    if (!hasActiveGame) {
       goHome();
       return;
     }
@@ -53,7 +53,7 @@ export default function Tracker() {
       destructive: true,
       onConfirm: goHome,
     });
-  }, [confirm, goHome, hasProgress]);
+  }, [confirm, goHome, hasActiveGame]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -92,19 +92,24 @@ export default function Tracker() {
   if (state.finished) {
     const fullWord = state.secretWord.cards.map((c) => c.letter).join('');
     return (
-      <EndScreen
-        won={state.outcome === 'won'}
-        word={fullWord}
-        onRestart={onRestart}
-        onHome={() => router.replace('/')}
-      />
+      <View style={styles.page}>
+        <ParchmentBackground />
+        <EndScreen
+          won={state.outcome === 'won'}
+          word={fullWord}
+          onRestart={onRestart}
+          onHome={() => router.dismissTo('/')}
+        />
+      </View>
     );
   }
 
   const guessEligible = canGuess(state.secretWord);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
       <NewGameButton onConfirm={onRestart} />
       <Text style={styles.heading}>Tracker para jugar con el juego físico</Text>
       <Text style={styles.subheading}>
@@ -112,8 +117,11 @@ export default function Tracker() {
       </Text>
 
       <Text style={styles.maskedWord}>{maskedText(state.secretWord)}</Text>
-      <WordTrack word={state.secretWord} />
+      <WordTrack word={state.secretWord} variant="physical" />
 
+      <View style={styles.divider}>
+        <FiligreeDivider width={170} />
+      </View>
       <Text style={styles.sectionTitle}>Objetivos</Text>
       <Text style={styles.sectionHint}>
         Pulsa ＋ cuando cumplas el objetivo en tu mesa; − si te equivocaste.
@@ -126,6 +134,7 @@ export default function Tracker() {
           count={state.declaredCount.get(objective.id) ?? 0}
           onIncrement={() => onMark(objective)}
           onDecrement={() => tracker.unmark(objective)}
+          variant="physical"
         />
       ))}
 
@@ -144,14 +153,23 @@ export default function Tracker() {
       <Footer />
 
       <FlashMessage message={flash.message} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+  },
   container: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  divider: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+    opacity: 0.8,
   },
   heading: {
     fontFamily: fonts.serif,

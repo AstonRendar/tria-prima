@@ -18,16 +18,22 @@ son obra propia para evitar uso indebido de propiedad intelectual ajena.
 
 ## Descripción
 
-App móvil con tres modos:
+App móvil con cuatro modos. **Contra el maestro** es el modo principal: va primero y
+destacado en la home.
 
-1. **Duelo a dos** (`/play`) — dos personas comparten un dispositivo y juegan turnos
+1. **Contra el maestro** (`/versus`) — duelo contra la app. El humano es p1 y la app
+   (p2, "El maestro") esconde una palabra de la lista y juega sus turnos sola:
+   planifica con búsqueda voraz, declara y adivina usando solo información pública
+   (letras reveladas + lista de palabras). Sin handoff: los pasos de la app se
+   reproducen con retardo para que se vea la jugada.
+2. **Duelo a dos** (`/play`) — dos personas comparten un dispositivo y juegan turnos
    alternos. Cada una introduce su palabra clave de 6 letras al inicio y trata de
    descifrar la del rival manipulando 9 cubos compartidos en una cuadrícula 3×3.
-2. **En soledad** (`/solo`) — un solo jugador contra la app. La app esconde una
+3. **Desafío** (`/solo`) — un solo jugador contra la app. La app esconde una
    palabra y gestiona todo el juego digitalmente: el jugador manipula los cubos en
    pantalla, declara automáticamente al cerrar la fase de movimiento y la app
    coloca los marcadores y calcula la puntuación final.
-3. **Con el juego físico** (`/tracker`) — *tracker* para jugar con el juego de mesa
+4. **Con el juego físico** (`/tracker`) — *tracker* para jugar con el juego de mesa
    en la mesa. La app esconde una palabra y lleva la cuenta de marcadores; el
    jugador manipula los cubos en la mesa real y pulsa ＋/− por cada objetivo
    cumplido o desecho.
@@ -38,6 +44,7 @@ App móvil con tres modos:
 - **React Native** + **TypeScript**
 - **Expo** (managed workflow)
 - **expo-router** — routing basado en ficheros (`app/`)
+- **react-native-svg** — arte vectorial de la capa de ornamentos (`src/ui/ornaments/`)
 
 ### Plataformas
 - iOS (iPhone)
@@ -77,6 +84,25 @@ Modo duelo (2 jugadores):
 - `MatchState` (con dos `PlayerData`, currentPlayerId, board, objectives compartidos).
 - `StartMatch`, `RotateMatchCube`, `SwapMatchCubes`, `EndMatchTurn`,
   `DeclareMatchObjectives`, `GuessMatchWord`.
+- El setup permite elegir quién empieza (`firstPlayer: 'p1' | 'p2' | 'random'`,
+  por defecto `random`). Aplica al duelo y al modo contra el maestro (vía
+  `VersusSetup`); en solitario y tracker no hay rival, no aplica.
+
+Modo contra el maestro (humano vs app, reutiliza `MatchState` y los casos de uso del duelo):
+- `StartVersus` — `startVersusMatch`: p1 humano, p2 la app con palabra del repositorio.
+- `AppOpponent` — `planAppTurn` (búsqueda voraz sobre todos los turnos legales,
+  +1 por objetivo declarable, +1 si revela letra, y en negativo las líneas que el
+  rival mantiene bloqueadas mientras sigan formadas, con −1 extra si re-declararlas
+  revelaría letra propia; empata al azar) y `chooseAppGuess`
+  (solo información pública: 6 reveladas → palabra exacta; 1 candidata → la arriesga;
+  5 reveladas y varias → una al azar; si no, sigue jugando). Dos niveles (`AppLevel`):
+  **maestro** (siempre la mejor jugada) y **aprendiz** (50 % de despiste con jugada
+  aleatoria; solo arriesga la única candidata con 5+ letras). El nivel se elige en el
+  setup y viaja en `VersusSetup`.
+- `PlayAppTurn` — `buildAppTurnSteps` / `applyAppStep` / `playAppTurn`: el turno de la
+  app como lista de pasos que la UI reproduce con retardo. Cada acción va precedida
+  de un paso `select` (no-op en el estado) que la UI remarca y anima como si el dado
+  lo hubiera tocado un humano.
 
 Modo solitario digital (1 jugador, todo en la app):
 - `SoloPlayState` (board, objectives, palabra elegida por la app, turno, puntuación).
@@ -95,34 +121,67 @@ Comunes:
 
 ### `src/infrastructure/`
 - `Random` — interfaz + `DefaultRandom`.
-- `WordRepository` — interfaz + `InMemoryWordRepository` (lista de palabras de 6 letras
-  en castellano).
+- `WordRepository` — interfaz (`randomWord` + `allWords`) + `InMemoryWordRepository`
+  (lista de palabras de 6 letras en castellano). **Norma de contenido**: el vocabulario
+  debe ser apto para todos los públicos — prohibido añadir insultos, palabras malsonantes,
+  sexuales o inapropiadas. Las palabras se guardan ya normalizadas (mayúsculas, sin
+  tildes, solo A–Z y Ñ) y ordenadas alfabéticamente.
 - `ProductionDependencies` — factoría del bundle real.
 
 ### `src/ui/`
 - `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveCard`,
-  `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `ActionButton`,
+  `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
   `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `Footer`,
   `SetupScreen`).
-- `hooks/` — `useMatch` (duelo), `useTracker` (solitario).
-- `audio/` — sonido sintético vía Web Audio API, sin assets. `sound.ts` (efectos, singleton
-  `audio`) y `music.ts` (música de fondo chiptune en bucle, singleton `music`). Los toggles
-  ♪ (música) y 🔊 (efectos) viven en `AudioControls`, montado como `headerRight` del Stack
-  para estar siempre visibles. Ambas preferencias se persisten en `localStorage`
-  (`tria-prima/music-enabled`, `tria-prima/sfx-enabled` vía `audio/preferences.ts`),
-  activadas por defecto; la música arranca en el primer gesto del usuario por la política
-  de autoplay. En iOS/Android ambos caen a implementación silenciosa hasta integrar
-  `expo-audio`.
+- `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
+  más la reproducción automática y retardada del turno de la app), `useSoloPlay`
+  (solitario digital), `useTracker` (tracker físico).
+- `audio/` — sonido sintético, sin assets. La fuente de verdad son los specs compartidos:
+  `sfxSpecs.ts` (efectos) y `score.ts` (partituras). Hay dos pistas de música (`MusicTrack`):
+  `menu` y `game` (misma cadencia andaluza en Re menor; la de partida con pulso más vivo y
+  melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia; el hook
+  `useGameMusic(hasActiveGame)` (en las 4 pantallas de juego) pone `game` mientras hay
+  partida activa y devuelve `menu` al salir o terminar. En **web**, `sound.ts` y
+  `music.ts` los tocan en vivo con la Web Audio API. En **iOS/Android**, `nativeAudio.ts`
+  los pre-renderiza a WAV (PCM 16 bits mono, data URI) con `synth.ts` y los reproduce con
+  `expo-audio`; la melodía nativa usa triángulo y un eco horneado en lugar del filtro+delay
+  de la web. En nativo no hay política de autoplay: la música arranca con la app si la
+  preferencia está activa. Los toggles ♪ / 🔊 viven en `AudioControls` (headerRight del
+  Stack). Preferencias en `localStorage` vía `audio/preferences.ts` (en nativo no hay
+  `localStorage`: el try/catch deja el valor por defecto, activado, sin persistir).
+  En jest, `expo-audio` está mockeado vía `moduleNameMapper` del proyecto ui
+  (`src/ui/audio/__mocks__/expo-audio.ts`).
+- `ornaments/` — biblioteca decorativa SVG (estilo grimorio: interior de los libros de
+  D&D 5.5 + motivos alquímicos, todo obra propia): `ParchmentBackground` (fondo de
+  pergamino con gradiente radial, moteado, viñeta y marca de agua: el emblema
+  `OuroborosGlyph` enorme en la mitad derecha, sepia al 7 %), `OrnateFrame` (marco de doble
+  línea oro+tinta con volutas en las esquinas; mide con `onLayout`; la prop
+  `cornerScale` reduce las volutas para paneles compactos — es el marco estándar de
+  todo panel: modales, zonas de bloqueo, panel de acciones, contadores del tracker,
+  estadísticas del solitario y secciones de las reglas), `FiligreeDivider`
+  (filete con remates; variantes `line`/`fleuron`), `AlchemicalSigil` (azufre, mercurio
+  y sal a trazo), `ColorSeal` (sello circular por color de fase), `Ouroboros` (emblema
+  hero) y `DropCap` (capitular de instrucciones). Son funciones puras de props, sin
+  estado ni testID y con `pointerEvents="none"`. react-native-svg no soporta filtros
+  SVG en nativo: la textura se logra con gradientes y un moteado determinista
+  (PRNG mulberry32 con semilla fija en `scatter.ts`, nunca `Math.random`). Los glifos
+  unicode 🜍 ☿ 🜔 se conservan solo en `FaceTile` (45 caras: texto es más barato que
+  45 SVGs); en cubos no se mete SVG dentro del nodo animado de `CubeView`.
 - `styles/tokens.ts` — paleta inspirada en la imagen *pergamino + tinta azul marino*,
-  tipografía serif (Georgia / serif).
+  tipografía serif (Georgia / serif). El rediseño añade oro envejecido (`gold`,
+  `goldBright`), `sepia`, `parchmentLight`, `gradients` y `shadows` (boxShadow en
+  web / shadow+elevation en nativo). Incluye además los tokens `physical*`
+  (`physicalColorHex/Contrast/Label`, `physicalSymbolGlyph/Label`) de la variante
+  visual `physical` (ver modo tracker).
 - `ConfirmProvider` — modal de confirmación accesible desde cualquier pantalla por hook
   `useConfirm()`.
 
 ### `app/` — Rutas (expo-router)
 - `_layout.tsx` — Stack con `ConfirmProvider`.
-- `index.tsx` — Home: cuatro botones (Duelo, En soledad, Con el juego físico, Reglas).
+- `index.tsx` — Home: cinco botones (Contra el maestro —principal, destacado—, Duelo, Desafío, Con el juego físico, Reglas).
 - `instructions.tsx` — manual con vocabulario propio.
 - `play.tsx` — modo Duelo. Muestra `SetupScreen` si no hay partida.
+- `versus.tsx` — modo contra el maestro. Setup propio (solo la palabra del jugador).
 - `solo.tsx` — modo solitario digital.
 - `tracker.tsx` — modo tracker físico.
 
@@ -133,8 +192,10 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 
 | Zona | Patrón | Ejemplos |
 |---|---|---|
-| Home | `home/{destino}` | `home/play`, `home/tracker`, `home/instructions` |
-| Setup (Duelo) | `setup/{campo}` | `setup/p1`, `setup/p2`, `setup/start` |
+| Home | `home/{destino}` | `home/play`, `home/versus`, `home/tracker`, `home/instructions` |
+| Setup (Versus) | `setup/{word\|start\|level-apprentice\|level-master\|first-p1\|first-p2\|first-random}` | — |
+| Turno (Versus) | `versus/turn-name` | — |
+| Setup (Duelo) | `setup/{campo}` | `setup/p1`, `setup/p2`, `setup/first-random`, `setup/start` |
 | Cuadrícula | `cube/{i}` | `cube/0`..`cube/8` |
 | Acciones turno | `action/{kind}` | `action/roll-forward`, `action/spin-cw`, `action/swap`, `action/cancel` |
 | Fin de turno | `turn/{declare\|end}` | `turn/declare`, `turn/end` |
@@ -147,6 +208,7 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 | Footer | `footer`, `footer/store` | — |
 | Audio (cabecera) | `audio/{music\|sfx}` | — |
 | Contadores por insignia | `sign-counter/{kind}:{value}` | `sign-counter/symbol:sulfur`, `sign-counter/color:rubedo` |
+| Zonas de bloqueo (duelo) | `blocked/{opponent\|me}` | — |
 
 ## Flujo del turno (modo Duelo)
 
@@ -198,12 +260,37 @@ el rival pueda jugar.
 - La app esconde una palabra clave. El jugador juega físicamente con el juego de mesa
   y pulsa ＋ en el objetivo correspondiente cada vez que lo cumple en la mesa.
 - No hay puntuación digital ni contador de turnos: solo gestión de letras reveladas.
+- Las insignias usan la variante visual `physical` (componente `SignGlyph` +
+  tokens `physical*`): colores planos turquesa/blanco/naranja y letras griegas
+  Δ Θ Ξ para que coincidan con los componentes del juego de mesa real. Solo
+  letras y colores planos — sin arte copiado del juego original. El resto de
+  modos sigue con la variante `alchemy` (sigilos y sellos del grimorio).
 
 ## Testing
 
 ### Stack
-- **Jest** + **ts-jest**. Tests en `__tests__/` junto al código.
-- Tipos vienen de `@types/jest`.
+- **Jest** en configuración multi-proyecto (`package.json`):
+  - Proyecto **logic** — `ts-jest` + entorno node. Tests de `domain`, `application`
+    e `infrastructure` en `__tests__/` junto al código.
+  - Proyecto **ui** — preset `jest-expo` + `@testing-library/react-native` (v14).
+    Tests en `src/ui/__tests__/*.test.tsx`.
+- Tipos vienen de `@types/jest` (v29, alineado con jest 29 que exige `jest-expo`).
+- Cobertura: `collectCoverageFrom` cubre todo `domain` y `application`.
+
+### Tipos de test
+- **Unitarios** — toda regla del dominio o caso de uso lleva su test.
+- **Funcionales** — `src/application/__tests__/functional/`: partidas guiadas por modo
+  que encadenan los casos de uso reales con tablero determinista (`StubRandom([0])`
+  deja el `CUBE_SET` en orden y sin girar: fila superior de azufres y fila inferior rubedo).
+- **Smoke de UI** — `src/ui/__tests__/Screens.smoke.test.tsx`: un único render que
+  recorre todas las pantallas con navegación imperativa.
+
+### Particularidades de los tests de UI
+- El `render` de RNTL 14 es **asíncrono**: `await renderRouter(...)` siempre.
+- El store de navegación de expo-router es global al fichero de test y `renderRouter`
+  no lo reinicia: usar un solo render por fichero y navegar con `router.navigate`
+  dentro de `act`. Tras cada salto, la primera aserción debe ser `findBy*`.
+- `renderRouter` activa fake timers: restaurar con `jest.useRealTimers()` en `afterEach`.
 
 ### Política TDD
 - Toda regla del dominio o caso de uso lleva su test.
@@ -217,6 +304,20 @@ npm test            # toda la suite
 npm run test:watch  # modo watch
 npm run typecheck   # tsc --noEmit
 ```
+
+## Flujo de trabajo git
+
+Repositorio: <https://github.com/AstonRendar/tria-prima>. Se sigue **git flow**:
+
+> **Autoría**: ningún agente (Claude, Antigravity, etc.) firma commits, PRs, documentos
+> ni ningún otro artefacto como autor o coautor. Nada de `Co-Authored-By` ni pies tipo
+> "Generated with…". La autoría es siempre del usuario.
+
+- `main` — solo versiones estables (releases). No se hace commit directo.
+- `develop` — rama de integración; el trabajo diario se fusiona aquí.
+- `feature/<nombre>` — una rama por funcionalidad, sale de `develop` y vuelve a `develop`.
+- `release/<versión>` — preparación de release, de `develop` a `main` (+ merge de vuelta a `develop`).
+- `hotfix/<nombre>` — arreglos urgentes sobre `main` (+ merge de vuelta a `develop`).
 
 ## Principios de desarrollo
 - **Castellano** en mensajes de UI y textos al usuario. **Inglés** en código.

@@ -36,6 +36,8 @@ npm run typecheck
 
 ## Reglas específicas de este entorno
 - Idioma de comunicación con el usuario: **castellano**.
+- **No firmar nada como autor**: sin `Co-Authored-By` en commits ni "Generated with"
+  en PRs o documentos. Ver la regla común en `AGENTS.md` (aplica a todos los agentes).
 - No instalar dependencias nuevas sin confirmación previa salvo que sean evidentes.
 - No proponer cambios de stack sin confirmar con el usuario.
 - Mantener `AGENTS.md` actualizado de forma proactiva ante cualquier decisión nueva del proyecto.

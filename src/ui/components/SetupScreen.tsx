@@ -1,16 +1,31 @@
-import { useRef, useState } from 'react';
+import { Ref, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TextInputProps,
   View,
 } from 'react-native';
-import { MatchSetup } from '@/application/StartMatch';
+import { FirstPlayerChoice, MatchSetup } from '@/application/StartMatch';
 import { isValidSecretWord, normalizeGuess, WORD_LENGTH } from '@/domain/SecretWord';
+import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { ActionButton } from './ActionButton';
 import { Footer } from './Footer';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+
+function FieldInput({ ref, ...props }: TextInputProps & { ref?: Ref<TextInput> }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <TextInput
+      {...props}
+      ref={ref}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={[styles.input, focused && styles.inputFocused]}
+    />
+  );
+}
 
 type Props = {
   onStart: (setup: MatchSetup) => void;
@@ -24,6 +39,7 @@ export function SetupScreen({ onStart }: Props) {
   const [p2Name, setP2Name] = useState('');
   const [p1Word, setP1Word] = useState('');
   const [p2Word, setP2Word] = useState('');
+  const [firstPlayer, setFirstPlayer] = useState<FirstPlayerChoice>('random');
 
   const namesValid = p1Name.trim().length > 0 && p2Name.trim().length > 0;
 
@@ -44,6 +60,7 @@ export function SetupScreen({ onStart }: Props) {
       p2Name: p2Name.trim(),
       p1Word: normalizeGuess(p1Word),
       p2Word: normalizeGuess(p2Word),
+      firstPlayer,
     });
   };
 
@@ -54,6 +71,8 @@ export function SetupScreen({ onStart }: Props) {
         p2={p2Name}
         onChangeP1={setP1Name}
         onChangeP2={setP2Name}
+        firstPlayer={firstPlayer}
+        onChangeFirstPlayer={setFirstPlayer}
         valid={namesValid}
         onContinue={confirmNames}
       />
@@ -108,6 +127,8 @@ function NamesStep({
   p2,
   onChangeP1,
   onChangeP2,
+  firstPlayer,
+  onChangeFirstPlayer,
   valid,
   onContinue,
 }: {
@@ -115,6 +136,8 @@ function NamesStep({
   p2: string;
   onChangeP1: (s: string) => void;
   onChangeP2: (s: string) => void;
+  firstPlayer: FirstPlayerChoice;
+  onChangeFirstPlayer: (choice: FirstPlayerChoice) => void;
   valid: boolean;
   onContinue: () => void;
 }) {
@@ -129,14 +152,18 @@ function NamesStep({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={styles.page}>
-      <Text style={styles.flourish}>⚜</Text>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.flourish}>
+        <FiligreeDivider width={160} variant="fleuron" />
+      </View>
       <Text style={styles.title}>Aprendices de Paracelso</Text>
       <Text style={styles.subtitle}>Indicad vuestros nombres antes de comenzar la Obra.</Text>
 
       <View style={styles.field}>
         <Text style={styles.label}>Aprendiz 1</Text>
-        <TextInput
+        <FieldInput
           value={p1}
           onChangeText={onChangeP1}
           placeholder="Nombre del primer aprendiz"
@@ -146,14 +173,13 @@ function NamesStep({
           returnKeyType="next"
           onSubmitEditing={onSubmitP1}
           blurOnSubmit={false}
-          style={styles.input}
           testID="setup/p1"
         />
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>Aprendiz 2</Text>
-        <TextInput
+        <FieldInput
           ref={p2Ref}
           value={p2}
           onChangeText={onChangeP2}
@@ -162,9 +188,32 @@ function NamesStep({
           maxLength={24}
           returnKeyType="done"
           onSubmitEditing={onSubmitP2}
-          style={styles.input}
           testID="setup/p2"
         />
+      </View>
+
+      <View style={styles.field}>
+        <Text style={styles.label}>¿Quién empieza?</Text>
+        <View style={styles.firstPlayerRow}>
+          <ActionButton
+            label={p1.trim() || 'Aprendiz 1'}
+            variant={firstPlayer === 'p1' ? 'primary' : 'secondary'}
+            onPress={() => onChangeFirstPlayer('p1')}
+            testID="setup/first-p1"
+          />
+          <ActionButton
+            label={p2.trim() || 'Aprendiz 2'}
+            variant={firstPlayer === 'p2' ? 'primary' : 'secondary'}
+            onPress={() => onChangeFirstPlayer('p2')}
+            testID="setup/first-p2"
+          />
+          <ActionButton
+            label="Al azar"
+            variant={firstPlayer === 'random' ? 'primary' : 'secondary'}
+            onPress={() => onChangeFirstPlayer('random')}
+            testID="setup/first-random"
+          />
+        </View>
       </View>
 
       <View style={styles.action}>
@@ -178,7 +227,8 @@ function NamesStep({
       </View>
 
       <Footer />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -195,7 +245,8 @@ function Handoff({
 }) {
   return (
     <View style={[styles.page, styles.centered]}>
-      <View style={styles.handoffBox}>
+      <ParchmentBackground />
+      <OrnateFrame padding={spacing.xl} style={styles.handoffBox}>
         <Text style={styles.handoffTitle}>{title}</Text>
         <Text style={styles.handoffName}>{name}</Text>
         <Text style={styles.handoffBody}>{message}</Text>
@@ -205,7 +256,7 @@ function Handoff({
           onPress={onContinue}
           testID="setup/handoff-continue"
         />
-      </View>
+      </OrnateFrame>
     </View>
   );
 }
@@ -225,8 +276,12 @@ function WordStep({
   const valid = normalized.length === WORD_LENGTH;
   const tooLong = normalized.length > WORD_LENGTH;
   return (
-    <ScrollView contentContainerStyle={styles.container} style={styles.page}>
-      <Text style={styles.flourish}>⚜</Text>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.flourish}>
+        <FiligreeDivider width={160} variant="fleuron" />
+      </View>
       <Text style={styles.title}>{playerName}</Text>
       <Text style={styles.subtitle}>
         Escribe tu palabra clave. Solo tú debes verla.
@@ -234,7 +289,7 @@ function WordStep({
 
       <View style={styles.field}>
         <Text style={styles.label}>Palabra clave (6 letras)</Text>
-        <TextInput
+        <FieldInput
           value={value}
           onChangeText={(text) => onChange(text.toUpperCase())}
           placeholder="ESCRIBE AQUI"
@@ -246,13 +301,12 @@ function WordStep({
           maxLength={12}
           returnKeyType="done"
           onSubmitEditing={valid ? onContinue : undefined}
-          style={styles.input}
           testID="setup/word"
         />
-        <Text style={styles.hint}>
+        <Text style={[styles.hint, !valid && styles.hintInvalid]}>
           {tooLong
             ? `Demasiado larga: solo ${WORD_LENGTH} letras (sin acentos ni espacios).`
-            : `Sustantivo común singular. Letras útiles: ${normalized.length} / ${WORD_LENGTH}.`}
+            : `Sustantivo común, en singular o plural. Letras útiles: ${normalized.length} / ${WORD_LENGTH}.`}
         </Text>
       </View>
 
@@ -267,13 +321,13 @@ function WordStep({
       </View>
 
       <Footer />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: colors.background,
     flex: 1,
   },
   container: {
@@ -287,9 +341,8 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   flourish: {
-    color: colors.danger,
-    fontSize: 32,
-    marginBottom: spacing.xs,
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   title: {
     fontFamily: fonts.serif,
@@ -333,6 +386,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 2,
   },
+  inputFocused: {
+    borderColor: colors.gold,
+  },
   hint: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
@@ -340,19 +396,23 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: spacing.xs,
   },
+  hintInvalid: {
+    color: colors.danger,
+  },
   action: {
     width: '100%',
     maxWidth: 360,
     marginTop: spacing.md,
   },
+  firstPlayerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    rowGap: spacing.xs,
+  },
   handoffBox: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xl,
     alignItems: 'center',
   },
   handoffTitle: {

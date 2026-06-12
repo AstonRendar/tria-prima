@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
+import { TOUCHES_PER_TURN } from '@/domain/Board';
 import { RotationKind } from '@/domain/Cube';
 import { GRID_SIZE, Position } from '@/domain/Position';
 import { otherPlayer, PlayerId } from '@/domain/Player';
@@ -23,25 +24,15 @@ import { SetupScreen } from '@/ui/components/SetupScreen';
 import { SignCounters } from '@/ui/components/SignCounters';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useMatch } from '@/ui/hooks/useMatch';
-import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
+import { colors, fonts, spacing } from '@/ui/styles/tokens';
+import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
 
 const dependencies = buildProductionDependencies();
 
-type TurnPhase =
-  | 'select-cube'
-  | 'choose-action'
-  | 'select-second-cube'
-  | 'declare';
-
-const ROTATIONS: ReadonlyArray<{ label: string; kind: RotationKind }> = [
-  { label: 'Voltear hacia ti', kind: 'roll-backward' },
-  { label: 'Voltear al rival', kind: 'roll-forward' },
-  { label: 'Rotar ↻', kind: 'spin-cw' },
-  { label: 'Rotar ↺', kind: 'spin-ccw' },
-];
-
-const TOUCHES_PER_TURN = 2;
+const ROTATIONS = rotationActions('al rival');
 
 export default function Play() {
   const router = useRouter();
@@ -63,9 +54,10 @@ export default function Play() {
 
   const hasActiveGame = match.state !== null && !match.state.finished;
   useBeforeUnloadWarning(hasActiveGame);
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
-    router.replace('/');
+    router.dismissTo('/');
   }, [router]);
 
   const requestExit = useCallback(() => {
@@ -121,7 +113,7 @@ export default function Play() {
     }
     const msg = describeDeclareResult(result.declared, result.released, result.revealedCardIndices.length);
     if (msg) flash.show(msg);
-  }, [phase, state, match, flash]);
+  }, [phase, state, match, flash.show]);
 
   const rows = useMemo(() => {
     const r: number[][] = [];
@@ -247,28 +239,33 @@ export default function Play() {
       .join('');
     const winnerName = state.players[won].name;
     return (
-      <EndScreen
-        won
-        word={fullWord}
-        onRestart={onRestart}
-        onHome={() => router.replace('/')}
-      >
-        <View style={styles.endStats}>
-          <Text style={styles.endStat}>Gana {winnerName}</Text>
-          <Text style={styles.endStat}>Palabra del rival</Text>
-        </View>
-      </EndScreen>
+      <View style={styles.page}>
+        <ParchmentBackground />
+        <EndScreen
+          won
+          word={fullWord}
+          onRestart={onRestart}
+          onHome={() => router.dismissTo('/')}
+        >
+          <View style={styles.endStats}>
+            <Text style={styles.endStat}>Gana {winnerName}</Text>
+            <Text style={styles.endStat}>Palabra del rival</Text>
+          </View>
+        </EndScreen>
+      </View>
     );
   }
 
   const guessEligible = canGuess(opponent.secretWord);
   const phaseHint = describePhase(phase, touched.size);
-  const p1Slots = state.objectives.filter((s) => s.blockedBy === 'p1');
-  const p2Slots = state.objectives.filter((s) => s.blockedBy === 'p2');
+  const mySlots = state.objectives.filter((s) => s.blockedBy === me);
+  const opponentSlots = state.objectives.filter((s) => s.blockedBy === opponent.id);
   const availableSlots = state.objectives.filter((s) => s.blockedBy === null);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.topRow}>
         <NewGameButton onConfirm={onRestart} />
         <View style={styles.turnBadge}>
@@ -279,9 +276,11 @@ export default function Play() {
         </View>
       </View>
 
-      <View style={styles.headerRow}>
-        <SignCounters word={opponent.secretWord} />
-      </View>
+      <ObjectiveBlockedZone
+        playerName={`Bloqueados de ${opponent.name}`}
+        slots={opponentSlots}
+        testID="blocked/opponent"
+      />
 
       <Text style={styles.opponentLine}>
         Palabra de {opponent.name}
@@ -297,12 +296,6 @@ export default function Play() {
       <Text style={styles.phaseHint}>{phaseHint}</Text>
 
       <View style={styles.boardRow}>
-        <ObjectiveBlockedZone
-          side="left"
-          playerName={state.players.p1.name}
-          playerId="p1"
-          slots={p1Slots}
-        />
         <View style={styles.grid}>
           {rows.map((row, ri) => (
             <View key={ri} style={styles.gridRow}>
@@ -321,16 +314,20 @@ export default function Play() {
             </View>
           ))}
         </View>
-        <ObjectiveBlockedZone
-          side="right"
-          playerName={state.players.p2.name}
-          playerId="p2"
-          slots={p2Slots}
-        />
+        <View style={styles.availableColumn}>
+          <Text style={styles.availableTitle}>Libres</Text>
+          {availableSlots.length === 0 ? (
+            <Text style={styles.empty}>—</Text>
+          ) : (
+            availableSlots.map((slot) => (
+              <ObjectiveCard key={slot.objective.id} slot={slot} compact />
+            ))
+          )}
+        </View>
       </View>
 
       {phase === 'choose-action' && (
-        <View style={styles.actionPanel}>
+        <OrnateFrame padding={spacing.sm} cornerScale={0.7} style={styles.actionPanel}>
           {ROTATIONS.map((r) => (
             <View key={r.kind} style={styles.actionBtn}>
               <ActionButton
@@ -346,11 +343,11 @@ export default function Play() {
           <View style={styles.actionBtn}>
             <ActionButton label="Cancelar" onPress={onCancelAction} testID="action/cancel" />
           </View>
-        </View>
+        </OrnateFrame>
       )}
 
       {phase === 'select-second-cube' && (
-        <View style={styles.swapNotice}>
+        <OrnateFrame padding={spacing.md} style={styles.swapNotice}>
           <Text style={styles.swapText}>
             Toca otro dado en la misma fila o columna para intercambiarlos.
           </Text>
@@ -359,7 +356,7 @@ export default function Play() {
             onPress={() => setPhase('choose-action')}
             testID="action/cancel-swap"
           />
-        </View>
+        </OrnateFrame>
       )}
 
       {phase === 'declare' && (
@@ -373,20 +370,16 @@ export default function Play() {
         </View>
       )}
 
-      <Text style={styles.sectionTitle}>Objetivos disponibles</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.availableRow}
-      >
-        {availableSlots.length === 0 ? (
-          <Text style={styles.empty}>Todos los objetivos están bloqueados.</Text>
-        ) : (
-          availableSlots.map((slot) => (
-            <ObjectiveCard key={slot.objective.id} slot={slot} />
-          ))
-        )}
-      </ScrollView>
+      <View style={styles.divider}>
+        <FiligreeDivider width={170} />
+      </View>
+      <ObjectiveBlockedZone
+        playerName={`Bloqueados de ${state.players[me].name}`}
+        slots={mySlots}
+        testID="blocked/me"
+      />
+      <Text style={[styles.opponentLine, styles.myWordLine]}>Tu palabra</Text>
+      <SignCounters word={state.players[me].secretWord} />
 
       {guessEligible && (
         <GuessBox
@@ -407,14 +400,15 @@ export default function Play() {
           onContinue={() => setHandoffPlayerId(null)}
         />
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 function Handoff({ name, onContinue }: { name: string; onContinue: () => void }) {
   return (
     <View style={styles.handoffOverlay}>
-      <View style={styles.handoffBox}>
+      <OrnateFrame padding={spacing.xl} style={styles.handoffBox}>
         <Text style={styles.handoffTitle}>Cambio de turno</Text>
         <Text style={styles.handoffBody}>
           Pasa el dispositivo a <Text style={styles.handoffName}>{name}</Text>.
@@ -425,38 +419,23 @@ function Handoff({ name, onContinue }: { name: string; onContinue: () => void })
           onPress={onContinue}
           testID="handoff/continue"
         />
-      </View>
+      </OrnateFrame>
     </View>
   );
 }
 
-function describeDeclareResult(declared: number, released: number, revealed: number): string | null {
-  const parts: string[] = [];
-  if (declared > 0) parts.push(`Declarados ${declared}`);
-  if (released > 0) parts.push(`Liberados ${released}`);
-  if (revealed > 0) parts.push('Letra revelada');
-  return parts.length > 0 ? parts.join(' · ') : null;
-}
-
-function describePhase(phase: TurnPhase, touchedCount: number): string {
-  if (phase === 'declare') {
-    return 'Objetivos cumplidos declarados. Pulsa "Acabar turno" cuando estés listo.';
-  }
-  if (phase === 'choose-action') {
-    return 'Elige qué hacer con el dado seleccionado.';
-  }
-  if (phase === 'select-second-cube') {
-    return 'Selecciona otro dado en la misma fila o columna.';
-  }
-  return touchedCount === 0
-    ? 'Selecciona un dado para empezar tu jugada.'
-    : 'Selecciona un segundo dado.';
-}
-
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+  },
   container: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  divider: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+    opacity: 0.8,
   },
   topRow: {
     flexDirection: 'row',
@@ -481,11 +460,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     maxWidth: 180,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
   opponentLine: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
@@ -502,6 +476,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 4,
     marginTop: 2,
+    marginBottom: spacing.sm,
+  },
+  myWordLine: {
     marginBottom: spacing.sm,
   },
   phaseHint: {
@@ -534,10 +511,17 @@ const styles = StyleSheet.create({
   gridRow: {
     flexDirection: 'row',
   },
-  availableRow: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.sm,
+  availableColumn: {
+    marginLeft: spacing.sm,
+    alignItems: 'center',
+  },
+  availableTitle: {
+    fontFamily: fonts.serif,
+    color: colors.textMuted,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
   },
   actionPanel: {
     flexDirection: 'row',
@@ -555,11 +539,6 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   swapNotice: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    padding: spacing.md,
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
@@ -567,16 +546,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.serif,
     color: colors.text,
     textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    textAlign: 'center',
-    marginTop: spacing.md,
     marginBottom: spacing.sm,
   },
   empty: {
@@ -609,11 +578,6 @@ const styles = StyleSheet.create({
   handoffBox: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xl,
     alignItems: 'center',
   },
   handoffTitle: {
