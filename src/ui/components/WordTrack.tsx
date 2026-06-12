@@ -1,14 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { SecretWord } from '@/domain/SecretWord';
+import { AlchemicalSigil, ColorSeal } from '@/ui/ornaments';
 import { RevealFlip } from './RevealFlip';
-import {
-  colors,
-  cubeColorContrast,
-  cubeColorHex,
-  cubeSymbolGlyph,
-  fonts,
-  radius,
-} from '@/ui/styles/tokens';
+import { colors, fonts, radius } from '@/ui/styles/tokens';
 
 type Props = {
   word: SecretWord;
@@ -19,17 +13,13 @@ export function WordTrack({ word }: Props) {
     <View style={styles.row}>
       {word.cards.map((card, i) => {
         const isColor = card.faceSign.kind === 'color';
-        const cardColor = isColor ? cubeColorHex[card.faceSign.value] : colors.parchment;
-        const glyphColor = isColor
-          ? cubeColorContrast[card.faceSign.value]
-          : colors.text;
         return (
           <View key={i} style={styles.cell} testID={`word-card/${i}`}>
-            <View style={[styles.signBox, { backgroundColor: cardColor }]}>
-              {!isColor && (
-                <Text style={[styles.signGlyph, { color: glyphColor }]}>
-                  {cubeSymbolGlyph[card.faceSign.value]}
-                </Text>
+            <View style={styles.signBox}>
+              {isColor ? (
+                <ColorSeal color={card.faceSign.value} size={32} />
+              ) : (
+                <AlchemicalSigil symbol={card.faceSign.value} size={30} color={colors.text} />
               )}
             </View>
             <RevealFlip
@@ -64,17 +54,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.sm,
+    backgroundColor: colors.parchment,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  signGlyph: {
-    fontFamily: fonts.serif,
-    fontSize: 22,
-    lineHeight: 24,
-    fontWeight: '800',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    includeFontPadding: false,
   },
   letterBox: {
     width: 40,
@@ -89,7 +73,7 @@ const styles = StyleSheet.create({
   },
   letterRevealed: {
     backgroundColor: colors.accent,
-    borderColor: colors.accent,
+    borderColor: colors.goldBright,
   },
   letter: {
     fontFamily: fonts.serif,
