@@ -21,8 +21,14 @@ export class StubRandom implements Random {
 }
 
 export class StubWordRepository implements WordRepository {
-  constructor(private readonly word: string) {}
+  constructor(
+    private readonly word: string,
+    private readonly words: ReadonlyArray<string> = [word]
+  ) {}
   randomWord(): string {
     return this.word;
+  }
+  allWords(): ReadonlyArray<string> {
+    return this.words;
   }
 }

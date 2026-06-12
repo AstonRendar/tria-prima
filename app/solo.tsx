@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
+import { TOUCHES_PER_TURN } from '@/domain/Board';
 import { RotationKind } from '@/domain/Cube';
 import { GRID_SIZE, Position } from '@/domain/Position';
 import { rankFor } from '@/domain/Score';
@@ -19,25 +20,15 @@ import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useSoloPlay } from '@/ui/hooks/useSoloPlay';
-import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
+import { colors, fonts, spacing } from '@/ui/styles/tokens';
+import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
 
 const dependencies = buildProductionDependencies();
 
-type TurnPhase =
-  | 'select-cube'
-  | 'choose-action'
-  | 'select-second-cube'
-  | 'declare';
-
-const ROTATIONS: ReadonlyArray<{ label: string; kind: RotationKind }> = [
-  { label: 'Voltear hacia ti', kind: 'roll-backward' },
-  { label: 'Voltear al maestro', kind: 'roll-forward' },
-  { label: 'Rotar ↻', kind: 'spin-cw' },
-  { label: 'Rotar ↺', kind: 'spin-ccw' },
-];
-
-const TOUCHES_PER_TURN = 2;
+const ROTATIONS = rotationActions('al maestro');
 
 export default function SoloPlay() {
   const router = useRouter();
@@ -58,9 +49,10 @@ export default function SoloPlay() {
 
   const hasActiveGame = !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
-    router.replace('/');
+    router.dismissTo('/');
   }, [router]);
 
   const requestExit = useCallback(() => {
@@ -102,7 +94,7 @@ export default function SoloPlay() {
       result.revealedCardIndices.length
     );
     if (msg) flash.show(msg);
-  }, [phase, state.canDeclareThisTurn, solo, flash]);
+  }, [phase, state.canDeclareThisTurn, solo, flash.show]);
 
   const onPressCube = (i: Position) => {
     if (state.finished) return;
@@ -218,21 +210,24 @@ export default function SoloPlay() {
     const won = state.outcome === 'won';
     const fullWord = state.secretWord.cards.map((c) => c.letter).join('');
     return (
-      <EndScreen
-        won={won}
-        word={fullWord}
-        onRestart={onRestart}
-        onHome={() => router.replace('/')}
-      >
-        <View style={styles.endStats}>
-          <Text style={styles.endStat}>Turnos: {state.turn}</Text>
-          <Text style={styles.endStat}>
-            Objetivos iniciales: {state.initialFreeObjectives}
-          </Text>
-          <Text style={styles.endStat}>Puntuación: {score}</Text>
-          <Text style={styles.endRank}>{info.label}</Text>
-        </View>
-      </EndScreen>
+      <View style={styles.page}>
+        <ParchmentBackground />
+        <EndScreen
+          won={won}
+          word={fullWord}
+          onRestart={onRestart}
+          onHome={() => router.dismissTo('/')}
+        >
+          <View style={styles.endStats}>
+            <Text style={styles.endStat}>Turnos: {state.turn}</Text>
+            <Text style={styles.endStat}>
+              Objetivos iniciales: {state.initialFreeObjectives}
+            </Text>
+            <Text style={styles.endStat}>Puntuación: {score}</Text>
+            <Text style={styles.endRank}>{info.label}</Text>
+          </View>
+        </EndScreen>
+      </View>
     );
   }
 
@@ -242,7 +237,9 @@ export default function SoloPlay() {
   const availableSlots = state.objectives.filter((s) => s.blockedBy === null);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
       <NewGameButton onConfirm={onRestart} />
 
       <View style={styles.headerRow}>
@@ -285,7 +282,7 @@ export default function SoloPlay() {
       </View>
 
       {phase === 'choose-action' && (
-        <View style={styles.actionPanel}>
+        <OrnateFrame padding={spacing.sm} cornerScale={0.7} style={styles.actionPanel}>
           {ROTATIONS.map((r) => (
             <View key={r.kind} style={styles.actionBtn}>
               <ActionButton
@@ -301,11 +298,11 @@ export default function SoloPlay() {
           <View style={styles.actionBtn}>
             <ActionButton label="Cancelar" onPress={onCancelAction} testID="action/cancel" />
           </View>
-        </View>
+        </OrnateFrame>
       )}
 
       {phase === 'select-second-cube' && (
-        <View style={styles.swapNotice}>
+        <OrnateFrame padding={spacing.md} style={styles.swapNotice}>
           <Text style={styles.swapText}>
             Toca otro dado en la misma fila o columna para intercambiarlos.
           </Text>
@@ -314,7 +311,7 @@ export default function SoloPlay() {
             onPress={() => setPhase('choose-action')}
             testID="action/cancel-swap"
           />
-        </View>
+        </OrnateFrame>
       )}
 
       {phase === 'declare' && (
@@ -328,12 +325,11 @@ export default function SoloPlay() {
         </View>
       )}
 
+      <View style={styles.divider}>
+        <FiligreeDivider width={170} />
+      </View>
       <Text style={styles.sectionTitle}>Objetivos disponibles</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.availableRow}
-      >
+      <View style={styles.objectiveRow}>
         {availableSlots.length === 0 ? (
           <Text style={styles.empty}>Todos los objetivos están bloqueados.</Text>
         ) : (
@@ -341,14 +337,10 @@ export default function SoloPlay() {
             <ObjectiveCard key={slot.objective.id} slot={slot} />
           ))
         )}
-      </ScrollView>
+      </View>
 
       <Text style={styles.sectionTitle}>Tu zona de bloqueo</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.availableRow}
-      >
+      <View style={styles.objectiveRow}>
         {myBlocked.length === 0 ? (
           <Text style={styles.empty}>Sin objetivos bloqueados.</Text>
         ) : (
@@ -356,7 +348,7 @@ export default function SoloPlay() {
             <ObjectiveCard key={slot.objective.id} slot={slot} />
           ))
         )}
-      </ScrollView>
+      </View>
 
       {guessEligible && (
         <GuessBox
@@ -370,46 +362,32 @@ export default function SoloPlay() {
       <Footer />
 
       <FlashMessage message={flash.message} />
-    </ScrollView>
-  );
-}
-
-function describeDeclareResult(declared: number, released: number, revealed: number): string | null {
-  const parts: string[] = [];
-  if (declared > 0) parts.push(`Declarados ${declared}`);
-  if (released > 0) parts.push(`Liberados ${released}`);
-  if (revealed > 0) parts.push('Letra revelada');
-  return parts.length > 0 ? parts.join(' · ') : null;
-}
-
-function describePhase(phase: TurnPhase, touchedCount: number): string {
-  if (phase === 'declare') {
-    return 'Objetivos declarados. Pulsa "Acabar turno" cuando estés listo.';
-  }
-  if (phase === 'choose-action') {
-    return 'Elige qué hacer con el dado seleccionado.';
-  }
-  if (phase === 'select-second-cube') {
-    return 'Selecciona otro dado en la misma fila o columna.';
-  }
-  return touchedCount === 0
-    ? 'Selecciona un dado para empezar tu jugada.'
-    : 'Selecciona un segundo dado.';
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
+      </ScrollView>
     </View>
   );
 }
 
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <OrnateFrame padding={spacing.sm} cornerScale={0.5} style={styles.stat}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statValue}>{value}</Text>
+    </OrnateFrame>
+  );
+}
+
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+  },
   container: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  divider: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+    opacity: 0.8,
   },
   headerRow: {
     flexDirection: 'row',
@@ -419,12 +397,7 @@ const styles = StyleSheet.create({
   stat: {
     flex: 1,
     alignItems: 'center',
-    padding: spacing.sm,
     marginHorizontal: spacing.xs,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   statLabel: {
     fontFamily: fonts.serif,
@@ -499,11 +472,6 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   swapNotice: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    padding: spacing.md,
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
@@ -523,9 +491,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
-  availableRow: {
-    flexGrow: 1,
+  objectiveRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
+    rowGap: spacing.sm,
     paddingHorizontal: spacing.sm,
   },
   empty: {

@@ -1,7 +1,22 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { Cube, RotationKind, visibleFaces } from '@/domain/Cube';
-import { colors, radius, spacing } from '@/ui/styles/tokens';
+import {
+  colors,
+  cubeColorLabel,
+  cubeSymbolLabel,
+  radius,
+  shadows,
+  spacing,
+} from '@/ui/styles/tokens';
 import { FaceTile } from './FaceTile';
 
 export type CubeAnimationKind = RotationKind | 'swap';
@@ -19,6 +34,14 @@ type Props = {
 const TOP_SIZE = 46;
 const SIDE_SIZE = 22;
 
+// La cuadrícula 3×3 más la columna de objetivos disponibles deben caber en
+// pantallas de móvil: por debajo de ~480px de ancho el dado se encoge en
+// proporción.
+function useCubeScale(): number {
+  const { width } = useWindowDimensions();
+  return Math.min(1, Math.max(0.65, width / 480));
+}
+
 // Un cuarto de giro (90°) en lugar de vueltas completas: el dado "cae" desde
 // su orientación previa hasta la nueva. La perspectiva da sensación 3D real.
 const ANIM_DURATION = 320;
@@ -34,6 +57,9 @@ export function CubeView({
   testID,
 }: Props) {
   const { top, front, back, left, right } = visibleFaces(cube);
+  const cubeScale = useCubeScale();
+  const topSize = Math.round(TOP_SIZE * cubeScale);
+  const sideSize = Math.round(SIDE_SIZE * cubeScale);
   // Valores en grados: arrancan en el ángulo "antes del giro" y animan a 0
   // para que la cara aterrice ya en su posición final.
   const rotateX = useRef(new Animated.Value(0)).current;
@@ -128,6 +154,9 @@ export function CubeView({
       onPress={onPress}
       testID={testID}
       disabled={locked || !onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Dado con ${cubeSymbolLabel[top.symbol]} ${cubeColorLabel[top.color]} arriba${locked ? ', bloqueado' : ''}`}
+      accessibilityState={{ disabled: locked || !onPress, selected: !!selected }}
       style={({ pressed }) => [
         styles.outer,
         selected && styles.selected,
@@ -137,12 +166,12 @@ export function CubeView({
       ]}
     >
       <View style={styles.row}>
-        <View style={styles.sideSlot}>
-          <FaceTile face={back} size={SIDE_SIZE} dim />
+        <View style={[styles.sideSlot, { width: topSize }]}>
+          <FaceTile face={back} size={sideSize} dim />
         </View>
       </View>
       <View style={styles.row}>
-        <FaceTile face={left} size={SIDE_SIZE} dim />
+        <FaceTile face={left} size={sideSize} dim />
         <View style={{ width: spacing.xs }} />
         <Animated.View
           style={{
@@ -155,14 +184,14 @@ export function CubeView({
             ],
           }}
         >
-          <FaceTile face={top} size={TOP_SIZE} />
+          <FaceTile face={top} size={topSize} />
         </Animated.View>
         <View style={{ width: spacing.xs }} />
-        <FaceTile face={right} size={SIDE_SIZE} dim />
+        <FaceTile face={right} size={sideSize} dim />
       </View>
       <View style={styles.row}>
-        <View style={styles.sideSlot}>
-          <FaceTile face={front} size={SIDE_SIZE} dim />
+        <View style={[styles.sideSlot, { width: topSize }]}>
+          <FaceTile face={front} size={sideSize} dim />
         </View>
       </View>
       {locked && (
@@ -185,6 +214,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    ...shadows.card,
   },
   selected: {
     borderColor: colors.accent,
@@ -205,7 +235,6 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   sideSlot: {
-    width: TOP_SIZE,
     alignItems: 'center',
   },
   ring: {

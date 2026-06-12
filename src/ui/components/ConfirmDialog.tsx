@@ -1,5 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+import { FiligreeDivider, OrnateFrame } from '@/ui/ornaments';
+import { colors, fonts, radius, shadows, spacing } from '@/ui/styles/tokens';
 
 type Props = {
   visible: boolean;
@@ -32,32 +33,37 @@ export function ConfirmDialog({
     >
       <Pressable style={styles.backdrop} onPress={onCancel} testID="confirm/backdrop">
         <Pressable style={styles.dialog} onPress={() => {}}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
-          <View style={styles.buttons}>
-            <Pressable
-              onPress={onCancel}
-              testID="confirm/cancel"
-              style={({ pressed }) => [
-                styles.btn,
-                styles.btnSecondary,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.btnSecondaryText}>{cancelLabel ?? 'Cancelar'}</Text>
-            </Pressable>
-            <Pressable
-              onPress={onConfirm}
-              testID="confirm/ok"
-              style={({ pressed }) => [
-                styles.btn,
-                destructive ? styles.btnDanger : styles.btnPrimary,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.btnDarkText}>{confirmLabel ?? 'Aceptar'}</Text>
-            </Pressable>
-          </View>
+          <OrnateFrame padding={spacing.xl} style={shadows.raised as object}>
+            <Text style={styles.title}>{title}</Text>
+            <View style={styles.titleRule}>
+              <FiligreeDivider width={150} />
+            </View>
+            <Text style={styles.message}>{message}</Text>
+            <View style={styles.buttons}>
+              <Pressable
+                onPress={onCancel}
+                testID="confirm/cancel"
+                style={({ pressed }) => [
+                  styles.btn,
+                  styles.btnSecondary,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.btnSecondaryText}>{cancelLabel ?? 'Cancelar'}</Text>
+              </Pressable>
+              <Pressable
+                onPress={onConfirm}
+                testID="confirm/ok"
+                style={({ pressed }) => [
+                  styles.btn,
+                  destructive ? styles.btnDanger : styles.btnPrimary,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.btnDarkText}>{confirmLabel ?? 'Aceptar'}</Text>
+              </Pressable>
+            </View>
+          </OrnateFrame>
         </Pressable>
       </Pressable>
     </Modal>
@@ -75,17 +81,15 @@ const styles = StyleSheet.create({
   dialog: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xl,
   },
   title: {
     fontFamily: fonts.serif,
     color: colors.accent,
     fontSize: 20,
     fontWeight: '800',
+    marginBottom: spacing.xs,
+  },
+  titleRule: {
     marginBottom: spacing.md,
   },
   message: {
