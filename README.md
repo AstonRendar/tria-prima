@@ -17,7 +17,7 @@ ganas, falla y pierdes.
 |---|---|---|
 | **Duelo a dos** | `/play` | Dos personas comparten dispositivo y juegan turnos alternos. |
 | **Contra el maestro** | `/versus` | Duelo contra la app: planifica sus turnos, declara y adivina usando solo información pública. |
-| **En soledad** | `/solo` | Solitario digital con puntuación por turnos. |
+| **Desafío** | `/solo` | Solitario digital con puntuación por turnos. |
 | **Con el juego físico** | `/tracker` | Acompañante para jugar con el juego de mesa real: lleva marcadores y letras reveladas. |
 
 ## Stack

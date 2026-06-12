@@ -28,7 +28,7 @@ App móvil con cuatro modos:
    planifica con búsqueda voraz, declara y adivina usando solo información pública
    (letras reveladas + lista de palabras). Sin handoff: los pasos de la app se
    reproducen con retardo para que se vea la jugada.
-3. **En soledad** (`/solo`) — un solo jugador contra la app. La app esconde una
+3. **Desafío** (`/solo`) — un solo jugador contra la app. La app esconde una
    palabra y gestiona todo el juego digitalmente: el jugador manipula los cubos en
    pantalla, declara automáticamente al cerrar la fase de movimiento y la app
    coloca los marcadores y calcula la puntuación final.
@@ -142,7 +142,7 @@ Comunes:
 
 ### `app/` — Rutas (expo-router)
 - `_layout.tsx` — Stack con `ConfirmProvider`.
-- `index.tsx` — Home: cuatro botones (Duelo, En soledad, Con el juego físico, Reglas).
+- `index.tsx` — Home: cinco botones (Duelo, Contra el maestro, Desafío, Con el juego físico, Reglas).
 - `instructions.tsx` — manual con vocabulario propio.
 - `play.tsx` — modo Duelo. Muestra `SetupScreen` si no hay partida.
 - `versus.tsx` — modo contra el maestro. Setup propio (solo la palabra del jugador).
