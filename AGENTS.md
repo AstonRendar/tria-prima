@@ -213,8 +213,10 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 ## Flujo del turno (modo Duelo)
 
 1. **`select-cube`** — el jugador toca uno de los 9 dados.
-2. **`choose-action`** — aparece un panel con: Voltear hacia ti, Voltear al rival,
-   Rotar ↻, Rotar ↺, Intercambiar, Cancelar.
+2. **`choose-action`** — aparece un panel con: Voltear ↷, Rotar ↻, Intercambiar,
+   Cancelar. Como los dados tienen caras opuestas idénticas (`CubeSet`), voltear
+   adelante/atrás y rotar ↻/↺ son equivalentes: basta un botón por movimiento
+   (y `AppOpponent` solo explora `roll-forward` y `spin-cw`).
 3. **`select-second-cube`** — si elige intercambiar, espera el segundo dado en la misma
    fila o columna.
 4. **`declare`** — los 2 dados están tocados. La declaración se ejecuta automáticamente

@@ -29,12 +29,9 @@ export type AppTurnPlan = {
   touched: Position[];
 };
 
-const ROTATION_KINDS: ReadonlyArray<RotationKind> = [
-  'roll-forward',
-  'roll-backward',
-  'spin-cw',
-  'spin-ccw',
-];
+// Los dados tienen caras opuestas idénticas (ver CUBE_SET): voltear
+// adelante/atrás y rotar ↻/↺ son equivalentes, basta explorar una de cada.
+const ROTATION_KINDS: ReadonlyArray<RotationKind> = ['roll-forward', 'spin-cw'];
 
 // Elige el turno de la app por búsqueda voraz: evalúa todos los turnos
 // legales (un intercambio, o dos giros sobre dados distintos) y se queda con
