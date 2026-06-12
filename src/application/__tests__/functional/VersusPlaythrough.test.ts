@@ -36,6 +36,17 @@ describe('versus playthrough', () => {
     state = result.state;
 
     expect(steps[steps.length - 1].kind).toBe('end-turn');
+
+    // Cada acción viene precedida por la selección del dado que va a mover,
+    // como haría un humano.
+    const actionIndices = steps.flatMap((s, i) => (s.kind === 'action' ? [i] : []));
+    expect(actionIndices.length).toBeGreaterThanOrEqual(1);
+    for (const i of actionIndices) {
+      const action = steps[i];
+      if (action.kind !== 'action') continue;
+      const position = action.action.kind === 'swap' ? action.action.a : action.action.position;
+      expect(steps[i - 1]).toEqual({ kind: 'select', position });
+    }
     expect(state.currentPlayerId).toBe('p1');
     expect(state.turn).toBe(2);
     expect(new Set(state.board.lockedThisTurn).size).toBe(2);

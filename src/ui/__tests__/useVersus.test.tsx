@@ -37,9 +37,10 @@ describe('useVersus', () => {
     expect(result.current.state?.currentPlayerId).toBe('p2');
     expect(result.current.appPlaying).toBe(true);
 
-    // Como mucho 4 pasos (2 acciones + declaración + fin de turno) a 900 ms.
+    // Como mucho 6 pasos (2 selecciones + 2 acciones + declaración + fin de
+    // turno) a 900 ms.
     await act(async () => {
-      jest.advanceTimersByTime(5 * 900);
+      jest.advanceTimersByTime(7 * 900);
     });
 
     const state = result.current.state;
