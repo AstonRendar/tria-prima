@@ -58,7 +58,7 @@ export function useVersus(deps: Dependencies): VersusApi {
     if (appRunningRef.current) return;
     appRunningRef.current = true;
     setAppPlaying(true);
-    const steps = buildAppTurnSteps(state, depsRef.current);
+    const steps = buildAppTurnSteps(state, depsRef.current, setupRef.current?.level);
     steps.forEach((step, i) => {
       timersRef.current.push(
         setTimeout(() => {

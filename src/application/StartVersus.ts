@@ -1,3 +1,4 @@
+import { AppLevel } from './AppOpponent';
 import { Dependencies } from './Dependencies';
 import { MatchState } from './MatchState';
 import { startMatch } from './StartMatch';
@@ -7,6 +8,7 @@ export const APP_PLAYER_NAME = 'El maestro';
 export type VersusSetup = {
   readonly playerName: string;
   readonly playerWord: string;
+  readonly level: AppLevel;
 };
 
 // Duelo contra la app: el humano es p1 y la app (p2) esconde una palabra de

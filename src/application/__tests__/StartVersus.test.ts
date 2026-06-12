@@ -5,7 +5,7 @@ import { StubRandom, StubWordRepository } from './testdoubles';
 function buildState() {
   return startVersusMatch(
     { random: new StubRandom([0]), wordRepository: new StubWordRepository('PUERTA') },
-    { playerName: 'Alice', playerWord: 'CAMINO' }
+    { playerName: 'Alice', playerWord: 'CAMINO', level: 'master' }
   );
 }
 

@@ -20,7 +20,7 @@ describe('useVersus', () => {
     const { result } = await renderHook(() => useVersus(deps));
 
     await act(async () => {
-      result.current.start({ playerName: 'Tú', playerWord: 'CAMINO' });
+      result.current.start({ playerName: 'Tú', playerWord: 'CAMINO', level: 'master' });
     });
     expect(result.current.state?.currentPlayerId).toBe('p1');
 
@@ -57,7 +57,7 @@ describe('useVersus', () => {
     };
     const { result } = await renderHook(() => useVersus(deps));
     await act(async () => {
-      result.current.start({ playerName: 'Tú', playerWord: 'CAMINO' });
+      result.current.start({ playerName: 'Tú', playerWord: 'CAMINO', level: 'master' });
     });
     await act(async () => {
       jest.advanceTimersByTime(10 * 900);
