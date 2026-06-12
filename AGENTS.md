@@ -86,7 +86,9 @@ Modo duelo (2 jugadores):
 Modo contra el maestro (humano vs app, reutiliza `MatchState` y los casos de uso del duelo):
 - `StartVersus` — `startVersusMatch`: p1 humano, p2 la app con palabra del repositorio.
 - `AppOpponent` — `planAppTurn` (búsqueda voraz sobre todos los turnos legales,
-  +1 por objetivo declarable y +1 si revela letra; empata al azar) y `chooseAppGuess`
+  +1 por objetivo declarable, +1 si revela letra, y en negativo las líneas que el
+  rival mantiene bloqueadas mientras sigan formadas, con −1 extra si re-declararlas
+  revelaría letra propia; empata al azar) y `chooseAppGuess`
   (solo información pública: 6 reveladas → palabra exacta; 1 candidata → la arriesga;
   5 reveladas y varias → una al azar; si no, sigue jugando). Dos niveles (`AppLevel`):
   **maestro** (siempre la mejor jugada) y **aprendiz** (50 % de despiste con jugada
