@@ -122,7 +122,7 @@ Comunes:
 
 ### `src/ui/`
 - `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveCard`,
-  `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `ActionButton`,
+  `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `RevealFlip`, `ActionButton`,
   `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `Footer`,
   `SetupScreen`).
 - `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
