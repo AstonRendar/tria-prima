@@ -1,6 +1,9 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Footer } from '@/ui/components/Footer';
-import { colors, fonts, spacing } from '@/ui/styles/tokens';
+import { DropCap, FiligreeDivider, Ouroboros, ParchmentBackground } from '@/ui/ornaments';
+import { colors, fonts, shadows, spacing } from '@/ui/styles/tokens';
+
+const startsWithLetter = (body: string) => /^[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(body);
 
 type Section = { title: string; body: string };
 
@@ -64,46 +67,58 @@ const SECTIONS: Section[] = [
 
 export default function Instructions() {
   return (
-    <ScrollView contentContainerStyle={styles.container} style={styles.page}>
-      <View style={styles.hero}>
-        <Text style={styles.heroDecor}>⚜</Text>
-        <Text style={styles.heroTitle}>Tria Prima</Text>
-        <Text style={styles.heroSubtitle}>Reglas del cifrado</Text>
-        <View style={styles.heroRule} />
-      </View>
-
-      {SECTIONS.map((s) => (
-        <View key={s.title} style={styles.section}>
-          <Text style={styles.sectionTitle}>{s.title}</Text>
-          <View style={styles.sectionRule} />
-          <Text style={styles.sectionBody}>{s.body}</Text>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.hero}>
+          <Ouroboros size={84} color={colors.text} accent={colors.gold} />
+          <Text style={styles.heroTitle}>Tria Prima</Text>
+          <Text style={styles.heroSubtitle}>Reglas del cifrado</Text>
+          <View style={styles.heroRule}>
+            <FiligreeDivider width={180} variant="fleuron" />
+          </View>
         </View>
-      ))}
 
-      <Text style={styles.flourish}>⁂</Text>
-      <Footer />
-    </ScrollView>
+        {SECTIONS.map((s) => (
+          <View key={s.title} style={styles.section}>
+            <Text style={styles.sectionTitle}>{s.title}</Text>
+            <View style={styles.sectionRule}>
+              <FiligreeDivider width={150} />
+            </View>
+            {startsWithLetter(s.body) ? (
+              <View style={styles.bodyRow}>
+                <DropCap letter={s.body[0]} />
+                <Text style={[styles.sectionBody, styles.bodyAfterCap]}>
+                  {s.body.slice(1)}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.sectionBody}>{s.body}</Text>
+            )}
+          </View>
+        ))}
+
+        <View style={styles.flourish}>
+          <FiligreeDivider width={180} variant="fleuron" />
+        </View>
+        <Footer />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: colors.background,
+    flex: 1,
   },
   container: {
     padding: 20,
     paddingBottom: 60,
-    backgroundColor: colors.background,
   },
   hero: {
     alignItems: 'center',
     paddingVertical: 24,
     marginBottom: 16,
-  },
-  heroDecor: {
-    color: colors.danger,
-    fontSize: 28,
-    marginBottom: 4,
   },
   heroTitle: {
     fontFamily: fonts.serif,
@@ -111,6 +126,7 @@ const styles = StyleSheet.create({
     fontSize: 42,
     fontWeight: '800',
     letterSpacing: 3,
+    marginTop: spacing.md,
   },
   heroSubtitle: {
     fontFamily: fonts.serif,
@@ -121,19 +137,16 @@ const styles = StyleSheet.create({
   },
   heroRule: {
     marginTop: 14,
-    width: 120,
-    height: 1,
-    backgroundColor: colors.parchmentDark,
   },
   section: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 4,
+    borderColor: colors.gold,
+    borderRadius: 6,
     paddingVertical: 16,
     paddingHorizontal: 18,
     marginBottom: 16,
-    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+    ...shadows.card,
   },
   sectionTitle: {
     fontFamily: fonts.serif,
@@ -143,10 +156,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   sectionRule: {
-    marginTop: 6,
-    marginBottom: 12,
-    height: 1,
-    backgroundColor: colors.parchmentDark,
+    marginTop: 4,
+    marginBottom: 10,
+    opacity: 0.8,
   },
   sectionBody: {
     fontFamily: fonts.serif,
@@ -154,10 +166,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 26,
   },
+  bodyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  bodyAfterCap: {
+    flex: 1,
+    marginLeft: spacing.sm,
+  },
   flourish: {
-    color: colors.danger,
-    textAlign: 'center',
-    fontSize: 28,
+    alignItems: 'center',
     marginTop: 8,
   },
 });
