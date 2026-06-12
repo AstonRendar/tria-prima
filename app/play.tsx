@@ -110,7 +110,7 @@ export default function Play() {
     }
     const msg = describeDeclareResult(result.declared, result.released, result.revealedCardIndices.length);
     if (msg) flash.show(msg);
-  }, [phase, state, match, flash]);
+  }, [phase, state, match, flash.show]);
 
   const rows = useMemo(() => {
     const r: number[][] = [];
