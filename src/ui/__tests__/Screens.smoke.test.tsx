@@ -17,6 +17,10 @@ async function goTo(url: string) {
   });
 }
 
+// El recorrido completo roza los 5 s por sí solo; con la suite en paralelo
+// supera el timeout por defecto de jest.
+jest.setTimeout(20000);
+
 describe('app smoke', () => {
   it('walks through every main screen', async () => {
     await renderRouter('./app', { initialUrl: '/' });
