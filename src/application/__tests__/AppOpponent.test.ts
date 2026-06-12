@@ -74,6 +74,27 @@ function almostSulfurBoard(): Board {
   };
 }
 
+// Fila superior de azufres ya formada; el resto de dados son uniformes y no
+// permiten completar ninguna otra línea, así que la única jugada con valor es
+// deshacer esa fila con un intercambio vertical.
+function sulfurRowBoard(): Board {
+  return {
+    cubes: [
+      cubeWithTop(0, SULFUR_N),
+      cubeWithTop(1, SULFUR_N),
+      cubeWithTop(2, { symbol: 'sulfur', color: 'citrinitas' }),
+      cubeWithTop(3, { symbol: 'salt', color: 'citrinitas' }),
+      cubeWithTop(4, { symbol: 'mercury', color: 'rubedo' }),
+      cubeWithTop(5, { symbol: 'salt', color: 'nigredo' }),
+      cubeWithTop(6, { symbol: 'mercury', color: 'nigredo' }),
+      cubeWithTop(7, { symbol: 'salt', color: 'rubedo' }),
+      cubeWithTop(8, { symbol: 'mercury', color: 'citrinitas' }),
+    ],
+    lockedThisTurn: [],
+    lockedNextTurn: [],
+  };
+}
+
 function buildState(overrides: Partial<MatchState> = {}): MatchState {
   return {
     players: {
@@ -125,6 +146,28 @@ describe('planAppTurn', () => {
       const plan = planAppTurn(state, new StubRandom([seed]));
       expect(plan.touched).not.toContain(0);
       expect(plan.touched).not.toContain(2);
+    }
+  });
+
+  it('breaks the line the rival keeps blocked', () => {
+    const state = buildState({
+      board: sulfurRowBoard(),
+      objectives: [{ objective: SULFUR_OBJECTIVE, blockedBy: 'p1' }],
+    });
+    for (const seed of [0, 0.2, 0.4, 0.6, 0.8, 0.99]) {
+      const plan = planAppTurn(state, new StubRandom([seed]));
+      expect(findMatchedLine(applyPlan(state.board, plan), SULFUR_OBJECTIVE)).toBeNull();
+    }
+  });
+
+  it('keeps its own blocked line on the board to declare it again', () => {
+    const state = buildState({
+      board: sulfurRowBoard(),
+      objectives: [{ objective: SULFUR_OBJECTIVE, blockedBy: 'p2' }],
+    });
+    for (const seed of [0, 0.2, 0.4, 0.6, 0.8, 0.99]) {
+      const plan = planAppTurn(state, new StubRandom([seed]));
+      expect(findMatchedLine(applyPlan(state.board, plan), SULFUR_OBJECTIVE)).not.toBeNull();
     }
   });
 
