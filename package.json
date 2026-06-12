@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "expo": "~56.0.4",
+    "expo-audio": "~56.0.12",
     "expo-constants": "~56.0.15",
     "expo-linking": "~56.0.11",
     "expo-router": "~56.2.6",
@@ -55,12 +56,16 @@
         "testMatch": [
           "<rootDir>/src/domain/**/__tests__/**/*.test.ts",
           "<rootDir>/src/application/**/__tests__/**/*.test.ts",
-          "<rootDir>/src/infrastructure/**/__tests__/**/*.test.ts"
+          "<rootDir>/src/infrastructure/**/__tests__/**/*.test.ts",
+          "<rootDir>/src/ui/audio/__tests__/**/*.test.ts"
         ]
       },
       {
         "displayName": "ui",
         "preset": "jest-expo",
+        "moduleNameMapper": {
+          "^expo-audio$": "<rootDir>/src/ui/audio/__mocks__/expo-audio.ts"
+        },
         "testMatch": [
           "<rootDir>/src/ui/**/__tests__/**/*.test.tsx"
         ]
