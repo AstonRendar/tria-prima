@@ -44,6 +44,26 @@ describe('startMatch', () => {
     expect(state.firstPlayerId).toBe(state.currentPlayerId);
   });
 
+  it('honors an explicit first player choice', () => {
+    const base = { p1Name: 'A', p2Name: 'B', p1Word: 'CAMINO', p2Word: 'PUERTA' };
+    expect(startMatch(deps(), { ...base, firstPlayer: 'p1' }).currentPlayerId).toBe('p1');
+    expect(startMatch(deps(), { ...base, firstPlayer: 'p2' }).currentPlayerId).toBe('p2');
+  });
+
+  it('draws the first player when the choice is random', () => {
+    const base = { p1Name: 'A', p2Name: 'B', p1Word: 'CAMINO', p2Word: 'PUERTA' };
+    const depsWith = (value: number) => ({
+      random: new StubRandom([value]),
+      wordRepository: new StubWordRepository('CAMINO'),
+    });
+    expect(
+      startMatch(depsWith(0), { ...base, firstPlayer: 'random' }).currentPlayerId
+    ).toBe('p1');
+    expect(
+      startMatch(depsWith(0.9), { ...base, firstPlayer: 'random' }).currentPlayerId
+    ).toBe('p2');
+  });
+
   it('normalizes accents and case in the supplied words', () => {
     const state = startMatch(deps(), {
       p1Name: 'A',
