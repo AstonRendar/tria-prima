@@ -17,6 +17,13 @@ export type AppAction =
   | { kind: 'rotate'; position: Position; rotation: RotationKind }
   | { kind: 'swap'; a: Position; b: Position };
 
+// Nivel del maestro: el aprendiz se despista (la mitad de las veces juega una
+// jugada cualquiera) y solo arriesga adivinanzas casi seguras; el maestro
+// juega siempre la mejor jugada y arriesga antes.
+export type AppLevel = 'apprentice' | 'master';
+
+const APPRENTICE_BLUNDER_CHANCE = 0.5;
+
 export type AppTurnPlan = {
   actions: ReadonlyArray<AppAction>;
   touched: Position[];
@@ -33,7 +40,11 @@ const ROTATION_KINDS: ReadonlyArray<RotationKind> = [
 // legales (un intercambio, o dos giros sobre dados distintos) y se queda con
 // el que más objetivos declarables deja en el tablero, con bonus por los que
 // revelarían una letra del rival. Empata al azar para no ser predecible.
-export function planAppTurn(state: MatchState, random: Random): AppTurnPlan {
+export function planAppTurn(
+  state: MatchState,
+  random: Random,
+  level: AppLevel = 'master'
+): AppTurnPlan {
   const free: Position[] = [];
   for (let p = 0; p < BOARD_CELLS; p++) {
     if (!isLocked(state.board, p)) free.push(p);
@@ -71,6 +82,10 @@ export function planAppTurn(state: MatchState, random: Random): AppTurnPlan {
     }
   }
 
+  if (level === 'apprentice' && random.next() < APPRENTICE_BLUNDER_CHANCE) {
+    return candidates[random.pickIndex(candidates.length)].plan;
+  }
+
   const best = Math.max(...candidates.map((c) => c.score));
   const winners = candidates.filter((c) => c.score === best);
   return winners[random.pickIndex(winners.length)].plan;
@@ -101,14 +116,14 @@ function scoreBoard(board: Board, state: MatchState): number {
 
 // Decide si la app intenta adivinar. Juega limpio: solo usa las letras
 // reveladas del rival y la lista pública de palabras.
-//   - 6 letras reveladas → la palabra es conocida.
-//   - una única candidata compatible → la arriesga.
-//   - 5 letras y varias candidatas → arriesga una al azar.
-//   - en cualquier otro caso, sigue jugando.
+//   - 6 letras reveladas → la palabra es conocida (ambos niveles).
+//   - maestro: una única candidata → la arriesga; 5 letras y varias → una al azar.
+//   - aprendiz: solo arriesga la única candidata con 5+ letras reveladas.
 export function chooseAppGuess(
   state: MatchState,
   words: ReadonlyArray<string>,
-  random: Random
+  random: Random,
+  level: AppLevel = 'master'
 ): string | null {
   const word = currentOpponent(state).secretWord;
   const revealed = revealedCount(word);
@@ -119,6 +134,10 @@ export function chooseAppGuess(
   const candidates = [...new Set(words.map(normalizeGuess))].filter((w) =>
     matchesRevealed(word, w)
   );
+  if (level === 'apprentice') {
+    if (candidates.length === 1 && revealed >= WORD_LENGTH - 1) return candidates[0];
+    return null;
+  }
   if (candidates.length === 1) return candidates[0];
   if (candidates.length > 1 && revealed >= WORD_LENGTH - 1) {
     return candidates[random.pickIndex(candidates.length)];

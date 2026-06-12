@@ -88,7 +88,10 @@ Modo contra el maestro (humano vs app, reutiliza `MatchState` y los casos de uso
 - `AppOpponent` — `planAppTurn` (búsqueda voraz sobre todos los turnos legales,
   +1 por objetivo declarable y +1 si revela letra; empata al azar) y `chooseAppGuess`
   (solo información pública: 6 reveladas → palabra exacta; 1 candidata → la arriesga;
-  5 reveladas y varias → una al azar; si no, sigue jugando).
+  5 reveladas y varias → una al azar; si no, sigue jugando). Dos niveles (`AppLevel`):
+  **maestro** (siempre la mejor jugada) y **aprendiz** (50 % de despiste con jugada
+  aleatoria; solo arriesga la única candidata con 5+ letras). El nivel se elige en el
+  setup y viaja en `VersusSetup`.
 - `PlayAppTurn` — `buildAppTurnSteps` / `applyAppStep` / `playAppTurn`: el turno de la
   app como lista de pasos que la UI reproduce con retardo.
 
@@ -151,7 +154,7 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 | Zona | Patrón | Ejemplos |
 |---|---|---|
 | Home | `home/{destino}` | `home/play`, `home/versus`, `home/tracker`, `home/instructions` |
-| Setup (Versus) | `setup/{word\|start}` | — |
+| Setup (Versus) | `setup/{word\|start\|level-apprentice\|level-master}` | — |
 | Turno (Versus) | `versus/turn-name` | — |
 | Setup (Duelo) | `setup/{campo}` | `setup/p1`, `setup/p2`, `setup/start` |
 | Cuadrícula | `cube/{i}` | `cube/0`..`cube/8` |
