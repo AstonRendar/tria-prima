@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
-import Svg, { Circle, Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, G, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { colors, gradients } from '@/ui/styles/tokens';
+import { OuroborosGlyph } from './Ouroboros';
 import { mottling } from './scatter';
 
 const SPECKS = mottling(7, 60, 100, 160);
@@ -31,6 +32,11 @@ export function ParchmentBackground({ tone = 'light' }: Props) {
         </RadialGradient>
       </Defs>
       <Rect width={100} height={160} fill="url(#parchment-base)" />
+      {/* Marca de agua: el emblema, enorme y desplazado a la mitad derecha,
+          apenas un tono más oscuro que el pergamino. */}
+      <G transform="translate(30, 42) scale(0.62)" opacity={0.07}>
+        <OuroborosGlyph color={colors.sepia} accent={colors.sepia} center={colors.sepia} />
+      </G>
       {SPECKS.map((s, i) => (
         <Circle
           key={i}
