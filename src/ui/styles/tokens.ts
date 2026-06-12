@@ -87,6 +87,41 @@ export const cubeSymbolLabel: Record<CubeSymbol, string> = {
   salt: 'Sal',
 };
 
+// Variante "physical": insignias del juego de mesa original (pinceladas
+// turquesa/blanca/naranja y letras griegas Δ Θ Ξ) para el modo tracker,
+// donde la app acompaña a los componentes físicos reales. Letras y colores
+// planos: sin arte copiado. Mapeo heredado del diseño inicial del proyecto
+// (sulfur→Δ, mercury→Θ, salt→Ξ, rubedo→naranja).
+export const physicalColorHex: Record<CubeColor, string> = {
+  nigredo: '#3BB8CE',
+  citrinitas: '#F3EFE6',
+  rubedo: '#E06A28',
+};
+
+export const physicalColorContrast: Record<CubeColor, string> = {
+  nigredo: '#1B2336',
+  citrinitas: '#1B2336',
+  rubedo: '#1B2336',
+};
+
+export const physicalSymbolGlyph: Record<CubeSymbol, string> = {
+  sulfur: 'Δ',
+  mercury: 'Θ',
+  salt: 'Ξ',
+};
+
+export const physicalColorLabel: Record<CubeColor, string> = {
+  nigredo: 'Azul',
+  citrinitas: 'Blanco',
+  rubedo: 'Naranja',
+};
+
+export const physicalSymbolLabel: Record<CubeSymbol, string> = {
+  sulfur: 'Delta',
+  mercury: 'Theta',
+  salt: 'Xi',
+};
+
 export const spacing = {
   xs: 4,
   sm: 8,

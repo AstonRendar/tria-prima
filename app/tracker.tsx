@@ -117,7 +117,7 @@ export default function Tracker() {
       </Text>
 
       <Text style={styles.maskedWord}>{maskedText(state.secretWord)}</Text>
-      <WordTrack word={state.secretWord} />
+      <WordTrack word={state.secretWord} variant="physical" />
 
       <View style={styles.divider}>
         <FiligreeDivider width={170} />
@@ -134,6 +134,7 @@ export default function Tracker() {
           count={state.declaredCount.get(objective.id) ?? 0}
           onIncrement={() => onMark(objective)}
           onDecrement={() => tracker.unmark(objective)}
+          variant="physical"
         />
       ))}
 
