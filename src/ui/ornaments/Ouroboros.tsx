@@ -1,14 +1,8 @@
 import { View } from 'react-native';
-import Svg, { Circle, Line, Path } from 'react-native-svg';
+import Svg, { Circle, G, Line, Path } from 'react-native-svg';
 import { CubeSymbol } from '@/domain/Symbol';
 import { colors } from '@/ui/styles/tokens';
-import { AlchemicalSigil } from './AlchemicalSigil';
-
-type Props = {
-  size: number;
-  color?: string;
-  accent?: string;
-};
+import { SigilGlyph } from './AlchemicalSigil';
 
 // Cuerpo: arco de 310° (hueco arriba donde la cabeza muerde la cola).
 const BODY = 'M82 21.9 A44 44 0 1 1 44.95 18.66';
@@ -28,50 +22,69 @@ const VERTICES: ReadonlyArray<{ x: number; y: number; symbol: CubeSymbol }> = [
   { x: 60, y: 90, symbol: 'salt' },
 ];
 
+// El sigilo (lienzo 24×24) se dibuja con 22 unidades de alto, como en el hero.
+const SIGIL_SCALE = 22 / 24;
+
+type GlyphProps = {
+  color: string;
+  accent: string;
+  center?: string;
+};
+
+// Emblema completo en un lienzo de 120×120, sin <Svg>: incrustable en otros SVG
+// (p. ej. la marca de agua del pergamino, en monocromo).
+export function OuroborosGlyph({ color, accent, center = colors.danger }: GlyphProps) {
+  return (
+    <G>
+      <Path d={BODY} stroke={color} strokeWidth={7} strokeLinecap="round" fill="none" />
+      <Path
+        d={BODY}
+        stroke={accent}
+        strokeWidth={2.5}
+        strokeDasharray="1.5 6"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <Path d={HEAD} fill={color} />
+      <Circle cx={78.8} cy={20} r={1.2} fill={accent} />
+      <Path d={TAIL} fill={color} />
+      {TRIANGLE_EDGES.map((e, i) => (
+        <Line
+          key={i}
+          x1={e.x1}
+          y1={e.y1}
+          x2={e.x2}
+          y2={e.y2}
+          stroke={accent}
+          strokeWidth={1.2}
+          strokeLinecap="round"
+        />
+      ))}
+      <Circle cx={60} cy={60} r={2} fill={center} />
+      {VERTICES.map((v) => (
+        <G
+          key={v.symbol}
+          transform={`translate(${v.x - 11}, ${v.y - 11}) scale(${SIGIL_SCALE})`}
+        >
+          <SigilGlyph symbol={v.symbol} color={color} strokeWidth={2.2} />
+        </G>
+      ))}
+    </G>
+  );
+}
+
+type Props = {
+  size: number;
+  color?: string;
+  accent?: string;
+};
+
 export function Ouroboros({ size, color = colors.text, accent = colors.gold }: Props) {
-  const scale = size / 120;
-  const sigilSize = 22 * scale;
   return (
     <View style={{ width: size, height: size }} pointerEvents="none">
       <Svg width={size} height={size} viewBox="0 0 120 120">
-        <Path d={BODY} stroke={color} strokeWidth={7} strokeLinecap="round" fill="none" />
-        <Path
-          d={BODY}
-          stroke={accent}
-          strokeWidth={2.5}
-          strokeDasharray="1.5 6"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <Path d={HEAD} fill={color} />
-        <Circle cx={78.8} cy={20} r={1.2} fill={accent} />
-        <Path d={TAIL} fill={color} />
-        {TRIANGLE_EDGES.map((e, i) => (
-          <Line
-            key={i}
-            x1={e.x1}
-            y1={e.y1}
-            x2={e.x2}
-            y2={e.y2}
-            stroke={accent}
-            strokeWidth={1.2}
-            strokeLinecap="round"
-          />
-        ))}
-        <Circle cx={60} cy={60} r={2} fill={colors.danger} />
+        <OuroborosGlyph color={color} accent={accent} />
       </Svg>
-      {VERTICES.map((v) => (
-        <View
-          key={v.symbol}
-          style={{
-            position: 'absolute',
-            left: v.x * scale - sigilSize / 2,
-            top: v.y * scale - sigilSize / 2,
-          }}
-        >
-          <AlchemicalSigil symbol={v.symbol} size={sigilSize} color={color} strokeWidth={2.2} />
-        </View>
-      ))}
     </View>
   );
 }
