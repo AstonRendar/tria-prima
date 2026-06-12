@@ -26,7 +26,8 @@ import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
 import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useMatch } from '@/ui/hooks/useMatch';
-import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
+import { colors, fonts, spacing } from '@/ui/styles/tokens';
 import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
 
 const dependencies = buildProductionDependencies();
@@ -238,17 +239,20 @@ export default function Play() {
       .join('');
     const winnerName = state.players[won].name;
     return (
-      <EndScreen
-        won
-        word={fullWord}
-        onRestart={onRestart}
-        onHome={() => router.dismissTo('/')}
-      >
-        <View style={styles.endStats}>
-          <Text style={styles.endStat}>Gana {winnerName}</Text>
-          <Text style={styles.endStat}>Palabra del rival</Text>
-        </View>
-      </EndScreen>
+      <View style={styles.page}>
+        <ParchmentBackground />
+        <EndScreen
+          won
+          word={fullWord}
+          onRestart={onRestart}
+          onHome={() => router.dismissTo('/')}
+        >
+          <View style={styles.endStats}>
+            <Text style={styles.endStat}>Gana {winnerName}</Text>
+            <Text style={styles.endStat}>Palabra del rival</Text>
+          </View>
+        </EndScreen>
+      </View>
     );
   }
 
@@ -259,7 +263,9 @@ export default function Play() {
   const availableSlots = state.objectives.filter((s) => s.blockedBy === null);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.page}>
+      <ParchmentBackground />
+      <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.topRow}>
         <NewGameButton onConfirm={onRestart} />
         <View style={styles.turnBadge}>
@@ -341,7 +347,7 @@ export default function Play() {
       )}
 
       {phase === 'select-second-cube' && (
-        <View style={styles.swapNotice}>
+        <OrnateFrame padding={spacing.md} style={styles.swapNotice}>
           <Text style={styles.swapText}>
             Toca otro dado en la misma fila o columna para intercambiarlos.
           </Text>
@@ -350,7 +356,7 @@ export default function Play() {
             onPress={() => setPhase('choose-action')}
             testID="action/cancel-swap"
           />
-        </View>
+        </OrnateFrame>
       )}
 
       {phase === 'declare' && (
@@ -364,6 +370,9 @@ export default function Play() {
         </View>
       )}
 
+      <View style={styles.divider}>
+        <FiligreeDivider width={170} />
+      </View>
       <ObjectiveBlockedZone
         playerName={`Bloqueados de ${state.players[me].name}`}
         slots={mySlots}
@@ -391,14 +400,15 @@ export default function Play() {
           onContinue={() => setHandoffPlayerId(null)}
         />
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 function Handoff({ name, onContinue }: { name: string; onContinue: () => void }) {
   return (
     <View style={styles.handoffOverlay}>
-      <View style={styles.handoffBox}>
+      <OrnateFrame padding={spacing.xl} style={styles.handoffBox}>
         <Text style={styles.handoffTitle}>Cambio de turno</Text>
         <Text style={styles.handoffBody}>
           Pasa el dispositivo a <Text style={styles.handoffName}>{name}</Text>.
@@ -409,15 +419,23 @@ function Handoff({ name, onContinue }: { name: string; onContinue: () => void })
           onPress={onContinue}
           testID="handoff/continue"
         />
-      </View>
+      </OrnateFrame>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+  },
   container: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  divider: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+    opacity: 0.8,
   },
   topRow: {
     flexDirection: 'row',
@@ -521,11 +539,6 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   swapNotice: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    padding: spacing.md,
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
@@ -565,11 +578,6 @@ const styles = StyleSheet.create({
   handoffBox: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xl,
     alignItems: 'center',
   },
   handoffTitle: {
