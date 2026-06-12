@@ -1,7 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { ALL_COLORS } from '@/domain/Color';
-import { PlayerCard, SecretWord } from '@/domain/SecretWord';
-import { ALL_SYMBOLS } from '@/domain/Symbol';
+import { SecretWord } from '@/domain/SecretWord';
 import { colors, cubeColorHex, cubeSymbolGlyph, fonts, radius } from '@/ui/styles/tokens';
 import { RevealFlip } from './RevealFlip';
 
@@ -9,22 +7,13 @@ type Props = {
   word: SecretWord;
 };
 
-// Resumen en miniatura del estado de una palabra, agrupado por insignia
-// (3 símbolos + 3 colores) en el mismo orden que los objetivos: de un
-// vistazo se ve qué objetivo conviene declarar.
+// Resumen en miniatura del estado de una palabra. Las cartas van en el orden
+// de las letras de la palabra (la insignia de cada carta es la que le tocó al
+// azar al inicio): así la palabra se lee según se revela.
 export function SignCounters({ word }: Props) {
-  const ordered: PlayerCard[] = [
-    ...ALL_SYMBOLS.map((s) =>
-      word.cards.find((c) => c.faceSign.kind === 'symbol' && c.faceSign.value === s)
-    ),
-    ...ALL_COLORS.map((col) =>
-      word.cards.find((c) => c.faceSign.kind === 'color' && c.faceSign.value === col)
-    ),
-  ].filter((c): c is PlayerCard => c !== undefined);
-
   return (
     <View style={styles.row} testID="sign-counters">
-      {ordered.map((card) => {
+      {word.cards.map((card) => {
         const isColor = card.faceSign.kind === 'color';
         const sign = `${card.faceSign.kind}:${card.faceSign.value}`;
         return (
