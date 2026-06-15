@@ -102,7 +102,9 @@ Modo contra el maestro (humano vs app, reutiliza `MatchState` y los casos de uso
 - `PlayAppTurn` — `buildAppTurnSteps` / `applyAppStep` / `playAppTurn`: el turno de la
   app como lista de pasos que la UI reproduce con retardo. Cada acción va precedida
   de un paso `select` (no-op en el estado) que la UI remarca y anima como si el dado
-  lo hubiera tocado un humano.
+  lo hubiera tocado un humano. Mientras juega el maestro (no es el turno del humano),
+  la pantalla cubre el tablero con un velo translúcido (`versus/master-veil`) que deja
+  claro que no hay que tocar nada hasta que termine sus movimientos.
 
 Modo solitario digital (1 jugador, todo en la app):
 - `SoloPlayState` (board, objectives, palabra elegida por la app, turno, puntuación).
@@ -131,17 +133,23 @@ Comunes:
 ### `src/ui/`
 - `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveCard`,
   `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
-  `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `Footer`,
-  `SetupScreen`).
+  `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GameStartCover`, `GuessBox`, `Footer`,
+  `SetupScreen`). `FlashMessage` flota fijo en la parte superior (fuera del `ScrollView`,
+  `position:absolute`) para verse aunque haya scroll. `GameStartCover` es el velo de
+  pergamino que gobierna `useGameStartTransition`.
 - `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
   más la reproducción automática y retardada del turno de la app), `useSoloPlay`
-  (solitario digital), `useTracker` (tracker físico).
+  (solitario digital), `useTracker` (tracker físico), `useGameStartTransition`
+  (fundido de entrada a la partida + cambio de pista de música, en las 4 pantallas
+  de juego).
 - `audio/` — sonido sintético, sin assets. La fuente de verdad son los specs compartidos:
   `sfxSpecs.ts` (efectos) y `score.ts` (partituras). Hay dos pistas de música (`MusicTrack`):
   `menu` y `game` (misma cadencia andaluza en Re menor; la de partida con pulso más vivo y
   melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia; el hook
-  `useGameMusic(hasActiveGame)` (en las 4 pantallas de juego) pone `game` mientras hay
-  partida activa y devuelve `menu` al salir o terminar. En **web**, `sound.ts` y
+  `useGameStartTransition(hasActiveGame)` (en las 4 pantallas de juego) gobierna el fundido
+  de entrada y el cambio de pista: la música del menú sigue sonando durante el fundido y, al
+  terminar el fundido, llama a `setTrack('game')`; al salir o terminar la partida vuelve a
+  `menu`. En **web**, `sound.ts` y
   `music.ts` los tocan en vivo con la Web Audio API. En **iOS/Android**, `nativeAudio.ts`
   los pre-renderiza a WAV (PCM 16 bits mono, data URI) con `synth.ts` y los reproduce con
   `expo-audio`; la melodía nativa usa triángulo y un eco horneado en lugar del filtro+delay
@@ -194,7 +202,7 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 |---|---|---|
 | Home | `home/{destino}` | `home/play`, `home/versus`, `home/tracker`, `home/instructions` |
 | Setup (Versus) | `setup/{word\|start\|level-apprentice\|level-master\|first-p1\|first-p2\|first-random}` | — |
-| Turno (Versus) | `versus/turn-name` | — |
+| Turno (Versus) | `versus/{turn-name\|master-veil}` | — |
 | Setup (Duelo) | `setup/{campo}` | `setup/p1`, `setup/p2`, `setup/first-random`, `setup/start` |
 | Cuadrícula | `cube/{i}` | `cube/0`..`cube/8` |
 | Acciones turno | `action/{kind}` | `action/roll-forward`, `action/spin-cw`, `action/swap`, `action/cancel` |
