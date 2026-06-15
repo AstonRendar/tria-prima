@@ -36,7 +36,9 @@ export function useGameStartTransition(active: boolean): GameStartTransition {
         toValue: 0,
         duration,
         easing: Easing.inOut(Easing.quad),
-        useNativeDriver: true,
+        // Driver JS: la entrada cruza el remontaje del velo (setup → partida),
+        // y una animación nativa quedaría enganchada al nodo desmontado.
+        useNativeDriver: false,
       });
       animRef.current = anim;
       anim.start(({ finished }) => {
@@ -55,7 +57,7 @@ export function useGameStartTransition(active: boolean): GameStartTransition {
         toValue: 1,
         duration: FADE_HALF_MS,
         easing: Easing.inOut(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: false,
       });
       animRef.current = out;
       out.start(({ finished }) => {
