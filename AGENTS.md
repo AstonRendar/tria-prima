@@ -145,11 +145,13 @@ Comunes:
 - `audio/` — sonido sintético, sin assets. La fuente de verdad son los specs compartidos:
   `sfxSpecs.ts` (efectos) y `score.ts` (partituras). Hay dos pistas de música (`MusicTrack`):
   `menu` y `game` (misma cadencia andaluza en Re menor; la de partida con pulso más vivo y
-  melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia; el hook
-  `useGameStartTransition(hasActiveGame)` (en las 4 pantallas de juego) gobierna el fundido
-  de entrada y el cambio de pista: la música del menú sigue sonando durante el fundido y, al
-  terminar el fundido, llama a `setTrack('game')`; al salir o terminar la partida vuelve a
-  `menu`. En **web**, `sound.ts` y
+  melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia y
+  `MusicPlayer.pause` detiene la reproducción sin tocar la preferencia (para los fundidos);
+  el hook `useGameStartTransition(hasActiveGame)` (en las 4 pantallas de juego) gobierna el
+  fundido de entrada y el cambio de pista: al empezar la partida apaga la música del menú
+  (`pause`), reproduce el fundido (≥ 2 s) en silencio y, al terminar, arranca la pista de
+  partida (`setTrack('game')` + `start`); al salir o terminar la partida vuelve a `menu`.
+  En **web**, `sound.ts` y
   `music.ts` los tocan en vivo con la Web Audio API. En **iOS/Android**, `nativeAudio.ts`
   los pre-renderiza a WAV (PCM 16 bits mono, data URI) con `synth.ts` y los reproduce con
   `expo-audio`; la melodía nativa usa triángulo y un eco horneado en lugar del filtro+delay
