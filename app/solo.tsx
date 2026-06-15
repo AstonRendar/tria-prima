@@ -14,13 +14,14 @@ import { CubeAnimationKind, CubeView } from '@/ui/components/CubeView';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
+import { GameStartCover } from '@/ui/components/GameStartCover';
 import { GuessBox } from '@/ui/components/GuessBox';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
-import { useGameMusic } from '@/ui/hooks/useGameMusic';
+import { useGameStartTransition } from '@/ui/hooks/useGameStartTransition';
 import { useSoloPlay } from '@/ui/hooks/useSoloPlay';
 import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
@@ -63,7 +64,7 @@ export default function SoloPlay() {
 
   const hasActiveGame = !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  useGameMusic(hasActiveGame);
+  const startCover = useGameStartTransition(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -353,9 +354,10 @@ export default function SoloPlay() {
       )}
 
       <Footer />
+      </ScrollView>
 
       <FlashMessage message={flash.message} />
-      </ScrollView>
+      <GameStartCover opacity={startCover} />
     </View>
   );
 }
