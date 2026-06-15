@@ -69,7 +69,7 @@ export default function Play() {
 
   const hasActiveGame = match.state !== null && !match.state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const startCover = useGameStartTransition(hasActiveGame);
+  const { cover: startCover, fadeThroughBlack } = useGameStartTransition(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -145,7 +145,12 @@ export default function Play() {
   }, [state?.finished, state?.outcome, state?.currentPlayerId]);
 
   if (!state) {
-    return <SetupScreen onStart={match.start} />;
+    return (
+      <View style={styles.page}>
+        <SetupScreen onStart={(setup) => fadeThroughBlack(() => match.start(setup))} />
+        <GameStartCover opacity={startCover} />
+      </View>
+    );
   }
 
   const me = state.currentPlayerId;
@@ -219,11 +224,13 @@ export default function Play() {
   };
 
   const onRestart = () => {
-    match.restart();
-    resetTurn();
-    setGuess('');
-    setHandoffPlayerId(null);
-    setLastAnimation(null);
+    fadeThroughBlack(() => {
+      match.restart();
+      resetTurn();
+      setGuess('');
+      setHandoffPlayerId(null);
+      setLastAnimation(null);
+    });
   };
 
   if (state.finished) {
@@ -246,6 +253,7 @@ export default function Play() {
             <Text style={styles.endStat}>Palabra del rival</Text>
           </View>
         </EndScreen>
+        <GameStartCover opacity={startCover} />
       </View>
     );
   }

@@ -36,7 +36,12 @@ export default function Tracker() {
   // la salida (al entrar ya hay una palabra escondida en juego).
   const hasActiveGame = !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const startCover = useGameStartTransition(hasActiveGame);
+  const { cover: startCover, fadeThroughBlack, revealFromBlack } =
+    useGameStartTransition(hasActiveGame);
+
+  useLayoutEffect(() => {
+    revealFromBlack();
+  }, [revealFromBlack]);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -86,8 +91,10 @@ export default function Tracker() {
   };
 
   const onRestart = () => {
-    tracker.restart();
-    setGuess('');
+    fadeThroughBlack(() => {
+      tracker.restart();
+      setGuess('');
+    });
   };
 
   if (state.finished) {
@@ -101,6 +108,7 @@ export default function Tracker() {
           onRestart={onRestart}
           onHome={() => router.dismissTo('/')}
         />
+        <GameStartCover opacity={startCover} />
       </View>
     );
   }
