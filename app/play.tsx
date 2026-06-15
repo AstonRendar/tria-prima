@@ -28,7 +28,21 @@ import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useMatch } from '@/ui/hooks/useMatch';
 import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
-import { describeDeclareResult, describePhase, rotationActions, TurnPhase } from '@/ui/turnFlow';
+import {
+  cancelAction,
+  cancelSwap,
+  canFinishTurn,
+  commitSwap,
+  describeDeclareResult,
+  describePhase,
+  pressCube,
+  rotateSelected,
+  rotationActions,
+  startSwap,
+  TurnPhase,
+  TurnState,
+  turnMessage,
+} from '@/ui/turnFlow';
 
 const dependencies = buildProductionDependencies();
 
@@ -136,46 +150,36 @@ export default function Play() {
   const me = state.currentPlayerId;
   const opponent = opponentOf(state, me);
 
+  const applyTurn = (next: TurnState) => {
+    setPhase(next.phase);
+    setSelected(next.selected);
+    setTouched(next.touched as Set<Position>);
+  };
+
+  const resetTurn = () => {
+    setPhase('select-cube');
+    setSelected(null);
+    setTouched(new Set());
+  };
+
   const onPressCube = (i: Position) => {
     if (state.finished) return;
     if (state.board.lockedThisTurn.includes(i)) return;
-    if (phase === 'declare') {
-      flash.show('Ya has movido tus dos dados. Declara o acaba el turno.');
-      return;
-    }
-
-    if (phase === 'select-cube') {
-      setSelected(i);
-      setPhase('choose-action');
-      return;
-    }
-    if (phase === 'choose-action') {
-      if (selected === i) {
-        setSelected(null);
-        setPhase('select-cube');
-      } else {
-        setSelected(i);
-      }
-      return;
-    }
-    if (phase === 'select-second-cube') {
-      if (selected === null) return;
-      if (i === selected) {
-        flash.show('Selecciona otro dado distinto');
-        return;
-      }
-      const previous = selected;
-      const applied = match.swap(previous, i);
-      if (!applied) {
+    const current: TurnState = { phase, selected, touched };
+    const outcome = pressCube(current, i);
+    if (outcome.message) flash.show(turnMessage(outcome.message));
+    if (outcome.swap) {
+      const { a, b } = outcome.swap;
+      if (!match.swap(a, b)) {
         flash.show('Solo puedes intercambiar en la misma fila o columna');
         return;
       }
       audio.play('swap');
-      setLastAnimation({ positions: new Set([previous, i]), kind: 'swap' });
-      setTouched(new Set([previous, i]));
-      setSelected(null);
-      setPhase('declare');
+      setLastAnimation({ positions: new Set([a, b]), kind: 'swap' });
+      applyTurn(commitSwap(a, b));
+      return;
     }
+    if (outcome.state !== current) applyTurn(outcome.state);
   };
 
   const onRotate = (kind: RotationKind) => {
@@ -184,36 +188,27 @@ export default function Play() {
     match.rotate(target, kind);
     audio.play(kind === 'spin-cw' || kind === 'spin-ccw' ? 'cube-spin' : 'cube-roll');
     setLastAnimation({ positions: new Set([target]), kind });
-    const next = new Set(touched).add(target);
-    setTouched(next);
-    setSelected(null);
-    setPhase(next.size >= TOUCHES_PER_TURN ? 'declare' : 'select-cube');
+    applyTurn(rotateSelected({ phase, selected, touched }));
   };
 
   const onStartSwap = () => {
-    if (selected === null) return;
-    if (touched.size > 0) {
-      flash.show('Para intercambiar, ha de ser tu única acción del turno');
-      return;
-    }
-    setPhase('select-second-cube');
+    const outcome = startSwap({ phase, selected, touched });
+    if (outcome.message) flash.show(turnMessage(outcome.message));
+    applyTurn(outcome.state);
   };
 
-  const onCancelAction = () => {
-    setSelected(null);
-    setPhase('select-cube');
-  };
+  const onCancelAction = () => applyTurn(cancelAction({ phase, selected, touched }));
+
+  const onCancelSwap = () => applyTurn(cancelSwap({ phase, selected, touched }));
 
   const onEndTurn = () => {
-    if (touched.size < TOUCHES_PER_TURN) {
+    if (!canFinishTurn({ phase, selected, touched })) {
       flash.show(`Hay que mover ${TOUCHES_PER_TURN} dados para acabar el turno`);
       return;
     }
     audio.play('turn-end');
     match.finishTurn(Array.from(touched));
-    setTouched(new Set());
-    setSelected(null);
-    setPhase('select-cube');
+    resetTurn();
     setLastAnimation(null);
   };
 
@@ -224,10 +219,8 @@ export default function Play() {
 
   const onRestart = () => {
     match.restart();
-    setSelected(null);
-    setTouched(new Set());
+    resetTurn();
     setGuess('');
-    setPhase('select-cube');
     setHandoffPlayerId(null);
     setLastAnimation(null);
   };
@@ -353,7 +346,7 @@ export default function Play() {
           </Text>
           <ActionButton
             label="Cancelar"
-            onPress={() => setPhase('choose-action')}
+            onPress={onCancelSwap}
             testID="action/cancel-swap"
           />
         </OrnateFrame>

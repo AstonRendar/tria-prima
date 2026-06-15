@@ -227,6 +227,14 @@ Tras *Acabar turno*: alterna currentPlayerId, los 2 dados pasan a `lockedThisTur
 siguiente turno y se muestra un *handoff* ("Pasa el dispositivo a {nombre}") antes de que
 el rival pueda jugar.
 
+La transición entre fases vive como funciones puras en `src/ui/turnFlow.ts` (`TurnState`,
+`pressCube`, `rotateSelected`, `startSwap`, `commitSwap`, `cancelAction`, `cancelSwap`,
+`canFinishTurn`, `turnMessage`), compartidas por las tres pantallas con flujo de turno
+(`versus`, `play`, `solo`). Las pantallas solo ejecutan los efectos (audio, animación,
+dominio); la decisión es pura y está cubierta por `src/ui/__tests__/turnFlow.test.ts`
+(en el proyecto **logic**). Regla clave: un dado ya movido este turno no puede volver a
+tocarse (el turno son 2 dados **distintos**).
+
 ## Reglas del juego (resumen funcional)
 
 > El texto formal y narrativo está en `app/instructions.tsx`. Aquí solo el resumen
