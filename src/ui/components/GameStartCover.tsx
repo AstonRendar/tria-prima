@@ -1,8 +1,7 @@
 import { Animated, StyleSheet } from 'react-native';
-import { colors } from '@/ui/styles/tokens';
 
-// Velo de pergamino que cubre la pantalla al empezar la partida y se desvanece
-// para revelar el tablero. Lo gobierna useGameStartTransition.
+// Velo negro que cubre la pantalla al empezar la partida y se funde para
+// revelar el tablero. Lo gobierna useGameStartTransition.
 export function GameStartCover({ opacity }: { opacity: Animated.Value }) {
   return (
     <Animated.View
@@ -14,7 +13,7 @@ export function GameStartCover({ opacity }: { opacity: Animated.Value }) {
 
 const styles = StyleSheet.create({
   cover: {
-    backgroundColor: colors.background,
-    zIndex: 20,
+    backgroundColor: '#000',
+    zIndex: 50,
   },
 });
