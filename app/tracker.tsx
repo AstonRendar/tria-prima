@@ -9,13 +9,14 @@ import { useConfirm } from '@/ui/ConfirmProvider';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
+import { GameStartCover } from '@/ui/components/GameStartCover';
 import { GuessBox } from '@/ui/components/GuessBox';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCounter } from '@/ui/components/ObjectiveCounter';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
-import { useGameMusic } from '@/ui/hooks/useGameMusic';
+import { useGameStartTransition } from '@/ui/hooks/useGameStartTransition';
 import { useTracker } from '@/ui/hooks/useTracker';
 import { FiligreeDivider, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
@@ -35,7 +36,7 @@ export default function Tracker() {
   // la salida (al entrar ya hay una palabra escondida en juego).
   const hasActiveGame = !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  useGameMusic(hasActiveGame);
+  const startCover = useGameStartTransition(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -151,9 +152,10 @@ export default function Tracker() {
       )}
 
       <Footer />
+      </ScrollView>
 
       <FlashMessage message={flash.message} />
-      </ScrollView>
+      <GameStartCover opacity={startCover} />
     </View>
   );
 }
