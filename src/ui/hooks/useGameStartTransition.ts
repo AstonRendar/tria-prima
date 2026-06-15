@@ -1,50 +1,96 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import { music } from '@/ui/audio/music';
 
-const FADE_MS = 2200;
-const MENU_STOP_MS = 850;
+// Cada mitad del fundido (salida a negro + entrada desde negro). El total
+// (≈ 2,2 s) es suficiente para apreciarlo y las dos mitades son iguales.
+const FADE_HALF_MS = 1100;
 
-// Al empezar la partida la pantalla aparece cubierta y se revela con un
-// fundido largo (≥ 2 s). La música del menú se apaga antes de empezar el
-// fundido, este transcurre en silencio y la pista de partida arranca al
-// terminar. Al acabar o salir, vuelve la del menú.
-export function useGameStartTransition(active: boolean): Animated.Value {
+export type GameStartTransition = {
+  cover: Animated.Value;
+  // Fundido a negro a partes iguales: oscurece la pantalla actual (salida),
+  // ejecuta atBlack en el punto negro (cambio de pantalla) y revela la nueva
+  // (entrada). Para los modos con pantalla de preparación.
+  fadeThroughBlack: (atBlack: () => void) => void;
+  // La pantalla nace en negro y solo se revela (entrada). Para los modos que
+  // arrancan la partida directamente, sin pantalla de preparación.
+  revealFromBlack: () => void;
+};
+
+// Gestiona el fundido de entrada a la partida y la música: el menú se apaga
+// antes del fundido, este transcurre en silencio y la pista de partida arranca
+// al terminar. Al acabar la partida o salir de la pantalla, vuelve la del menú.
+export function useGameStartTransition(active: boolean): GameStartTransition {
   const cover = useRef(new Animated.Value(0)).current;
-  const wasActive = useRef(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wasActive = useRef(active);
+  const animRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  useEffect(() => {
-    if (active && !wasActive.current) {
-      wasActive.current = true;
-      cover.setValue(1);
+  const startGameMusic = useCallback(() => {
+    music.setTrack('game');
+    if (music.isEnabled()) music.start();
+  }, []);
+
+  const reveal = useCallback(
+    (duration: number) => {
+      const anim = Animated.timing(cover, {
+        toValue: 0,
+        duration,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      });
+      animRef.current = anim;
+      anim.start(({ finished }) => {
+        if (finished) startGameMusic();
+      });
+    },
+    [cover, startGameMusic]
+  );
+
+  const fadeThroughBlack = useCallback(
+    (atBlack: () => void) => {
+      animRef.current?.stop();
       music.pause();
-      timerRef.current = setTimeout(() => {
-        Animated.timing(cover, {
-          toValue: 0,
-          duration: FADE_MS,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }).start(({ finished }) => {
-          if (!finished) return;
-          music.setTrack('game');
-          if (music.isEnabled()) music.start();
-        });
-      }, MENU_STOP_MS);
-    } else if (!active && wasActive.current) {
+      cover.setValue(0);
+      const out = Animated.timing(cover, {
+        toValue: 1,
+        duration: FADE_HALF_MS,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      });
+      animRef.current = out;
+      out.start(({ finished }) => {
+        if (!finished) return;
+        atBlack();
+        reveal(FADE_HALF_MS);
+      });
+    },
+    [cover, reveal]
+  );
+
+  const revealFromBlack = useCallback(() => {
+    animRef.current?.stop();
+    music.pause();
+    cover.setValue(1);
+    reveal(FADE_HALF_MS * 2);
+  }, [cover, reveal]);
+
+  // Al terminar la partida o salir de la pantalla, vuelve la música del menú.
+  useEffect(() => {
+    if (!active && wasActive.current) {
       wasActive.current = false;
-      if (timerRef.current) clearTimeout(timerRef.current);
       music.setTrack('menu');
+    } else if (active) {
+      wasActive.current = true;
     }
-  }, [active, cover]);
+  }, [active]);
 
   useEffect(
     () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      animRef.current?.stop();
       music.setTrack('menu');
     },
     []
   );
 
-  return cover;
+  return { cover, fadeThroughBlack, revealFromBlack };
 }

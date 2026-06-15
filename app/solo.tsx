@@ -64,7 +64,12 @@ export default function SoloPlay() {
 
   const hasActiveGame = !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const startCover = useGameStartTransition(hasActiveGame);
+  const { cover: startCover, fadeThroughBlack, revealFromBlack } =
+    useGameStartTransition(hasActiveGame);
+
+  useLayoutEffect(() => {
+    revealFromBlack();
+  }, [revealFromBlack]);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -179,10 +184,12 @@ export default function SoloPlay() {
   };
 
   const onRestart = () => {
-    solo.restart();
-    resetTurn();
-    setGuess('');
-    setLastAnimation(null);
+    fadeThroughBlack(() => {
+      solo.restart();
+      resetTurn();
+      setGuess('');
+      setLastAnimation(null);
+    });
   };
 
   const rows = useMemo(() => {
@@ -221,6 +228,7 @@ export default function SoloPlay() {
             <Text style={styles.endRank}>{info.label}</Text>
           </View>
         </EndScreen>
+        <GameStartCover opacity={startCover} />
       </View>
     );
   }
