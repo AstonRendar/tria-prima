@@ -602,7 +602,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(15, 20, 33, 0.5)',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: spacing.xxl,
     zIndex: 25,
   },
   masterVeilPanel: {
