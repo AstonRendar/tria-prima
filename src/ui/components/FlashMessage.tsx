@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
+import { colors, fonts, radius, shadows, spacing } from '@/ui/styles/tokens';
 
 const DEFAULT_TIMEOUT_MS = 1800;
 
@@ -32,7 +32,7 @@ export function FlashMessage({ message }: { message: string | null }) {
 const styles = StyleSheet.create({
   flash: {
     position: 'absolute',
-    bottom: spacing.xl,
+    top: spacing.lg,
     left: spacing.lg,
     right: spacing.lg,
     padding: spacing.sm,
@@ -40,6 +40,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.goldBright,
+    zIndex: 30,
+    ...shadows.raised,
   },
   text: {
     fontFamily: fonts.serif,

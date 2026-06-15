@@ -16,6 +16,7 @@ import { CubeAnimationKind, CubeView } from '@/ui/components/CubeView';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
+import { GameStartCover } from '@/ui/components/GameStartCover';
 import { GuessBox } from '@/ui/components/GuessBox';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
@@ -24,7 +25,7 @@ import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
 import { SignCounters } from '@/ui/components/SignCounters';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
-import { useGameMusic } from '@/ui/hooks/useGameMusic';
+import { useGameStartTransition } from '@/ui/hooks/useGameStartTransition';
 import { useVersus } from '@/ui/hooks/useVersus';
 import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
@@ -67,7 +68,7 @@ export default function Versus() {
 
   const hasActiveGame = state !== null && !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  useGameMusic(hasActiveGame);
+  const startCover = useGameStartTransition(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -303,35 +304,43 @@ export default function Versus() {
       )}
       <Text style={styles.phaseHint}>{phaseHint}</Text>
 
-      <View style={styles.boardRow}>
-        <View style={styles.grid}>
-          {rows.map((row, ri) => (
-            <View key={ri} style={styles.gridRow}>
-              {row.map((i) => (
-                <CubeView
-                  key={i}
-                  cube={state.board.cubes[i]}
-                  selected={selected === i || appSelected === i}
-                  locked={state.board.lockedThisTurn.includes(i)}
-                  touched={touched.has(i)}
-                  animationKind={animation?.positions.has(i) ? animation.kind : null}
-                  onPress={isMyTurn ? () => onPressCube(i) : undefined}
-                  testID={`cube/${i}`}
-                />
-              ))}
-            </View>
-          ))}
+      <View style={styles.boardWrap}>
+        <View style={styles.boardRow}>
+          <View style={styles.grid}>
+            {rows.map((row, ri) => (
+              <View key={ri} style={styles.gridRow}>
+                {row.map((i) => (
+                  <CubeView
+                    key={i}
+                    cube={state.board.cubes[i]}
+                    selected={selected === i || appSelected === i}
+                    locked={state.board.lockedThisTurn.includes(i)}
+                    touched={touched.has(i)}
+                    animationKind={animation?.positions.has(i) ? animation.kind : null}
+                    onPress={isMyTurn ? () => onPressCube(i) : undefined}
+                    testID={`cube/${i}`}
+                  />
+                ))}
+              </View>
+            ))}
+          </View>
+          <View style={styles.availableColumn}>
+            <Text style={styles.availableTitle}>Libres</Text>
+            {availableSlots.length === 0 ? (
+              <Text style={styles.empty}>—</Text>
+            ) : (
+              availableSlots.map((slot) => (
+                <ObjectiveCard key={slot.objective.id} slot={slot} compact />
+              ))
+            )}
+          </View>
         </View>
-        <View style={styles.availableColumn}>
-          <Text style={styles.availableTitle}>Libres</Text>
-          {availableSlots.length === 0 ? (
-            <Text style={styles.empty}>—</Text>
-          ) : (
-            availableSlots.map((slot) => (
-              <ObjectiveCard key={slot.objective.id} slot={slot} compact />
-            ))
-          )}
-        </View>
+        {!isMyTurn && (
+          <View style={styles.masterVeil} pointerEvents="none" testID="versus/master-veil">
+            <Text style={styles.masterVeilText}>El maestro juega…</Text>
+            <Text style={styles.masterVeilHint}>Espera a que termine sus movimientos</Text>
+          </View>
+        )}
       </View>
 
       {isMyTurn && phase === 'choose-action' && (
@@ -395,9 +404,10 @@ export default function Versus() {
       )}
 
       <Footer />
+      </ScrollView>
 
       <FlashMessage message={flash.message} />
-      </ScrollView>
+      <GameStartCover opacity={startCover} />
     </View>
   );
 }
@@ -578,10 +588,43 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: spacing.md,
   },
+  boardWrap: {
+    position: 'relative',
+  },
   boardRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'flex-start',
+  },
+  masterVeil: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(27, 35, 54, 0.34)',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.goldBright,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  masterVeilText: {
+    fontFamily: fonts.serif,
+    color: colors.goldBright,
+    fontSize: 20,
+    fontWeight: '800',
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowRadius: 6,
+  },
+  masterVeilHint: {
+    fontFamily: fonts.serif,
+    color: colors.parchmentLight,
+    fontSize: 13,
+    fontStyle: 'italic',
+    marginTop: spacing.xs,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowRadius: 6,
   },
   grid: {
     alignItems: 'center',
