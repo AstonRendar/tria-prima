@@ -68,7 +68,7 @@ export default function Versus() {
 
   const hasActiveGame = state !== null && !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const startCover = useGameStartTransition(hasActiveGame);
+  const { cover: startCover, fadeThroughBlack } = useGameStartTransition(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -164,11 +164,16 @@ export default function Versus() {
 
   if (!state) {
     return (
-      <VersusSetup
-        onStart={(word, level, firstPlayer) =>
-          versus.start({ playerName: 'Tú', playerWord: word, level, firstPlayer })
-        }
-      />
+      <View style={styles.page}>
+        <VersusSetup
+          onStart={(word, level, firstPlayer) =>
+            fadeThroughBlack(() =>
+              versus.start({ playerName: 'Tú', playerWord: word, level, firstPlayer })
+            )
+          }
+        />
+        <GameStartCover opacity={startCover} />
+      </View>
     );
   }
 
@@ -240,10 +245,12 @@ export default function Versus() {
   };
 
   const onRestart = () => {
-    versus.restart();
-    resetTurn();
-    setGuess('');
-    setLastAnimation(null);
+    fadeThroughBlack(() => {
+      versus.restart();
+      resetTurn();
+      setGuess('');
+      setLastAnimation(null);
+    });
   };
 
   if (state.finished) {
@@ -259,6 +266,7 @@ export default function Versus() {
             </Text>
           </View>
         </EndScreen>
+        <GameStartCover opacity={startCover} />
       </View>
     );
   }

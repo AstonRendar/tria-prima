@@ -135,22 +135,29 @@ Comunes:
   `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
   `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GameStartCover`, `GuessBox`, `Footer`,
   `SetupScreen`). `FlashMessage` flota fijo en la parte superior (fuera del `ScrollView`,
-  `position:absolute`) para verse aunque haya scroll. `GameStartCover` es el velo de
-  pergamino que gobierna `useGameStartTransition`.
+  `position:absolute`) para verse aunque haya scroll. `GameStartCover` es el velo
+  negro que gobierna `useGameStartTransition`.
 - `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
   más la reproducción automática y retardada del turno de la app), `useSoloPlay`
   (solitario digital), `useTracker` (tracker físico), `useGameStartTransition`
-  (fundido de entrada a la partida + cambio de pista de música, en las 4 pantallas
-  de juego).
+  (fundido a negro de entrada a la partida + cambio de pista de música, en las 4
+  pantallas de juego). Expone `fadeThroughBlack(atBlack)` —fundido a negro a partes
+  iguales (salida + entrada): oscurece, ejecuta `atBlack` en el punto negro (donde se
+  cambia de pantalla) y revela— para los modos con setup (`versus`, `play`) y al
+  reiniciar, y `revealFromBlack` —la pantalla nace en negro y solo se revela— para
+  los modos que arrancan directos (`solo`, `tracker`). Las pantallas renderizan
+  `GameStartCover` en sus tres ramas (setup, partida y fin) para que el fundido se vea
+  en todas.
 - `audio/` — sonido sintético, sin assets. La fuente de verdad son los specs compartidos:
   `sfxSpecs.ts` (efectos) y `score.ts` (partituras). Hay dos pistas de música (`MusicTrack`):
   `menu` y `game` (misma cadencia andaluza en Re menor; la de partida con pulso más vivo y
   melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia y
   `MusicPlayer.pause` detiene la reproducción sin tocar la preferencia (para los fundidos);
   el hook `useGameStartTransition(hasActiveGame)` (en las 4 pantallas de juego) gobierna el
-  fundido de entrada y el cambio de pista: al empezar la partida apaga la música del menú
-  (`pause`), reproduce el fundido (≥ 2 s) en silencio y, al terminar, arranca la pista de
-  partida (`setTrack('game')` + `start`); al salir o terminar la partida vuelve a `menu`.
+  fundido a negro y el cambio de pista: al empezar la partida apaga la música del menú
+  (`pause`), reproduce el fundido a negro (≈ 2,2 s, mitades iguales) en silencio y, al
+  terminar, arranca la pista de partida (`setTrack('game')` + `start`); al salir o terminar
+  la partida vuelve a `menu`.
   En **web**, `sound.ts` y
   `music.ts` los tocan en vivo con la Web Audio API. En **iOS/Android**, `nativeAudio.ts`
   los pre-renderiza a WAV (PCM 16 bits mono, data URI) con `synth.ts` y los reproduce con
