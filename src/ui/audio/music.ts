@@ -10,6 +10,8 @@ export interface MusicPlayer {
   stop(): void;
   toggle(): boolean;
   isEnabled(): boolean;
+  // Detiene la reproducción sin tocar la preferencia (para los fundidos).
+  pause(): void;
   // Cambia de pista (menú / partida) respetando la preferencia de encendido.
   setTrack(track: MusicTrack): void;
 }
@@ -68,6 +70,10 @@ class WebMusicPlayer implements MusicPlayer {
   stop(): void {
     this.enabled = false;
     writeFlag(STORAGE_KEY, false);
+    this.halt();
+  }
+
+  pause(): void {
     this.halt();
   }
 
