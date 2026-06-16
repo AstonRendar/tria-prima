@@ -15,7 +15,7 @@ import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCounter } from '@/ui/components/ObjectiveCounter';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
-import { useGameStartTransition } from '@/ui/hooks/useGameStartTransition';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useTracker } from '@/ui/hooks/useTracker';
 import { FiligreeDivider, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
@@ -35,11 +35,7 @@ export default function Tracker() {
   // la salida (al entrar ya hay una palabra escondida en juego).
   const hasActiveGame = !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const { fadeThroughBlack, revealFromBlack } = useGameStartTransition(hasActiveGame);
-
-  useLayoutEffect(() => {
-    revealFromBlack();
-  }, [revealFromBlack]);
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -89,10 +85,8 @@ export default function Tracker() {
   };
 
   const onRestart = () => {
-    fadeThroughBlack(() => {
-      tracker.restart();
-      setGuess('');
-    });
+    tracker.restart();
+    setGuess('');
   };
 
   if (state.finished) {
