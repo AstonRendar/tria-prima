@@ -5,6 +5,7 @@ import { music } from '@/ui/audio/music';
 import { AudioControls } from '@/ui/components/AudioControls';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { ConfirmProvider } from '@/ui/ConfirmProvider';
+import { GameTransitionProvider } from '@/ui/GameTransitionProvider';
 import { colors, fonts } from '@/ui/styles/tokens';
 
 function MenuBackButton() {
@@ -18,6 +19,7 @@ export default function RootLayout() {
   }, []);
   return (
     <ConfirmProvider>
+      <GameTransitionProvider>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -40,6 +42,7 @@ export default function RootLayout() {
         <Stack.Screen name="solo" options={{ title: 'Desafío · digital' }} />
         <Stack.Screen name="tracker" options={{ title: 'Desafío · físico' }} />
       </Stack>
+      </GameTransitionProvider>
     </ConfirmProvider>
   );
 }

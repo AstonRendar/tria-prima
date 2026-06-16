@@ -16,7 +16,6 @@ import { CubeAnimationKind, CubeView } from '@/ui/components/CubeView';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
-import { GameStartCover } from '@/ui/components/GameStartCover';
 import { GuessBox } from '@/ui/components/GuessBox';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
@@ -68,7 +67,7 @@ export default function Versus() {
 
   const hasActiveGame = state !== null && !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const { cover: startCover, fadeThroughBlack } = useGameStartTransition(hasActiveGame);
+  const { fadeThroughBlack } = useGameStartTransition(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -164,16 +163,13 @@ export default function Versus() {
 
   if (!state) {
     return (
-      <View style={styles.page}>
-        <VersusSetup
-          onStart={(word, level, firstPlayer) =>
-            fadeThroughBlack(() =>
-              versus.start({ playerName: 'Tú', playerWord: word, level, firstPlayer })
-            )
-          }
-        />
-        <GameStartCover opacity={startCover} />
-      </View>
+      <VersusSetup
+        onStart={(word, level, firstPlayer) =>
+          fadeThroughBlack(() =>
+            versus.start({ playerName: 'Tú', playerWord: word, level, firstPlayer })
+          )
+        }
+      />
     );
   }
 
@@ -266,7 +262,6 @@ export default function Versus() {
             </Text>
           </View>
         </EndScreen>
-        <GameStartCover opacity={startCover} />
       </View>
     );
   }
@@ -416,7 +411,6 @@ export default function Versus() {
       )}
 
       <FlashMessage message={flash.message} />
-      <GameStartCover opacity={startCover} />
     </View>
   );
 }

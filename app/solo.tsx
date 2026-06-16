@@ -14,7 +14,6 @@ import { CubeAnimationKind, CubeView } from '@/ui/components/CubeView';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
-import { GameStartCover } from '@/ui/components/GameStartCover';
 import { GuessBox } from '@/ui/components/GuessBox';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
@@ -64,8 +63,7 @@ export default function SoloPlay() {
 
   const hasActiveGame = !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const { cover: startCover, fadeThroughBlack, revealFromBlack } =
-    useGameStartTransition(hasActiveGame);
+  const { fadeThroughBlack, revealFromBlack } = useGameStartTransition(hasActiveGame);
 
   useLayoutEffect(() => {
     revealFromBlack();
@@ -228,7 +226,6 @@ export default function SoloPlay() {
             <Text style={styles.endRank}>{info.label}</Text>
           </View>
         </EndScreen>
-        <GameStartCover opacity={startCover} />
       </View>
     );
   }
@@ -365,7 +362,6 @@ export default function SoloPlay() {
       </ScrollView>
 
       <FlashMessage message={flash.message} />
-      <GameStartCover opacity={startCover} />
     </View>
   );
 }
