@@ -38,9 +38,10 @@ describe('useVersus', () => {
     expect(result.current.appPlaying).toBe(true);
 
     // Como mucho 6 pasos (2 selecciones + 2 acciones + declaración + fin de
-    // turno) a 900 ms.
+    // turno) a 900 ms, más la pausa inicial y la pausa tras el primer
+    // movimiento del maestro.
     await act(async () => {
-      jest.advanceTimersByTime(7 * 900);
+      jest.advanceTimersByTime(1200 + 1100 + 7 * 900);
     });
 
     const state = result.current.state;

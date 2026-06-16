@@ -1,6 +1,6 @@
 {
   "name": "tria-prima",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -45,6 +45,7 @@
     "collectCoverageFrom": [
       "src/domain/**/*.ts",
       "src/application/**/*.ts",
+      "src/ui/turnFlow.ts",
       "!**/__tests__/**"
     ],
     "projects": [
@@ -59,7 +60,8 @@
           "<rootDir>/src/domain/**/__tests__/**/*.test.ts",
           "<rootDir>/src/application/**/__tests__/**/*.test.ts",
           "<rootDir>/src/infrastructure/**/__tests__/**/*.test.ts",
-          "<rootDir>/src/ui/audio/__tests__/**/*.test.ts"
+          "<rootDir>/src/ui/audio/__tests__/**/*.test.ts",
+          "<rootDir>/src/ui/__tests__/turnFlow.test.ts"
         ]
       },
       {
