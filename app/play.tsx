@@ -15,7 +15,6 @@ import { CubeAnimationKind, CubeView } from '@/ui/components/CubeView';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
-import { GameStartCover } from '@/ui/components/GameStartCover';
 import { GuessBox } from '@/ui/components/GuessBox';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
@@ -69,7 +68,7 @@ export default function Play() {
 
   const hasActiveGame = match.state !== null && !match.state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const { cover: startCover, fadeThroughBlack } = useGameStartTransition(hasActiveGame);
+  const { fadeThroughBlack } = useGameStartTransition(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -145,12 +144,7 @@ export default function Play() {
   }, [state?.finished, state?.outcome, state?.currentPlayerId]);
 
   if (!state) {
-    return (
-      <View style={styles.page}>
-        <SetupScreen onStart={(setup) => fadeThroughBlack(() => match.start(setup))} />
-        <GameStartCover opacity={startCover} />
-      </View>
-    );
+    return <SetupScreen onStart={(setup) => fadeThroughBlack(() => match.start(setup))} />;
   }
 
   const me = state.currentPlayerId;
@@ -253,7 +247,6 @@ export default function Play() {
             <Text style={styles.endStat}>Palabra del rival</Text>
           </View>
         </EndScreen>
-        <GameStartCover opacity={startCover} />
       </View>
     );
   }
@@ -403,7 +396,6 @@ export default function Play() {
           onContinue={() => setHandoffPlayerId(null)}
         />
       )}
-      <GameStartCover opacity={startCover} />
     </View>
   );
 }
