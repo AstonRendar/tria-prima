@@ -24,7 +24,7 @@ import { SetupScreen } from '@/ui/components/SetupScreen';
 import { SignCounters } from '@/ui/components/SignCounters';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
-import { useGameStartTransition } from '@/ui/hooks/useGameStartTransition';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useMatch } from '@/ui/hooks/useMatch';
 import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
@@ -68,7 +68,7 @@ export default function Play() {
 
   const hasActiveGame = match.state !== null && !match.state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const { fadeThroughBlack } = useGameStartTransition(hasActiveGame);
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -144,7 +144,7 @@ export default function Play() {
   }, [state?.finished, state?.outcome, state?.currentPlayerId]);
 
   if (!state) {
-    return <SetupScreen onStart={(setup) => fadeThroughBlack(() => match.start(setup))} />;
+    return <SetupScreen onStart={(setup) => match.start(setup)} />;
   }
 
   const me = state.currentPlayerId;
@@ -218,13 +218,11 @@ export default function Play() {
   };
 
   const onRestart = () => {
-    fadeThroughBlack(() => {
-      match.restart();
-      resetTurn();
-      setGuess('');
-      setHandoffPlayerId(null);
-      setLastAnimation(null);
-    });
+    match.restart();
+    resetTurn();
+    setGuess('');
+    setHandoffPlayerId(null);
+    setLastAnimation(null);
   };
 
   if (state.finished) {
