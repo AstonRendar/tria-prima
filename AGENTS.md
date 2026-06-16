@@ -133,34 +133,27 @@ Comunes:
 ### `src/ui/`
 - `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveCard`,
   `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
-  `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GameStartCover`, `GuessBox`, `Footer`,
+  `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `Footer`,
   `SetupScreen`). `FlashMessage` flota fijo en la parte superior (fuera del `ScrollView`,
-  `position:absolute`) para verse aunque haya scroll. `GameStartCover` es el velo
-  negro a pantalla completa; lo monta y gobierna `GameTransitionProvider`.
-- `GameTransitionProvider` — provider montado en `_layout` (por encima del `Stack`)
-  que renderiza el velo `GameStartCover` de forma **persistente**: como vive por
-  encima de las pantallas, no se desmonta cuando una pantalla cambia entre setup /
-  partida / fin, así la animación de revelado no se pierde al cruzar ese cambio (este
-  era el bug del fundido que «no volvía»). Expone por contexto `fadeThroughBlack(atBlack)`
-  —fundido a negro a partes iguales (salida + entrada): oscurece, ejecuta `atBlack` en el
-  punto negro y revela—, `revealFromBlack` —nace en negro y solo revela— y
-  `endTransition` —cancela y devuelve la música del menú—.
+  `position:absolute`) para verse aunque haya scroll.
+- No hay transición visual al empezar / reiniciar / terminar partida: el cambio entre
+  setup / partida / fin es directo, igual que volver al menú (navegación normal del
+  `Stack`, `router.dismissTo('/')`). Se probó un velo negro con fundido y se descartó
+  por no convencer; lo único que se conserva es la coordinación de la música.
 - `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
   más la reproducción automática y retardada del turno de la app), `useSoloPlay`
-  (solitario digital), `useTracker` (tracker físico), `useGameStartTransition`
-  (wrapper de conveniencia sobre `GameTransitionProvider`: devuelve `fadeThroughBlack`
-  /`revealFromBlack` y, según `active`, devuelve la música del menú al terminar la
-  partida o salir). `versus`/`play` usan `fadeThroughBlack` en el botón de empezar y al
-  reiniciar; `solo`/`tracker` usan `revealFromBlack` en el `useLayoutEffect` de montaje.
+  (solitario digital), `useTracker` (tracker físico), `useGameMusic`
+  (coordina la música con el estado de la partida: pista de partida mientras hay una
+  en curso —`active`—, pista de menú al terminar o al salir de la pantalla). Las cuatro
+  pantallas con partida (`versus`/`play`/`solo`/`tracker`) lo invocan con `hasActiveGame`.
 - `audio/` — sonido sintético, sin assets. La fuente de verdad son los specs compartidos:
   `sfxSpecs.ts` (efectos) y `score.ts` (partituras). Hay dos pistas de música (`MusicTrack`):
   `menu` y `game` (misma cadencia andaluza en Re menor; la de partida con pulso más vivo y
   melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia y
-  `MusicPlayer.pause` detiene la reproducción sin tocar la preferencia (para los fundidos);
-  `GameTransitionProvider` coordina el fundido a negro con la música: al empezar la partida
-  apaga la del menú (`pause`), reproduce el fundido a negro (≈ 2,2 s, mitades iguales) en
-  silencio y, al terminar, arranca la pista de partida (`setTrack('game')` + `start`); al
-  salir o terminar la partida vuelve a `menu`.
+  `MusicPlayer.pause` detiene la reproducción sin tocar la preferencia;
+  `useGameMusic` coordina la música con el estado de la partida: al empezar (o reiniciar)
+  cambia a la pista de partida (`setTrack('game')` + `start` si la preferencia está activa)
+  y, al terminar la partida o salir de la pantalla, vuelve a `menu`.
   En **web**, `sound.ts` y
   `music.ts` los tocan en vivo con la Web Audio API. En **iOS/Android**, `nativeAudio.ts`
   los pre-renderiza a WAV (PCM 16 bits mono, data URI) con `synth.ts` y los reproduce con
@@ -197,7 +190,7 @@ Comunes:
   `useConfirm()`.
 
 ### `app/` — Rutas (expo-router)
-- `_layout.tsx` — Stack con `ConfirmProvider` y `GameTransitionProvider`.
+- `_layout.tsx` — Stack con `ConfirmProvider`.
 - `index.tsx` — Home: cinco botones (Contra el maestro —principal, destacado—, Duelo, Desafío, Con el juego físico, Reglas).
 - `instructions.tsx` — manual con vocabulario propio.
 - `play.tsx` — modo Duelo. Muestra `SetupScreen` si no hay partida.

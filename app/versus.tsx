@@ -24,7 +24,7 @@ import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
 import { SignCounters } from '@/ui/components/SignCounters';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
-import { useGameStartTransition } from '@/ui/hooks/useGameStartTransition';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useVersus } from '@/ui/hooks/useVersus';
 import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, radius, shadows, spacing } from '@/ui/styles/tokens';
@@ -67,7 +67,7 @@ export default function Versus() {
 
   const hasActiveGame = state !== null && !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const { fadeThroughBlack } = useGameStartTransition(hasActiveGame);
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -165,9 +165,7 @@ export default function Versus() {
     return (
       <VersusSetup
         onStart={(word, level, firstPlayer) =>
-          fadeThroughBlack(() =>
-            versus.start({ playerName: 'Tú', playerWord: word, level, firstPlayer })
-          )
+          versus.start({ playerName: 'Tú', playerWord: word, level, firstPlayer })
         }
       />
     );
@@ -241,12 +239,10 @@ export default function Versus() {
   };
 
   const onRestart = () => {
-    fadeThroughBlack(() => {
-      versus.restart();
-      resetTurn();
-      setGuess('');
-      setLastAnimation(null);
-    });
+    versus.restart();
+    resetTurn();
+    setGuess('');
+    setLastAnimation(null);
   };
 
   if (state.finished) {
