@@ -136,28 +136,31 @@ Comunes:
   `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GameStartCover`, `GuessBox`, `Footer`,
   `SetupScreen`). `FlashMessage` flota fijo en la parte superior (fuera del `ScrollView`,
   `position:absolute`) para verse aunque haya scroll. `GameStartCover` es el velo
-  negro que gobierna `useGameStartTransition`.
+  negro a pantalla completa; lo monta y gobierna `GameTransitionProvider`.
+- `GameTransitionProvider` — provider montado en `_layout` (por encima del `Stack`)
+  que renderiza el velo `GameStartCover` de forma **persistente**: como vive por
+  encima de las pantallas, no se desmonta cuando una pantalla cambia entre setup /
+  partida / fin, así la animación de revelado no se pierde al cruzar ese cambio (este
+  era el bug del fundido que «no volvía»). Expone por contexto `fadeThroughBlack(atBlack)`
+  —fundido a negro a partes iguales (salida + entrada): oscurece, ejecuta `atBlack` en el
+  punto negro y revela—, `revealFromBlack` —nace en negro y solo revela— y
+  `endTransition` —cancela y devuelve la música del menú—.
 - `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
   más la reproducción automática y retardada del turno de la app), `useSoloPlay`
   (solitario digital), `useTracker` (tracker físico), `useGameStartTransition`
-  (fundido a negro de entrada a la partida + cambio de pista de música, en las 4
-  pantallas de juego). Expone `fadeThroughBlack(atBlack)` —fundido a negro a partes
-  iguales (salida + entrada): oscurece, ejecuta `atBlack` en el punto negro (donde se
-  cambia de pantalla) y revela— para los modos con setup (`versus`, `play`) y al
-  reiniciar, y `revealFromBlack` —la pantalla nace en negro y solo se revela— para
-  los modos que arrancan directos (`solo`, `tracker`). Las pantallas renderizan
-  `GameStartCover` en sus tres ramas (setup, partida y fin) para que el fundido se vea
-  en todas.
+  (wrapper de conveniencia sobre `GameTransitionProvider`: devuelve `fadeThroughBlack`
+  /`revealFromBlack` y, según `active`, devuelve la música del menú al terminar la
+  partida o salir). `versus`/`play` usan `fadeThroughBlack` en el botón de empezar y al
+  reiniciar; `solo`/`tracker` usan `revealFromBlack` en el `useLayoutEffect` de montaje.
 - `audio/` — sonido sintético, sin assets. La fuente de verdad son los specs compartidos:
   `sfxSpecs.ts` (efectos) y `score.ts` (partituras). Hay dos pistas de música (`MusicTrack`):
   `menu` y `game` (misma cadencia andaluza en Re menor; la de partida con pulso más vivo y
   melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia y
   `MusicPlayer.pause` detiene la reproducción sin tocar la preferencia (para los fundidos);
-  el hook `useGameStartTransition(hasActiveGame)` (en las 4 pantallas de juego) gobierna el
-  fundido a negro y el cambio de pista: al empezar la partida apaga la música del menú
-  (`pause`), reproduce el fundido a negro (≈ 2,2 s, mitades iguales) en silencio y, al
-  terminar, arranca la pista de partida (`setTrack('game')` + `start`); al salir o terminar
-  la partida vuelve a `menu`.
+  `GameTransitionProvider` coordina el fundido a negro con la música: al empezar la partida
+  apaga la del menú (`pause`), reproduce el fundido a negro (≈ 2,2 s, mitades iguales) en
+  silencio y, al terminar, arranca la pista de partida (`setTrack('game')` + `start`); al
+  salir o terminar la partida vuelve a `menu`.
   En **web**, `sound.ts` y
   `music.ts` los tocan en vivo con la Web Audio API. En **iOS/Android**, `nativeAudio.ts`
   los pre-renderiza a WAV (PCM 16 bits mono, data URI) con `synth.ts` y los reproduce con
@@ -194,7 +197,7 @@ Comunes:
   `useConfirm()`.
 
 ### `app/` — Rutas (expo-router)
-- `_layout.tsx` — Stack con `ConfirmProvider`.
+- `_layout.tsx` — Stack con `ConfirmProvider` y `GameTransitionProvider`.
 - `index.tsx` — Home: cinco botones (Contra el maestro —principal, destacado—, Duelo, Desafío, Con el juego físico, Reglas).
 - `instructions.tsx` — manual con vocabulario propio.
 - `play.tsx` — modo Duelo. Muestra `SetupScreen` si no hay partida.

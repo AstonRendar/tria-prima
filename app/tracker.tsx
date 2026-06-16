@@ -9,7 +9,6 @@ import { useConfirm } from '@/ui/ConfirmProvider';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
-import { GameStartCover } from '@/ui/components/GameStartCover';
 import { GuessBox } from '@/ui/components/GuessBox';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
@@ -36,8 +35,7 @@ export default function Tracker() {
   // la salida (al entrar ya hay una palabra escondida en juego).
   const hasActiveGame = !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const { cover: startCover, fadeThroughBlack, revealFromBlack } =
-    useGameStartTransition(hasActiveGame);
+  const { fadeThroughBlack, revealFromBlack } = useGameStartTransition(hasActiveGame);
 
   useLayoutEffect(() => {
     revealFromBlack();
@@ -108,7 +106,6 @@ export default function Tracker() {
           onRestart={onRestart}
           onHome={() => router.dismissTo('/')}
         />
-        <GameStartCover opacity={startCover} />
       </View>
     );
   }
@@ -163,7 +160,6 @@ export default function Tracker() {
       </ScrollView>
 
       <FlashMessage message={flash.message} />
-      <GameStartCover opacity={startCover} />
     </View>
   );
 }
