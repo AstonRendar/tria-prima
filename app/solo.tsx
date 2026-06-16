@@ -20,7 +20,7 @@ import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
-import { useGameStartTransition } from '@/ui/hooks/useGameStartTransition';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useSoloPlay } from '@/ui/hooks/useSoloPlay';
 import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
@@ -63,11 +63,7 @@ export default function SoloPlay() {
 
   const hasActiveGame = !state.finished;
   useBeforeUnloadWarning(hasActiveGame);
-  const { fadeThroughBlack, revealFromBlack } = useGameStartTransition(hasActiveGame);
-
-  useLayoutEffect(() => {
-    revealFromBlack();
-  }, [revealFromBlack]);
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -182,12 +178,10 @@ export default function SoloPlay() {
   };
 
   const onRestart = () => {
-    fadeThroughBlack(() => {
-      solo.restart();
-      resetTurn();
-      setGuess('');
-      setLastAnimation(null);
-    });
+    solo.restart();
+    resetTurn();
+    setGuess('');
+    setLastAnimation(null);
   };
 
   const rows = useMemo(() => {
