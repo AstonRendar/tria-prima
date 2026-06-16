@@ -15,6 +15,10 @@ import { RotationKind } from '@/domain/Cube';
 import { Position } from '@/domain/Position';
 
 const APP_STEP_DELAY_MS = 900;
+// Pausa antes del primer paso del turno del maestro y tras su primer
+// movimiento, para que se note el cambio de turno y se siga la jugada.
+const APP_LEAD_IN_MS = 1200;
+const APP_AFTER_FIRST_MOVE_MS = 1100;
 
 export type VersusApi = {
   state: MatchState | null;
@@ -59,13 +63,21 @@ export function useVersus(deps: Dependencies): VersusApi {
     appRunningRef.current = true;
     setAppPlaying(true);
     const steps = buildAppTurnSteps(state, depsRef.current, setupRef.current?.level);
-    steps.forEach((step, i) => {
+    let elapsed = APP_LEAD_IN_MS;
+    let seenFirstAction = false;
+    steps.forEach((step) => {
+      const at = elapsed;
       timersRef.current.push(
         setTimeout(() => {
           setLastAppStep(step);
           setState((s) => (s ? applyAppStep(s, step) : s));
-        }, APP_STEP_DELAY_MS * (i + 1))
+        }, at)
       );
+      elapsed = at + APP_STEP_DELAY_MS;
+      if (step.kind === 'action' && !seenFirstAction) {
+        seenFirstAction = true;
+        elapsed += APP_AFTER_FIRST_MOVE_MS;
+      }
     });
   }, [state]);
 

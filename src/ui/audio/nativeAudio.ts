@@ -98,6 +98,11 @@ export class NativeMusicPlayer {
     this.pauseCurrent();
   }
 
+  pause(): void {
+    if (!this.playing) return;
+    this.pauseCurrent();
+  }
+
   private playCurrent(): void {
     try {
       ensureAudioMode();

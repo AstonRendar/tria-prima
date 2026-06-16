@@ -102,7 +102,9 @@ Modo contra el maestro (humano vs app, reutiliza `MatchState` y los casos de uso
 - `PlayAppTurn` — `buildAppTurnSteps` / `applyAppStep` / `playAppTurn`: el turno de la
   app como lista de pasos que la UI reproduce con retardo. Cada acción va precedida
   de un paso `select` (no-op en el estado) que la UI remarca y anima como si el dado
-  lo hubiera tocado un humano.
+  lo hubiera tocado un humano. Mientras juega el maestro (no es el turno del humano),
+  la pantalla cubre el tablero con un velo translúcido (`versus/master-veil`) que deja
+  claro que no hay que tocar nada hasta que termine sus movimientos.
 
 Modo solitario digital (1 jugador, todo en la app):
 - `SoloPlayState` (board, objectives, palabra elegida por la app, turno, puntuación).
@@ -131,17 +133,35 @@ Comunes:
 ### `src/ui/`
 - `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveCard`,
   `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
-  `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `Footer`,
-  `SetupScreen`).
+  `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GameStartCover`, `GuessBox`, `Footer`,
+  `SetupScreen`). `FlashMessage` flota fijo en la parte superior (fuera del `ScrollView`,
+  `position:absolute`) para verse aunque haya scroll. `GameStartCover` es el velo
+  negro a pantalla completa; lo monta y gobierna `GameTransitionProvider`.
+- `GameTransitionProvider` — provider montado en `_layout` (por encima del `Stack`)
+  que renderiza el velo `GameStartCover` de forma **persistente**: como vive por
+  encima de las pantallas, no se desmonta cuando una pantalla cambia entre setup /
+  partida / fin, así la animación de revelado no se pierde al cruzar ese cambio (este
+  era el bug del fundido que «no volvía»). Expone por contexto `fadeThroughBlack(atBlack)`
+  —fundido a negro a partes iguales (salida + entrada): oscurece, ejecuta `atBlack` en el
+  punto negro y revela—, `revealFromBlack` —nace en negro y solo revela— y
+  `endTransition` —cancela y devuelve la música del menú—.
 - `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
   más la reproducción automática y retardada del turno de la app), `useSoloPlay`
-  (solitario digital), `useTracker` (tracker físico).
+  (solitario digital), `useTracker` (tracker físico), `useGameStartTransition`
+  (wrapper de conveniencia sobre `GameTransitionProvider`: devuelve `fadeThroughBlack`
+  /`revealFromBlack` y, según `active`, devuelve la música del menú al terminar la
+  partida o salir). `versus`/`play` usan `fadeThroughBlack` en el botón de empezar y al
+  reiniciar; `solo`/`tracker` usan `revealFromBlack` en el `useLayoutEffect` de montaje.
 - `audio/` — sonido sintético, sin assets. La fuente de verdad son los specs compartidos:
   `sfxSpecs.ts` (efectos) y `score.ts` (partituras). Hay dos pistas de música (`MusicTrack`):
   `menu` y `game` (misma cadencia andaluza en Re menor; la de partida con pulso más vivo y
-  melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia; el hook
-  `useGameMusic(hasActiveGame)` (en las 4 pantallas de juego) pone `game` mientras hay
-  partida activa y devuelve `menu` al salir o terminar. En **web**, `sound.ts` y
+  melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia y
+  `MusicPlayer.pause` detiene la reproducción sin tocar la preferencia (para los fundidos);
+  `GameTransitionProvider` coordina el fundido a negro con la música: al empezar la partida
+  apaga la del menú (`pause`), reproduce el fundido a negro (≈ 2,2 s, mitades iguales) en
+  silencio y, al terminar, arranca la pista de partida (`setTrack('game')` + `start`); al
+  salir o terminar la partida vuelve a `menu`.
+  En **web**, `sound.ts` y
   `music.ts` los tocan en vivo con la Web Audio API. En **iOS/Android**, `nativeAudio.ts`
   los pre-renderiza a WAV (PCM 16 bits mono, data URI) con `synth.ts` y los reproduce con
   `expo-audio`; la melodía nativa usa triángulo y un eco horneado en lugar del filtro+delay
@@ -177,7 +197,7 @@ Comunes:
   `useConfirm()`.
 
 ### `app/` — Rutas (expo-router)
-- `_layout.tsx` — Stack con `ConfirmProvider`.
+- `_layout.tsx` — Stack con `ConfirmProvider` y `GameTransitionProvider`.
 - `index.tsx` — Home: cinco botones (Contra el maestro —principal, destacado—, Duelo, Desafío, Con el juego físico, Reglas).
 - `instructions.tsx` — manual con vocabulario propio.
 - `play.tsx` — modo Duelo. Muestra `SetupScreen` si no hay partida.
@@ -194,7 +214,7 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 |---|---|---|
 | Home | `home/{destino}` | `home/play`, `home/versus`, `home/tracker`, `home/instructions` |
 | Setup (Versus) | `setup/{word\|start\|level-apprentice\|level-master\|first-p1\|first-p2\|first-random}` | — |
-| Turno (Versus) | `versus/turn-name` | — |
+| Turno (Versus) | `versus/{turn-name\|master-veil}` | — |
 | Setup (Duelo) | `setup/{campo}` | `setup/p1`, `setup/p2`, `setup/first-random`, `setup/start` |
 | Cuadrícula | `cube/{i}` | `cube/0`..`cube/8` |
 | Acciones turno | `action/{kind}` | `action/roll-forward`, `action/spin-cw`, `action/swap`, `action/cancel` |
@@ -213,8 +233,10 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 ## Flujo del turno (modo Duelo)
 
 1. **`select-cube`** — el jugador toca uno de los 9 dados.
-2. **`choose-action`** — aparece un panel con: Voltear hacia ti, Voltear al rival,
-   Rotar ↻, Rotar ↺, Intercambiar, Cancelar.
+2. **`choose-action`** — aparece un panel con: Voltear ↷, Rotar ↻, Intercambiar,
+   Cancelar. Como los dados tienen caras opuestas idénticas (`CubeSet`), voltear
+   adelante/atrás y rotar ↻/↺ son equivalentes: basta un botón por movimiento
+   (y `AppOpponent` solo explora `roll-forward` y `spin-cw`).
 3. **`select-second-cube`** — si elige intercambiar, espera el segundo dado en la misma
    fila o columna.
 4. **`declare`** — los 2 dados están tocados. La declaración se ejecuta automáticamente
@@ -224,6 +246,14 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 Tras *Acabar turno*: alterna currentPlayerId, los 2 dados pasan a `lockedThisTurn` del
 siguiente turno y se muestra un *handoff* ("Pasa el dispositivo a {nombre}") antes de que
 el rival pueda jugar.
+
+La transición entre fases vive como funciones puras en `src/ui/turnFlow.ts` (`TurnState`,
+`pressCube`, `rotateSelected`, `startSwap`, `commitSwap`, `cancelAction`, `cancelSwap`,
+`canFinishTurn`, `turnMessage`), compartidas por las tres pantallas con flujo de turno
+(`versus`, `play`, `solo`). Las pantallas solo ejecutan los efectos (audio, animación,
+dominio); la decisión es pura y está cubierta por `src/ui/__tests__/turnFlow.test.ts`
+(en el proyecto **logic**). Regla clave: un dado ya movido este turno no puede volver a
+tocarse (el turno son 2 dados **distintos**).
 
 ## Reglas del juego (resumen funcional)
 
