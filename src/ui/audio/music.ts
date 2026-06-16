@@ -18,6 +18,10 @@ export interface MusicPlayer {
 
 const STORAGE_KEY = 'tria-prima/music-enabled';
 
+// Entrada del máster: corta para que al cambiar de pista la nueva suene enseguida
+// y solape con el apagado de la anterior (≈ 0,8 s), sin hueco de silencio.
+const FADE_IN_S = 0.6;
+
 type WebAudioCtor = new () => AudioContext;
 type LegacyWindow = Window & { webkitAudioContext?: WebAudioCtor };
 
@@ -84,7 +88,7 @@ class WebMusicPlayer implements MusicPlayer {
 
     const master = ctx.createGain();
     master.gain.setValueAtTime(0, ctx.currentTime);
-    master.gain.linearRampToValueAtTime(1, ctx.currentTime + 2);
+    master.gain.linearRampToValueAtTime(1, ctx.currentTime + FADE_IN_S);
     master.connect(ctx.destination);
 
     // Eco suave para la atmósfera de laboratorio.
