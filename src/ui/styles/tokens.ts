@@ -144,3 +144,19 @@ export const fonts = {
     default: 'Georgia, serif',
   }) as string,
 };
+
+// Nombre legible de una insignia (objetivo o carta) para lectores de pantalla.
+export function signName(
+  sign: { kind: 'symbol'; value: CubeSymbol } | { kind: 'color'; value: CubeColor },
+  variant: 'alchemy' | 'physical' = 'alchemy'
+): string {
+  if (sign.kind === 'symbol') {
+    return (variant === 'physical' ? physicalSymbolLabel : cubeSymbolLabel)[sign.value];
+  }
+  return (variant === 'physical' ? physicalColorLabel : cubeColorLabel)[sign.value];
+}
+
+export function cardStateLabel(card: { revealed: boolean; letter: string; markers: number }): string {
+  if (card.revealed) return `letra ${card.letter}`;
+  return `oculta, ${card.markers} ${card.markers === 1 ? 'marcador' : 'marcadores'}`;
+}

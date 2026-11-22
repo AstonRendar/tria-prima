@@ -42,7 +42,7 @@ export function ObjectiveCounter({
       </View>
       <View style={styles.middle}>
         <Text style={styles.label}>{label}</Text>
-        <Text style={styles.count}>{count} declaración{count === 1 ? '' : 'es'}</Text>
+        <Text style={styles.count}>{count} {count === 1 ? 'declaración' : 'declaraciones'}</Text>
       </View>
       <View style={styles.buttons}>
         <Pressable

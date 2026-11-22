@@ -341,7 +341,7 @@ function VersusSetup({
         <Text style={styles.setupHint}>
           {level === 'apprentice'
             ? 'Se despista a menudo y solo arriesga adivinanzas casi seguras.'
-            : 'Juega siempre su mejor jugada y arriesga en cuanto puede.'}
+            : 'Juega siempre su mejor jugada y arriesga en cuanto tiene cinco letras.'}
         </Text>
       </View>
       <View style={styles.setupField}>

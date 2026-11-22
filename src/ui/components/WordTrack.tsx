@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SecretWord } from '@/domain/SecretWord';
 import { RevealFlip } from './RevealFlip';
 import { SignGlyph, SignVariant } from './SignGlyph';
-import { colors, fonts, radius } from '@/ui/styles/tokens';
+import { cardStateLabel, colors, fonts, radius, signName } from '@/ui/styles/tokens';
 
 type Props = {
   word: SecretWord;
@@ -14,7 +14,13 @@ export function WordTrack({ word, variant }: Props) {
     <View style={styles.row}>
       {word.cards.map((card, i) => {
         return (
-          <View key={i} style={styles.cell} testID={`word-card/${i}`}>
+          <View
+            key={i}
+            style={styles.cell}
+            testID={`word-card/${i}`}
+            accessible
+            accessibilityLabel={`Carta ${i + 1}, ${signName(card.faceSign, variant)}: ${cardStateLabel(card)}`}
+          >
             <View style={styles.signBox}>
               <SignGlyph sign={card.faceSign} size={32} variant={variant} />
             </View>
