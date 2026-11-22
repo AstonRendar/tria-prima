@@ -27,6 +27,8 @@ import { useTurnController } from '@/ui/hooks/useTurnController';
 import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
 import { describePhase } from '@/ui/turnFlow';
+import { TutorialTip } from '@/ui/tutorial/TutorialTip';
+import { useTutorial } from '@/ui/tutorial/useTutorial';
 
 const dependencies = buildProductionDependencies();
 
@@ -61,6 +63,20 @@ export default function Play() {
     enabled: hasActiveGame,
     showMessage: flash.show,
   });
+
+  const opponentWord = state ? opponentOf(state, state.currentPlayerId).secretWord : null;
+  const tutorial = useTutorial(
+    hasActiveGame && opponentWord && handoffPlayerId === null
+      ? {
+          isMyTurn: true,
+          phase: turnCtl.turn.phase,
+          touchedCount: turnCtl.turn.touched.size,
+          hasLockedCubes: state.board.lockedThisTurn.length > 0,
+          anyMarker: opponentWord.cards.some((c) => c.markers > 0 || c.revealed),
+          canGuess: match.canGuessNow,
+        }
+      : null
+  );
 
   // Tras avanzar de turno, abre el "pasa el dispositivo".
   useEffect(() => {
@@ -215,6 +231,9 @@ export default function Play() {
       <Footer />
       </ScrollView>
 
+      {handoffPlayerId === null && (
+        <TutorialTip step={tutorial.step} onDismiss={tutorial.dismiss} onSkip={tutorial.skip} />
+      )}
       <FlashMessage message={flash.message} />
 
       {handoffPlayerId && (

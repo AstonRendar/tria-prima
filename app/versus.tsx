@@ -35,6 +35,8 @@ import { useVersus } from '@/ui/hooks/useVersus';
 import { FiligreeDivider, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, radius, shadows, spacing } from '@/ui/styles/tokens';
 import { describePhase } from '@/ui/turnFlow';
+import { TutorialTip } from '@/ui/tutorial/TutorialTip';
+import { useTutorial } from '@/ui/tutorial/useTutorial';
 
 const dependencies = buildProductionDependencies();
 
@@ -69,6 +71,19 @@ export default function Versus() {
     enabled: isMyTurn,
     showMessage: flash.show,
   });
+
+  const tutorial = useTutorial(
+    hasActiveGame
+      ? {
+          isMyTurn,
+          phase: turnCtl.turn.phase,
+          touchedCount: turnCtl.turn.touched.size,
+          hasLockedCubes: state.board.lockedThisTurn.length > 0,
+          anyMarker: state.players.p2.secretWord.cards.some((c) => c.markers > 0 || c.revealed),
+          canGuess: versus.canGuessNow,
+        }
+      : null
+  );
 
   // Las jugadas de la app se narran según llegan. La selección y la animación
   // se derivan del paso en el propio render: así CubeView recibe el
@@ -249,6 +264,7 @@ export default function Versus() {
         </View>
       )}
 
+      <TutorialTip step={tutorial.step} onDismiss={tutorial.dismiss} onSkip={tutorial.skip} />
       <FlashMessage message={flash.message} />
     </View>
   );

@@ -23,6 +23,8 @@ import { useTurnController } from '@/ui/hooks/useTurnController';
 import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
 import { describePhase } from '@/ui/turnFlow';
+import { TutorialTip } from '@/ui/tutorial/TutorialTip';
+import { useTutorial } from '@/ui/tutorial/useTutorial';
 
 const dependencies = buildProductionDependencies();
 
@@ -56,6 +58,18 @@ export default function SoloPlay() {
     showMessage: flash.show,
   });
   const { turn } = turnCtl;
+  const tutorial = useTutorial(
+    hasActiveGame
+      ? {
+          isMyTurn: true,
+          phase: turn.phase,
+          touchedCount: turn.touched.size,
+          hasLockedCubes: state.board.lockedThisTurn.length > 0,
+          anyMarker: state.secretWord.cards.some((c) => c.markers > 0 || c.revealed),
+          canGuess: solo.canGuessNow,
+        }
+      : null
+  );
 
   useEffect(() => {
     if (!state.finished) return;
@@ -187,6 +201,7 @@ export default function SoloPlay() {
       <Footer />
       </ScrollView>
 
+      <TutorialTip step={tutorial.step} onDismiss={tutorial.dismiss} onSkip={tutorial.skip} />
       <FlashMessage message={flash.message} />
     </View>
   );

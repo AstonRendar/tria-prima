@@ -47,6 +47,7 @@
       "src/domain/**/*.ts",
       "src/application/**/*.ts",
       "src/ui/turnFlow.ts",
+      "src/ui/tutorial/tutorialSteps.ts",
       "!**/__tests__/**"
     ],
     "projects": [
@@ -62,7 +63,8 @@
           "<rootDir>/src/application/**/__tests__/**/*.test.ts",
           "<rootDir>/src/infrastructure/**/__tests__/**/*.test.ts",
           "<rootDir>/src/ui/audio/__tests__/**/*.test.ts",
-          "<rootDir>/src/ui/__tests__/turnFlow.test.ts"
+          "<rootDir>/src/ui/__tests__/turnFlow.test.ts",
+          "<rootDir>/src/ui/tutorial/__tests__/**/*.test.ts"
         ]
       },
       {

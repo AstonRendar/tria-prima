@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActionButton } from '@/ui/components/ActionButton';
 import { Footer } from '@/ui/components/Footer';
 import { RulesBook } from '@/ui/components/RulesBook';
 import { FiligreeDivider, Ouroboros, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
+import { resetTutorial } from '@/ui/tutorial/useTutorial';
 
 export default function Instructions() {
+  const [tutorialReset, setTutorialReset] = useState(false);
   return (
     <View style={styles.page}>
       <ParchmentBackground />
@@ -18,6 +22,17 @@ export default function Instructions() {
           </View>
         </View>
 
+        <View style={styles.tutorial}>
+          <ActionButton
+            label={tutorialReset ? 'El tutorial saldrá en tu próxima partida' : 'Repetir el tutorial'}
+            onPress={() => {
+              resetTutorial();
+              setTutorialReset(true);
+            }}
+            disabled={tutorialReset}
+            testID="instructions/reset-tutorial"
+          />
+        </View>
         <RulesBook />
 
         <View style={styles.flourish}>
@@ -30,6 +45,10 @@ export default function Instructions() {
 }
 
 const styles = StyleSheet.create({
+  tutorial: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
   page: {
     flex: 1,
   },
