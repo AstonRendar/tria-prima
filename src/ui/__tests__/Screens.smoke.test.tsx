@@ -44,6 +44,10 @@ describe('app smoke', () => {
     }
     expect(screen.getByTestId('first-turn-notice')).toBeTruthy();
 
+    // Primera partida: el tutorial explica el objetivo.
+    expect(await screen.findByTestId('tutorial/tip')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('tutorial/skip'));
+
     // Interacción básica: seleccionar un dado abre el panel de acciones.
     await fireEvent.press(screen.getByTestId('cube/0'));
     expect(await screen.findByTestId('action/spin-cw')).toBeTruthy();

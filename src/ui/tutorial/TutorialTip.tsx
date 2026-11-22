@@ -10,8 +10,8 @@ type Props = {
   onSkip: () => void;
 };
 
-// Consejo flotante en la parte inferior: no tapa el tablero entero para que se
-// pueda hacer lo que explica.
+// Consejo flotante en la parte superior: deja libres el tablero y el panel de
+// acciones para que se pueda hacer lo que explica.
 export function TutorialTip({ step, onDismiss, onSkip }: Props) {
   if (!step) return null;
   return (
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.md,
     right: spacing.md,
-    bottom: spacing.lg,
+    top: spacing.sm,
     zIndex: 40,
   },
   card: {

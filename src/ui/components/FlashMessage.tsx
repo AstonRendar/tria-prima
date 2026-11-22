@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.goldBright,
-    zIndex: 30,
+    zIndex: 50,
     ...shadows.raised,
   },
   text: {

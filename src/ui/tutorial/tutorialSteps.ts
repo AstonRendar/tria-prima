@@ -62,7 +62,7 @@ export const TUTORIAL_STEPS: ReadonlyArray<TutorialStep> = [
   {
     id: 'locked',
     title: 'Dados bloqueados',
-    body: 'Los dados remarcados son los que movió el rival en su turno: este turno no puedes tocarlos. Lo mismo le pasará a él con los tuyos.',
+    body: 'Los dados atenuados y con el signo ⊘ son los que movió el rival en su turno: este turno no puedes tocarlos. Lo mismo le pasará a él con los tuyos.',
     when: (c) => c.isMyTurn && c.phase === 'select-cube' && c.hasLockedCubes,
   },
   {

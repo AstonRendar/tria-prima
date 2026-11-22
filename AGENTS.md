@@ -144,7 +144,7 @@ Comunes:
 - `tutorial/` — tutorial de la primera partida (versus, duelo y desafío; no en el modo
   físico): `tutorialSteps.ts` define los consejos y cuándo aplican (`nextTutorialStep`,
   puro y testeado en el proyecto logic), `useTutorial` los muestra uno a uno y
-  `TutorialTip` los pinta abajo sin bloquear el tablero. Al verlos todos o pulsar
+  `TutorialTip` los pinta arriba sin tapar el tablero ni el panel de acciones. Al verlos todos o pulsar
   «Saltar tutorial» se guarda `tria-prima/tutorial-done`; la pantalla de reglas permite
   repetirlo. `FlashMessage` flota fijo en la parte superior (fuera del `ScrollView`,
   `position:absolute`) para verse aunque haya scroll.
