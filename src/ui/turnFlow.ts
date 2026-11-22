@@ -28,6 +28,7 @@ export const initialTurnState: TurnState = {
 
 // Avisos que la UI muestra (flash) tras una transición rechazada.
 export type TurnMessage =
+  | 'locked'
   | 'already-declared'
   | 'already-touched'
   | 'pick-different-cube'
@@ -35,6 +36,8 @@ export type TurnMessage =
 
 export function turnMessage(message: TurnMessage): string {
   switch (message) {
+    case 'locked':
+      return 'Ese dado lo movió el rival: está bloqueado este turno';
     case 'already-declared':
       return 'Ya has movido tus dos dados. Acaba el turno.';
     case 'already-touched':
@@ -54,10 +57,17 @@ export type PressOutcome = {
   readonly swap?: { readonly a: Position; readonly b: Position };
 };
 
-// Toca un dado. La pantalla ya ha descartado los casos previos (partida
-// terminada, turno ajeno o dado bloqueado). Si el estado no cambia, devuelve el
-// mismo objeto para que la pantalla pueda evitar un re-render innecesario.
-export function pressCube(state: TurnState, position: Position): PressOutcome {
+// Toca un dado. La pantalla ya ha descartado partida terminada y turno ajeno.
+// Si el estado no cambia, devuelve el mismo objeto para que la pantalla pueda
+// evitar un re-render innecesario.
+export function pressCube(
+  state: TurnState,
+  position: Position,
+  locked: ReadonlyArray<Position> = []
+): PressOutcome {
+  if (locked.includes(position)) {
+    return { state, message: 'locked' };
+  }
   if (state.phase === 'declare') {
     return { state, message: 'already-declared' };
   }
@@ -143,9 +153,15 @@ export function describeDeclareResult(
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
-export function describePhase(phase: TurnPhase, touchedCount: number): string {
+export function describePhase(
+  phase: TurnPhase,
+  touchedCount: number,
+  firstTurn: boolean = false
+): string {
   if (phase === 'declare') {
-    return 'Objetivos cumplidos declarados. Pulsa "Acabar turno" cuando estés listo.';
+    return firstTurn
+      ? 'Primer turno: no se declara. Pulsa "Acabar turno".'
+      : 'Objetivos cumplidos declarados. Pulsa "Acabar turno" cuando estés listo.';
   }
   if (phase === 'choose-action') {
     return 'Elige qué hacer con el dado seleccionado.';

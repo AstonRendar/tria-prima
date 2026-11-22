@@ -43,6 +43,7 @@ export function ConfirmDialog({
               <Pressable
                 onPress={onCancel}
                 testID="confirm/cancel"
+                accessibilityRole="button"
                 style={({ pressed }) => [
                   styles.btn,
                   styles.btnSecondary,
@@ -54,6 +55,7 @@ export function ConfirmDialog({
               <Pressable
                 onPress={onConfirm}
                 testID="confirm/ok"
+                accessibilityRole="button"
                 style={({ pressed }) => [
                   styles.btn,
                   destructive ? styles.btnDanger : styles.btnPrimary,

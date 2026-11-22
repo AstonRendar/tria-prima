@@ -45,9 +45,9 @@ describe('app smoke', () => {
     expect(screen.getByTestId('first-turn-notice')).toBeTruthy();
 
     // Interacción básica: seleccionar un dado abre el panel de acciones.
-    fireEvent.press(screen.getByTestId('cube/0'));
+    await fireEvent.press(screen.getByTestId('cube/0'));
     expect(await screen.findByTestId('action/spin-cw')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('action/cancel'));
+    await fireEvent.press(screen.getByTestId('action/cancel'));
 
     // Tracker: los seis contadores de objetivo.
     await goTo('/tracker');

@@ -10,8 +10,6 @@ export interface MusicPlayer {
   stop(): void;
   toggle(): boolean;
   isEnabled(): boolean;
-  // Detiene la reproducción sin tocar la preferencia (para los fundidos).
-  pause(): void;
   // Cambia de pista (menú / partida) respetando la preferencia de encendido.
   setTrack(track: MusicTrack): void;
 }
@@ -32,28 +30,27 @@ class WebMusicPlayer implements MusicPlayer {
   private loopTimer: ReturnType<typeof setTimeout> | null = null;
   private playing = false;
   private track: MusicTrack = 'menu';
-  private enabled = readFlag(STORAGE_KEY);
 
   isEnabled(): boolean {
-    return this.enabled;
+    return readFlag(STORAGE_KEY);
   }
 
   init(): void {
-    if (!this.enabled || typeof window === 'undefined') return;
+    if (!readFlag(STORAGE_KEY) || typeof window === 'undefined') return;
     // El navegador bloquea el audio hasta un gesto del usuario.
     window.addEventListener(
       'pointerdown',
       () => {
-        if (this.enabled && !this.playing) this.start();
+        if (readFlag(STORAGE_KEY) && !this.playing) this.start();
       },
       { once: true }
     );
   }
 
   toggle(): boolean {
-    if (this.playing) this.stop();
+    if (readFlag(STORAGE_KEY)) this.stop();
     else this.start();
-    return this.enabled;
+    return readFlag(STORAGE_KEY);
   }
 
   setTrack(track: MusicTrack): void {
@@ -65,19 +62,13 @@ class WebMusicPlayer implements MusicPlayer {
   }
 
   start(): void {
-    this.enabled = true;
     writeFlag(STORAGE_KEY, true);
     if (this.playing) return;
     this.begin();
   }
 
   stop(): void {
-    this.enabled = false;
     writeFlag(STORAGE_KEY, false);
-    this.halt();
-  }
-
-  pause(): void {
     this.halt();
   }
 

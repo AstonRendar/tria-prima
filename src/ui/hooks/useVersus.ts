@@ -24,11 +24,13 @@ export type VersusApi = {
   state: MatchState | null;
   appPlaying: boolean;
   lastAppStep: AppTurnStep | null;
+  // Dados que el maestro ha señalado en el paso en curso (dos en un intercambio).
+  appSelection: Position[];
   start: (setup: VersusSetup) => void;
   rotate: (position: Position, kind: RotationKind) => void;
   swap: (a: Position, b: Position) => boolean;
   declare: () => DeclareMatchResult;
-  finishTurn: (touched: ReadonlyArray<Position>) => void;
+  finishTurn: () => void;
   guess: (input: string) => void;
   canGuessNow: boolean;
   restart: () => void;
@@ -43,6 +45,7 @@ export function useVersus(deps: Dependencies): VersusApi {
   const [state, setState] = useState<MatchState | null>(null);
   const [appPlaying, setAppPlaying] = useState(false);
   const [lastAppStep, setLastAppStep] = useState<AppTurnStep | null>(null);
+  const [appSelection, setAppSelection] = useState<Position[]>([]);
   const appRunningRef = useRef(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -56,6 +59,7 @@ export function useVersus(deps: Dependencies): VersusApi {
   useEffect(() => {
     if (!state || state.finished || state.currentPlayerId !== 'p2') {
       appRunningRef.current = false;
+      clearTimers();
       setAppPlaying(false);
       return;
     }
@@ -70,6 +74,7 @@ export function useVersus(deps: Dependencies): VersusApi {
       timersRef.current.push(
         setTimeout(() => {
           setLastAppStep(step);
+          setAppSelection((sel) => (step.kind === 'select' ? [...sel, step.position] : []));
           setState((s) => (s ? applyAppStep(s, step) : s));
         }, at)
       );
@@ -79,7 +84,7 @@ export function useVersus(deps: Dependencies): VersusApi {
         elapsed += APP_AFTER_FIRST_MOVE_MS;
       }
     });
-  }, [state]);
+  }, [state, clearTimers]);
 
   const start = useCallback((setup: VersusSetup) => {
     setupRef.current = setup;
@@ -110,12 +115,12 @@ export function useVersus(deps: Dependencies): VersusApi {
     return result;
   }, [state]);
 
-  const finishTurn = useCallback((touched: ReadonlyArray<Position>) => {
-    setState((s) => (s ? endMatchTurn(s, touched) : s));
+  const finishTurn = useCallback(() => {
+    setState((s) => (s ? endMatchTurn(s) : s));
   }, []);
 
   const guess = useCallback((input: string) => {
-    setState((s) => (s ? guessMatchWord(s, input) : s));
+    setState((s) => (s ? guessMatchWord(s, 'p1', input) : s));
   }, []);
 
   const restart = useCallback(() => {
@@ -130,6 +135,7 @@ export function useVersus(deps: Dependencies): VersusApi {
     state,
     appPlaying,
     lastAppStep,
+    appSelection,
     start,
     rotate,
     swap,

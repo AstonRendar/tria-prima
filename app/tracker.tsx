@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
 import { ALL_OBJECTIVES, Objective } from '@/domain/Objective';
-import { canGuess, maskedText, revealedCount } from '@/domain/SecretWord';
+import { maskedText, plainText, revealedCount } from '@/domain/SecretWord';
 import { buildProductionDependencies } from '@/infrastructure/ProductionDependencies';
 import { audio } from '@/ui/audio/sound';
-import { useConfirm } from '@/ui/ConfirmProvider';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
@@ -14,7 +13,7 @@ import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCounter } from '@/ui/components/ObjectiveCounter';
 import { WordTrack } from '@/ui/components/WordTrack';
-import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
+import { useExitGuard } from '@/ui/hooks/useExitGuard';
 import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useTracker } from '@/ui/hooks/useTracker';
 import { FiligreeDivider, ParchmentBackground } from '@/ui/ornaments';
@@ -25,41 +24,34 @@ const dependencies = buildProductionDependencies();
 export default function Tracker() {
   const router = useRouter();
   const navigation = useNavigation();
-  const confirm = useConfirm();
   const tracker = useTracker(dependencies);
   const { state } = tracker;
   const [guess, setGuess] = useState('');
   const flash = useFlash();
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+    },
+    []
+  );
 
   // Mismo criterio que duelo y solitario: partida sin terminar = confirmar
   // la salida (al entrar ya hay una palabra escondida en juego).
   const hasActiveGame = !state.finished;
-  useBeforeUnloadWarning(hasActiveGame);
+  useExitGuard(hasActiveGame, 'Salir de la partida');
   useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
   }, [router]);
 
-  const requestExit = useCallback(() => {
-    if (!hasActiveGame) {
-      goHome();
-      return;
-    }
-    confirm({
-      title: 'Salir de la partida',
-      message: 'Se perderá el progreso actual. ¿Quieres salir al menú principal?',
-      confirmLabel: 'Salir',
-      destructive: true,
-      onConfirm: goHome,
-    });
-  }, [confirm, goHome, hasActiveGame]);
-
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerLeft: () => <HeaderBackButton onPress={requestExit} />,
+      headerLeft: () => <HeaderBackButton onPress={goHome} />,
     });
-  }, [navigation, requestExit]);
+  }, [navigation, goHome]);
 
   useEffect(() => {
     if (!state.finished) return;
@@ -74,7 +66,8 @@ export default function Tracker() {
     }
     audio.play('objective');
     if (result.revealedCardIndex !== null) {
-      setTimeout(() => audio.play('reveal'), 200);
+      if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+      revealTimerRef.current = setTimeout(() => audio.play('reveal'), 200);
       flash.show('Letra revelada');
     }
   };
@@ -90,21 +83,19 @@ export default function Tracker() {
   };
 
   if (state.finished) {
-    const fullWord = state.secretWord.cards.map((c) => c.letter).join('');
     return (
       <View style={styles.page}>
         <ParchmentBackground />
         <EndScreen
           won={state.outcome === 'won'}
-          word={fullWord}
+          word={plainText(state.secretWord)}
           onRestart={onRestart}
-          onHome={() => router.dismissTo('/')}
+          onHome={goHome}
         />
       </View>
     );
   }
 
-  const guessEligible = canGuess(state.secretWord);
 
   return (
     <View style={styles.page}>
@@ -124,7 +115,7 @@ export default function Tracker() {
       </View>
       <Text style={styles.sectionTitle}>Objetivos</Text>
       <Text style={styles.sectionHint}>
-        Pulsa ＋ cuando cumplas el objetivo en tu mesa; − si te equivocaste.
+        Pulsa ＋ cuando cumplas el objetivo en tu mesa; − si te equivocaste (también oculta una letra revelada por error).
         Al acumular 2 marcas se revela la letra de esa carta.
       </Text>
       {ALL_OBJECTIVES.map((objective) => (
@@ -142,7 +133,7 @@ export default function Tracker() {
         Reveladas {revealedCount(state.secretWord)} / 6
       </Text>
 
-      {guessEligible && (
+      {tracker.canGuessNow && (
         <GuessBox
           value={guess}
           onChangeText={setGuess}

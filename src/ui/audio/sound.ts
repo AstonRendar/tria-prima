@@ -19,15 +19,13 @@ const STORAGE_KEY = 'tria-prima/sfx-enabled';
 
 class WebAudioBus implements AudioBus {
   private ctx: AudioContext | null = null;
-  private enabled = readFlag(STORAGE_KEY);
 
   setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
     writeFlag(STORAGE_KEY, enabled);
   }
 
   isEnabled(): boolean {
-    return this.enabled;
+    return readFlag(STORAGE_KEY);
   }
 
   play(key: SoundKey): void {
@@ -39,7 +37,7 @@ class WebAudioBus implements AudioBus {
   }
 
   private getCtx(): AudioContext | null {
-    if (!this.enabled) return null;
+    if (!readFlag(STORAGE_KEY)) return null;
     if (typeof window === 'undefined') return null;
     if (!this.ctx) {
       const W = window as LegacyWindow;

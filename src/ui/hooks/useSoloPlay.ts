@@ -18,7 +18,7 @@ export type SoloPlayApi = {
   rotate: (position: Position, kind: RotationKind) => void;
   swap: (a: Position, b: Position) => boolean;
   declare: () => DeclareSoloResult;
-  finishTurn: (touched: ReadonlyArray<Position>) => void;
+  finishTurn: () => void;
   guess: (input: string) => void;
   canGuessNow: boolean;
   restart: () => void;
@@ -47,8 +47,8 @@ export function useSoloPlay(deps: Dependencies): SoloPlayApi {
     return result;
   }, [state]);
 
-  const finishTurn = useCallback((touched: ReadonlyArray<Position>) => {
-    setState((s) => endSoloTurn(s, touched));
+  const finishTurn = useCallback(() => {
+    setState((s) => endSoloTurn(s));
   }, []);
 
   const guess = useCallback((input: string) => {

@@ -1,18 +1,22 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
 import { AppLevel } from '@/application/AppOpponent';
 import { FirstPlayerChoice } from '@/application/StartMatch';
 import { APP_PLAYER_NAME } from '@/application/StartVersus';
-import { TOUCHES_PER_TURN } from '@/domain/Board';
-import { RotationKind } from '@/domain/Cube';
-import { GRID_SIZE, Position } from '@/domain/Position';
-import { canGuess, maskedText, normalizeGuess, revealedCount, WORD_LENGTH } from '@/domain/SecretWord';
+import { Position } from '@/domain/Position';
+import {
+  isValidSecretWord,
+  maskedText,
+  normalizeGuess,
+  plainText,
+  revealedCount,
+  WORD_LENGTH,
+} from '@/domain/SecretWord';
 import { buildProductionDependencies } from '@/infrastructure/ProductionDependencies';
 import { audio } from '@/ui/audio/sound';
-import { useConfirm } from '@/ui/ConfirmProvider';
 import { ActionButton } from '@/ui/components/ActionButton';
-import { CubeAnimationKind, CubeView } from '@/ui/components/CubeView';
+import { CubeGrid } from '@/ui/components/CubeGrid';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
@@ -22,86 +26,57 @@ import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveBlockedZone } from '@/ui/components/ObjectiveBlockedZone';
 import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
 import { SignCounters } from '@/ui/components/SignCounters';
+import { TurnActions } from '@/ui/components/TurnActions';
 import { WordTrack } from '@/ui/components/WordTrack';
-import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
+import { useExitGuard } from '@/ui/hooks/useExitGuard';
 import { useGameMusic } from '@/ui/hooks/useGameMusic';
+import { CubeAnimation, rotationSfx, useTurnController } from '@/ui/hooks/useTurnController';
 import { useVersus } from '@/ui/hooks/useVersus';
-import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
+import { FiligreeDivider, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, radius, shadows, spacing } from '@/ui/styles/tokens';
-import {
-  cancelAction,
-  cancelSwap,
-  canFinishTurn,
-  commitSwap,
-  describeDeclareResult,
-  describePhase,
-  pressCube,
-  rotateSelected,
-  rotationActions,
-  startSwap,
-  TurnPhase,
-  TurnState,
-  turnMessage,
-} from '@/ui/turnFlow';
+import { describePhase } from '@/ui/turnFlow';
 
 const dependencies = buildProductionDependencies();
-
-const ROTATIONS = rotationActions();
 
 export default function Versus() {
   const router = useRouter();
   const navigation = useNavigation();
-  const confirm = useConfirm();
   const versus = useVersus(dependencies);
   const { state } = versus;
-  const [phase, setPhase] = useState<TurnPhase>('select-cube');
-  const [selected, setSelected] = useState<Position | null>(null);
-  const [touched, setTouched] = useState<Set<Position>>(new Set());
   const [guess, setGuess] = useState('');
-  const [lastAnimation, setLastAnimation] = useState<{
-    positions: ReadonlySet<Position>;
-    kind: CubeAnimationKind;
-  } | null>(null);
   const flash = useFlash();
-  const autoDeclaredRef = useRef(false);
 
   const hasActiveGame = state !== null && !state.finished;
-  useBeforeUnloadWarning(hasActiveGame);
+  useExitGuard(hasActiveGame, 'Abandonar el duelo');
   useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
   }, [router]);
 
-  const requestExit = useCallback(() => {
-    if (!hasActiveGame) {
-      goHome();
-      return;
-    }
-    confirm({
-      title: 'Abandonar el duelo',
-      message: 'Se perderá la partida en curso. ¿Quieres salir al menú principal?',
-      confirmLabel: 'Salir',
-      destructive: true,
-      onConfirm: goHome,
-    });
-  }, [confirm, goHome, hasActiveGame]);
-
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerLeft: () => <HeaderBackButton onPress={requestExit} />,
+      headerLeft: () => <HeaderBackButton onPress={goHome} />,
     });
-  }, [navigation, requestExit]);
+  }, [navigation, goHome]);
 
-  const isMyTurn = state !== null && !state.finished && state.currentPlayerId === 'p1';
+  const isMyTurn = hasActiveGame && state.currentPlayerId === 'p1';
+
+  const turnCtl = useTurnController({
+    port: versus,
+    locked: state?.board.lockedThisTurn ?? [],
+    canDeclare: state?.canDeclareThisTurn ?? false,
+    enabled: isMyTurn,
+    showMessage: flash.show,
+  });
 
   // Las jugadas de la app se narran según llegan. La selección y la animación
   // se derivan del paso en el propio render: así CubeView recibe el
   // animationKind en el mismo commit en que cambia el tablero y el giro se ve
   // igual que cuando mueve el humano.
   const lastStep = versus.lastAppStep;
-  const appSelected = lastStep?.kind === 'select' ? lastStep.position : null;
-  const appAnimation: { positions: ReadonlySet<Position>; kind: CubeAnimationKind } | null =
+  const appSelected: Position[] = versus.appSelection;
+  const appAnimation: CubeAnimation | null =
     lastStep?.kind === 'action'
       ? lastStep.action.kind === 'swap'
         ? { positions: new Set([lastStep.action.a, lastStep.action.b]), kind: 'swap' }
@@ -113,48 +88,20 @@ export default function Versus() {
       flash.show('El maestro escoge un dado…');
     }
     if (lastStep.kind === 'action') {
-      if (lastStep.action.kind === 'swap') {
-        audio.play('swap');
-      } else {
-        const r = lastStep.action.rotation;
-        audio.play(r === 'spin-cw' || r === 'spin-ccw' ? 'cube-spin' : 'cube-roll');
-      }
+      audio.play(lastStep.action.kind === 'swap' ? 'swap' : rotationSfx(lastStep.action.rotation));
       flash.show('El maestro mueve…');
     }
     if (lastStep.kind === 'declare') {
       flash.show('El maestro declara sus objetivos');
+    }
+    if (lastStep.kind === 'guess') {
+      flash.show(`El maestro intenta adivinar: ${lastStep.input}`);
     }
     if (lastStep.kind === 'end-turn') {
       audio.play('turn-end');
       flash.show('Tu turno');
     }
   }, [lastStep, flash.show]);
-
-  // Al cerrar la fase de movimiento del humano, declara automáticamente.
-  useEffect(() => {
-    if (phase !== 'declare') {
-      autoDeclaredRef.current = false;
-      return;
-    }
-    if (autoDeclaredRef.current) return;
-    if (!state || !state.canDeclareThisTurn || !isMyTurn) return;
-    autoDeclaredRef.current = true;
-    const result = versus.declare();
-    if (result.declared > 0) audio.play('objective');
-    if (result.revealedCardIndices.length > 0) {
-      setTimeout(() => audio.play('reveal'), result.declared > 0 ? 200 : 0);
-    }
-    const msg = describeDeclareResult(result.declared, result.released, result.revealedCardIndices.length);
-    if (msg) flash.show(msg);
-  }, [phase, state, isMyTurn, versus, flash.show]);
-
-  const rows = useMemo(() => {
-    const r: number[][] = [];
-    for (let i = 0; i < GRID_SIZE; i++) {
-      r.push([i * GRID_SIZE, i * GRID_SIZE + 1, i * GRID_SIZE + 2]);
-    }
-    return r;
-  }, []);
 
   useEffect(() => {
     if (!state?.finished) return;
@@ -171,66 +118,11 @@ export default function Versus() {
     );
   }
 
-  const applyTurn = (next: TurnState) => {
-    setPhase(next.phase);
-    setSelected(next.selected);
-    setTouched(next.touched as Set<Position>);
-  };
-
-  const resetTurn = () => {
-    setPhase('select-cube');
-    setSelected(null);
-    setTouched(new Set());
-  };
-
-  const onPressCube = (i: Position) => {
-    if (state.finished || !isMyTurn) return;
-    if (state.board.lockedThisTurn.includes(i)) return;
-    const current: TurnState = { phase, selected, touched };
-    const outcome = pressCube(current, i);
-    if (outcome.message) flash.show(turnMessage(outcome.message));
-    if (outcome.swap) {
-      const { a, b } = outcome.swap;
-      if (!versus.swap(a, b)) {
-        flash.show('Solo puedes intercambiar en la misma fila o columna');
-        return;
-      }
-      audio.play('swap');
-      setLastAnimation({ positions: new Set([a, b]), kind: 'swap' });
-      applyTurn(commitSwap(a, b));
-      return;
-    }
-    if (outcome.state !== current) applyTurn(outcome.state);
-  };
-
-  const onRotate = (kind: RotationKind) => {
-    if (selected === null) return;
-    const target = selected;
-    versus.rotate(target, kind);
-    audio.play(kind === 'spin-cw' || kind === 'spin-ccw' ? 'cube-spin' : 'cube-roll');
-    setLastAnimation({ positions: new Set([target]), kind });
-    applyTurn(rotateSelected({ phase, selected, touched }));
-  };
-
-  const onStartSwap = () => {
-    const outcome = startSwap({ phase, selected, touched });
-    if (outcome.message) flash.show(turnMessage(outcome.message));
-    applyTurn(outcome.state);
-  };
-
-  const onCancelAction = () => applyTurn(cancelAction({ phase, selected, touched }));
-
-  const onCancelSwap = () => applyTurn(cancelSwap({ phase, selected, touched }));
+  const { turn } = turnCtl;
 
   const onEndTurn = () => {
-    if (!canFinishTurn({ phase, selected, touched })) {
-      flash.show(`Hay que mover ${TOUCHES_PER_TURN} dados para acabar el turno`);
-      return;
-    }
-    audio.play('turn-end');
-    versus.finishTurn(Array.from(touched));
-    resetTurn();
-    setLastAnimation(null);
+    setGuess('');
+    turnCtl.onEndTurn();
   };
 
   const onGuess = () => {
@@ -240,22 +132,18 @@ export default function Versus() {
 
   const onRestart = () => {
     versus.restart();
-    resetTurn();
+    turnCtl.reset();
     setGuess('');
-    setLastAnimation(null);
   };
 
   if (state.finished) {
     const won = state.outcome === 'p1-wins';
-    const appWord = state.players.p2.secretWord.cards.map((c) => c.letter).join('');
     return (
       <View style={styles.page}>
         <ParchmentBackground />
-        <EndScreen won={won} word={appWord} onRestart={onRestart} onHome={goHome}>
+        <EndScreen won={won} word={plainText(state.players.p2.secretWord)} onRestart={onRestart} onHome={goHome}>
           <View style={styles.endStats}>
-            <Text style={styles.endStat}>
-              {won ? 'Has vencido al maestro' : 'El maestro descifró tu palabra antes'}
-            </Text>
+            <Text style={styles.endStat}>{endMessage(won, state.failedGuessBy !== null)}</Text>
           </View>
         </EndScreen>
       </View>
@@ -263,10 +151,9 @@ export default function Versus() {
   }
 
   const opponent = state.players.p2;
-  const animation = appAnimation ?? lastAnimation;
-  const guessEligible = isMyTurn && canGuess(opponent.secretWord);
+  const animation = appAnimation ?? turnCtl.animation;
   const phaseHint = isMyTurn
-    ? describePhase(phase, touched.size)
+    ? describePhase(turn.phase, turn.touched.size, state.turn === 0)
     : 'El maestro estudia el tablero…';
   const mySlots = state.objectives.filter((s) => s.blockedBy === 'p1');
   const opponentSlots = state.objectives.filter((s) => s.blockedBy === 'p2');
@@ -304,24 +191,13 @@ export default function Versus() {
       <Text style={styles.phaseHint}>{phaseHint}</Text>
 
       <View style={styles.boardRow}>
-        <View style={styles.grid}>
-          {rows.map((row, ri) => (
-            <View key={ri} style={styles.gridRow}>
-              {row.map((i) => (
-                <CubeView
-                  key={i}
-                  cube={state.board.cubes[i]}
-                  selected={selected === i || appSelected === i}
-                  locked={state.board.lockedThisTurn.includes(i)}
-                  touched={touched.has(i)}
-                  animationKind={animation?.positions.has(i) ? animation.kind : null}
-                  onPress={isMyTurn ? () => onPressCube(i) : undefined}
-                  testID={`cube/${i}`}
-                />
-              ))}
-            </View>
-          ))}
-        </View>
+        <CubeGrid
+          board={state.board}
+          selected={isMyTurn ? (turn.selected === null ? [] : [turn.selected]) : appSelected}
+          touched={turn.touched}
+          animation={animation}
+          onPress={isMyTurn ? turnCtl.onPressCube : undefined}
+        />
         <View style={styles.availableColumn}>
           <Text style={styles.availableTitle}>Libres</Text>
           {availableSlots.length === 0 ? (
@@ -334,48 +210,24 @@ export default function Versus() {
         </View>
       </View>
 
-      {isMyTurn && phase === 'choose-action' && (
-        <OrnateFrame padding={spacing.sm} cornerScale={0.7} style={styles.actionPanel}>
-          {ROTATIONS.map((r) => (
-            <View key={r.kind} style={styles.actionBtn}>
-              <ActionButton
-                label={r.label}
-                onPress={() => onRotate(r.kind)}
-                testID={`action/${r.kind}`}
-              />
-            </View>
-          ))}
-          <View style={styles.actionBtn}>
-            <ActionButton label="Intercambiar…" onPress={onStartSwap} testID="action/swap" />
-          </View>
-          <View style={styles.actionBtn}>
-            <ActionButton label="Cancelar" onPress={onCancelAction} testID="action/cancel" />
-          </View>
-        </OrnateFrame>
+      {isMyTurn && (
+        <TurnActions
+          phase={turn.phase}
+          onRotate={turnCtl.onRotate}
+          onStartSwap={turnCtl.onStartSwap}
+          onCancelAction={turnCtl.onCancelAction}
+          onCancelSwap={turnCtl.onCancelSwap}
+          onEndTurn={onEndTurn}
+        />
       )}
 
-      {isMyTurn && phase === 'select-second-cube' && (
-        <OrnateFrame padding={spacing.md} style={styles.swapNotice}>
-          <Text style={styles.swapText}>
-            Toca otro dado en la misma fila o columna para intercambiarlos.
-          </Text>
-          <ActionButton
-            label="Cancelar"
-            onPress={onCancelSwap}
-            testID="action/cancel-swap"
-          />
-        </OrnateFrame>
-      )}
-
-      {isMyTurn && phase === 'declare' && (
-        <View style={styles.actionRow}>
-          <ActionButton
-            label="Acabar turno"
-            variant="primary"
-            onPress={onEndTurn}
-            testID="turn/end"
-          />
-        </View>
+      {versus.canGuessNow && (
+        <GuessBox
+          value={guess}
+          onChangeText={setGuess}
+          onSubmit={onGuess}
+          hint={`Acabas de descubrir una letra y tienes ${revealedCount(opponent.secretWord)} del maestro. Puedes intentar adivinar antes de acabar el turno.`}
+        />
       )}
 
       <View style={styles.divider}>
@@ -385,20 +237,11 @@ export default function Versus() {
       <Text style={[styles.opponentLine, styles.myWordLine]}>Tu palabra</Text>
       <SignCounters word={state.players.p1.secretWord} />
 
-      {guessEligible && (
-        <GuessBox
-          value={guess}
-          onChangeText={setGuess}
-          onSubmit={onGuess}
-          hint={`Tienes ${revealedCount(opponent.secretWord)} letras del maestro. Puedes intentar adivinar.`}
-        />
-      )}
-
       <Footer />
       </ScrollView>
 
       {!isMyTurn && (
-        <View style={styles.masterVeil} pointerEvents="none" testID="versus/master-veil">
+        <View style={styles.masterVeil} testID="versus/master-veil">
           <View style={styles.masterVeilPanel}>
             <Text style={styles.masterVeilText}>El maestro juega…</Text>
             <Text style={styles.masterVeilHint}>Espera a que termine sus movimientos</Text>
@@ -411,6 +254,11 @@ export default function Versus() {
   );
 }
 
+function endMessage(won: boolean, failedGuess: boolean): string {
+  if (won) return failedGuess ? 'El maestro falló al adivinar tu palabra' : 'Has vencido al maestro';
+  return failedGuess ? 'Fallaste al adivinar su palabra' : 'El maestro descifró tu palabra antes';
+}
+
 function VersusSetup({
   onStart,
 }: {
@@ -420,7 +268,7 @@ function VersusSetup({
   const [level, setLevel] = useState<AppLevel>('apprentice');
   const [firstPlayer, setFirstPlayer] = useState<FirstPlayerChoice>('random');
   const normalized = normalizeGuess(word);
-  const valid = normalized.length === WORD_LENGTH;
+  const valid = isValidSecretWord(word);
   const tooLong = normalized.length > WORD_LENGTH;
   return (
     <View style={styles.page}>
@@ -439,7 +287,7 @@ function VersusSetup({
         <TextInput
           value={word}
           onChangeText={(text) => setWord(text.toUpperCase())}
-          placeholder="ESCRIBE AQUI"
+          placeholder="ESCRIBE AQUÍ"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="characters"
           autoCorrect={false}
@@ -453,6 +301,8 @@ function VersusSetup({
         <Text style={[styles.setupHint, !valid && styles.setupHintInvalid]}>
           {tooLong
             ? `Demasiado larga: solo ${WORD_LENGTH} letras (sin acentos ni espacios).`
+            : normalized.length === WORD_LENGTH && !valid
+            ? 'Solo letras: sin números ni signos.'
             : `Sustantivo común, en singular o plural. Letras útiles: ${normalized.length} / ${WORD_LENGTH}.`}
         </Text>
       </View>
@@ -627,12 +477,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: spacing.xs,
   },
-  grid: {
-    alignItems: 'center',
-  },
-  gridRow: {
-    flexDirection: 'row',
-  },
   availableColumn: {
     marginLeft: spacing.md,
     alignItems: 'center',
@@ -647,31 +491,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.serif,
     color: colors.textMuted,
     fontSize: 18,
-  },
-  actionPanel: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: spacing.md,
-  },
-  actionBtn: {
-    marginVertical: spacing.xs,
-  },
-  actionRow: {
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  swapNotice: {
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  swapText: {
-    fontFamily: fonts.serif,
-    color: colors.text,
-    fontSize: 14,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginBottom: spacing.sm,
   },
   endStats: {
     alignItems: 'center',

@@ -19,7 +19,7 @@ export type MatchApi = {
   rotate: (position: Position, kind: RotationKind) => void;
   swap: (a: Position, b: Position) => boolean;
   declare: () => DeclareMatchResult;
-  finishTurn: (touched: ReadonlyArray<Position>) => void;
+  finishTurn: () => void;
   guess: (input: string) => void;
   canGuessNow: boolean;
   restart: () => void;
@@ -58,12 +58,12 @@ export function useMatch(deps: Dependencies): MatchApi {
     return result;
   }, [state]);
 
-  const finishTurn = useCallback((touched: ReadonlyArray<Position>) => {
-    setState((s) => (s ? endMatchTurn(s, touched) : s));
+  const finishTurn = useCallback(() => {
+    setState((s) => (s ? endMatchTurn(s) : s));
   }, []);
 
   const guess = useCallback((input: string) => {
-    setState((s) => (s ? guessMatchWord(s, input) : s));
+    setState((s) => (s ? guessMatchWord(s, s.currentPlayerId, input) : s));
   }, []);
 
   const restart = useCallback(() => {

@@ -19,20 +19,18 @@ function ensureAudioMode(): void {
 }
 
 export class NativeAudioBus {
-  private enabled = readFlag(SFX_STORAGE_KEY);
   private players = new Map<SoundKey, AudioPlayer>();
 
   setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
     writeFlag(SFX_STORAGE_KEY, enabled);
   }
 
   isEnabled(): boolean {
-    return this.enabled;
+    return readFlag(SFX_STORAGE_KEY);
   }
 
   play(key: SoundKey): void {
-    if (!this.enabled) return;
+    if (!readFlag(SFX_STORAGE_KEY)) return;
     try {
       ensureAudioMode();
       const player = this.playerFor(key);
@@ -55,25 +53,24 @@ export class NativeAudioBus {
 }
 
 export class NativeMusicPlayer {
-  private enabled = readFlag(MUSIC_STORAGE_KEY);
   private players = new Map<MusicTrack, AudioPlayer>();
   private track: MusicTrack = 'menu';
   private playing = false;
 
   isEnabled(): boolean {
-    return this.enabled;
+    return readFlag(MUSIC_STORAGE_KEY);
   }
 
   // En nativo no hay política de autoplay: si la preferencia está activa,
   // la música arranca con la app.
   init(): void {
-    if (this.enabled) this.start();
+    if (readFlag(MUSIC_STORAGE_KEY)) this.start();
   }
 
   toggle(): boolean {
-    if (this.playing) this.stop();
+    if (readFlag(MUSIC_STORAGE_KEY)) this.stop();
     else this.start();
-    return this.enabled;
+    return readFlag(MUSIC_STORAGE_KEY);
   }
 
   setTrack(track: MusicTrack): void {
@@ -85,23 +82,17 @@ export class NativeMusicPlayer {
   }
 
   start(): void {
-    this.enabled = true;
     writeFlag(MUSIC_STORAGE_KEY, true);
     if (this.playing) return;
     this.playCurrent();
   }
 
   stop(): void {
-    this.enabled = false;
     writeFlag(MUSIC_STORAGE_KEY, false);
     if (!this.playing) return;
     this.pauseCurrent();
   }
 
-  pause(): void {
-    if (!this.playing) return;
-    this.pauseCurrent();
-  }
 
   private playCurrent(): void {
     try {

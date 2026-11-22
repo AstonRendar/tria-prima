@@ -48,6 +48,9 @@ export function ObjectiveCounter({
         <Pressable
           onPress={onDecrement}
           testID={`objective/${objective.id}/-`}
+          accessibilityRole="button"
+          accessibilityLabel={`Quitar una declaración de ${label}`}
+          hitSlop={4}
           style={({ pressed }) => [styles.btn, pressed && styles.pressed]}
         >
           <Text style={styles.btnText}>−</Text>
@@ -55,6 +58,9 @@ export function ObjectiveCounter({
         <Pressable
           onPress={onIncrement}
           testID={`objective/${objective.id}/+`}
+          accessibilityRole="button"
+          accessibilityLabel={`Añadir una declaración de ${label}`}
+          hitSlop={4}
           style={({ pressed }) => [styles.btn, styles.btnPrimary, pressed && styles.pressed]}
         >
           <Text style={[styles.btnText, styles.btnTextPrimary]}>＋</Text>

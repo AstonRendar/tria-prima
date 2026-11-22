@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { music } from '@/ui/audio/music';
 import { audio } from '@/ui/audio/sound';
-import { colors, fonts, spacing } from '@/ui/styles/tokens';
+import { colors, fonts } from '@/ui/styles/tokens';
 
 export function AudioControls() {
   const [musicOn, setMusicOn] = useState(music.isEnabled());
@@ -20,7 +20,9 @@ export function AudioControls() {
         style={styles.button}
         onPress={() => setMusicOn(music.toggle())}
         testID="audio/music"
-        accessibilityLabel={musicOn ? 'Apagar música' : 'Encender música'}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: musicOn }}
+        accessibilityLabel="Música"
       >
         <Text style={[styles.icon, !musicOn && styles.iconOff]}>♪</Text>
       </Pressable>
@@ -28,7 +30,9 @@ export function AudioControls() {
         style={styles.button}
         onPress={toggleSfx}
         testID="audio/sfx"
-        accessibilityLabel={sfxOn ? 'Apagar efectos' : 'Encender efectos'}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: sfxOn }}
+        accessibilityLabel="Efectos de sonido"
       >
         <Text style={styles.icon}>{sfxOn ? '🔊' : '🔇'}</Text>
       </Pressable>
@@ -42,11 +46,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   button: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: spacing.xs,
   },
   icon: {
     fontFamily: fonts.serif,
