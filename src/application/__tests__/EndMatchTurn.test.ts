@@ -1,5 +1,8 @@
 import { endMatchTurn } from '@/application/EndMatchTurn';
+import { MatchState } from '@/application/MatchState';
+import { rotateMatchCube } from '@/application/RotateMatchCube';
 import { startMatch } from '@/application/StartMatch';
+import { Position } from '@/domain/Position';
 import { StubRandom, StubWordRepository } from './testdoubles';
 
 function buildState() {
@@ -9,46 +12,47 @@ function buildState() {
   );
 }
 
+function rotated(state: MatchState, positions: Position[]): MatchState {
+  return positions.reduce((s, p) => rotateMatchCube(s, p, 'roll-forward'), state);
+}
+
 describe('endMatchTurn', () => {
   it('alternates the current player', () => {
-    const state = buildState();
-    const initial = state.currentPlayerId;
-    const next = endMatchTurn(state, [0, 1]);
-    expect(next.currentPlayerId).not.toBe(initial);
+    const state = rotated(buildState(), [0, 1]);
+    expect(endMatchTurn(state).currentPlayerId).not.toBe(state.currentPlayerId);
   });
 
   it('increments the turn counter', () => {
-    const state = buildState();
-    expect(endMatchTurn(state, [2, 5]).turn).toBe(state.turn + 1);
+    const state = rotated(buildState(), [2, 5]);
+    expect(endMatchTurn(state).turn).toBe(state.turn + 1);
   });
 
-  it('locks the touched cubes for the next turn', () => {
-    const state = buildState();
-    const next = endMatchTurn(state, [1, 4]);
+  it('locks the moved cubes for the rival and clears the moves of the turn', () => {
+    const next = endMatchTurn(rotated(buildState(), [1, 4]));
     expect(next.board.lockedThisTurn).toEqual([1, 4]);
+    expect(next.board.touchedThisTurn).toEqual([]);
   });
 
   it('opens the declaration window for the next turn', () => {
-    const state = buildState();
+    const state = rotated(buildState(), [0, 4]);
     expect(state.canDeclareThisTurn).toBe(false);
-    expect(endMatchTurn(state, [0, 4]).canDeclareThisTurn).toBe(true);
+    expect(endMatchTurn(state).canDeclareThisTurn).toBe(true);
   });
 
   it('resets revealedThisTurn', () => {
-    const state = { ...buildState(), revealedThisTurn: true };
-    expect(endMatchTurn(state, [1, 2]).revealedThisTurn).toBe(false);
+    const state = { ...rotated(buildState(), [1, 2]), revealedThisTurn: true };
+    expect(endMatchTurn(state).revealedThisTurn).toBe(false);
   });
 
-  it('refuses to end the turn without exactly 2 distinct touched cubes', () => {
-    const state = buildState();
-    expect(endMatchTurn(state, [])).toBe(state);
-    expect(endMatchTurn(state, [3])).toBe(state);
-    expect(endMatchTurn(state, [3, 3])).toBe(state);
-    expect(endMatchTurn(state, [3, 4, 5])).toBe(state);
+  it('refuses to end the turn without exactly 2 distinct moved cubes', () => {
+    const none = buildState();
+    expect(endMatchTurn(none)).toBe(none);
+    const one = rotated(buildState(), [3]);
+    expect(endMatchTurn(one)).toBe(one);
   });
 
   it('is a no-op when the game is finished', () => {
-    const state = { ...buildState(), finished: true };
-    expect(endMatchTurn(state, [0, 1])).toBe(state);
+    const state = { ...rotated(buildState(), [0, 1]), finished: true };
+    expect(endMatchTurn(state)).toBe(state);
   });
 });

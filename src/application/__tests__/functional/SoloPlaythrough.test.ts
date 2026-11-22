@@ -23,24 +23,27 @@ describe('solo playthrough', () => {
     // Turno 0: solo manipulación. Gira dos dados de la fila central.
     state = rotateSoloCube(state, 3, 'spin-cw');
     state = rotateSoloCube(state, 4, 'spin-cw');
-    state = endSoloTurn(state, [3, 4]);
+    state = endSoloTurn(state);
     expect(state.turn).toBe(1);
     expect(state.board.lockedThisTurn).toEqual([3, 4]);
 
     // Turno 1: los dados tocados el turno anterior no responden.
     expect(swapSoloCubes(state, 3, 4).applied).toBe(false);
+    // Sin mover dos dados todavía no se declara.
+    expect(declareSoloObjectives(state).declared).toBe(0);
 
+    state = rotateSoloCube(state, 5, 'spin-cw');
+    state = rotateSoloCube(state, 8, 'spin-ccw');
     const firstDeclare = declareSoloObjectives(state);
     state = firstDeclare.state;
     expect(firstDeclare.declared).toBe(2);
     expect(state.objectives.filter((s) => s.blockedBy === 'p1')).toHaveLength(2);
     expect(state.secretWord.cards.filter((c) => c.markers === 1)).toHaveLength(2);
-
-    state = rotateSoloCube(state, 5, 'spin-cw');
-    state = rotateSoloCube(state, 8, 'spin-ccw');
-    state = endSoloTurn(state, [5, 8]);
+    state = endSoloTurn(state);
 
     // Turno 2: mantener las líneas re-declara y revela las dos letras.
+    state = rotateSoloCube(state, 0, 'spin-cw');
+    state = rotateSoloCube(state, 1, 'spin-cw');
     const secondDeclare = declareSoloObjectives(state);
     state = secondDeclare.state;
     expect(secondDeclare.declared).toBe(2);

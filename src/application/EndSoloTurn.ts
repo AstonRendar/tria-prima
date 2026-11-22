@@ -1,13 +1,9 @@
-import { Position } from '@/domain/Position';
+import { closeTurn } from '@/domain/Board';
 import { SoloPlayState } from './SoloPlayState';
-import { boardAfterTurn } from './TurnRules';
 
-export function endSoloTurn(
-  state: SoloPlayState,
-  touched: ReadonlyArray<Position>
-): SoloPlayState {
+export function endSoloTurn(state: SoloPlayState): SoloPlayState {
   if (state.finished) return state;
-  const board = boardAfterTurn(state.board, touched);
+  const board = closeTurn(state.board);
   if (!board) return state;
   return {
     ...state,

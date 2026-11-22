@@ -29,7 +29,7 @@ export function GuessBox({
       <TextInput
         value={value}
         onChangeText={(text) => onChangeText(text.toUpperCase())}
-        placeholder="ESCRIBE AQUI"
+        placeholder="ESCRIBE AQUÍ"
         placeholderTextColor={colors.textMuted}
         autoCapitalize="characters"
         autoCorrect={false}

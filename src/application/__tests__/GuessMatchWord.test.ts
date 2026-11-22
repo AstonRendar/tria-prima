@@ -26,7 +26,7 @@ function playerData(id: 'p1' | 'p2', name: string, word: string): PlayerData {
 function buildState(overrides: Partial<MatchState> = {}): MatchState {
   return {
     players: { p1: playerData('p1', 'Alice', 'PUERTA'), p2: playerData('p2', 'Bob', 'CAMINO') },
-    board: { cubes: [], lockedThisTurn: [], lockedNextTurn: [] },
+    board: { cubes: [], lockedThisTurn: [], touchedThisTurn: [] },
     objectives: [],
     currentPlayerId: 'p1',
     firstPlayerId: 'p1',
@@ -35,6 +35,7 @@ function buildState(overrides: Partial<MatchState> = {}): MatchState {
     revealedThisTurn: false,
     finished: false,
     outcome: null,
+    failedGuessBy: null,
     ...overrides,
   };
 }
@@ -48,13 +49,31 @@ describe('guessMatchWord', () => {
     expect(isMatchGuessAllowed(state)).toBe(false);
   });
 
-  it('allows guessing as soon as 4 letters of the opponent are revealed, regardless of when they were revealed', () => {
+  it('allows guessing with 4 letters revealed at the end of a turn that revealed a new letter', () => {
+    const opponent = playerData('p2', 'Bob', 'CAMINO');
+    const state = buildState({
+      players: { p1: playerData('p1', 'A', 'PUERTA'), p2: { ...opponent, secretWord: reveal(opponent.secretWord, [0, 1, 2, 3]) } },
+      revealedThisTurn: true,
+    });
+    expect(isMatchGuessAllowed(state)).toBe(true);
+  });
+
+  it('refuses to guess in a turn that did not reveal a new letter', () => {
     const opponent = playerData('p2', 'Bob', 'CAMINO');
     const state = buildState({
       players: { p1: playerData('p1', 'A', 'PUERTA'), p2: { ...opponent, secretWord: reveal(opponent.secretWord, [0, 1, 2, 3]) } },
       revealedThisTurn: false,
     });
-    expect(isMatchGuessAllowed(state)).toBe(true);
+    expect(isMatchGuessAllowed(state)).toBe(false);
+  });
+
+  it('ignores a guess from the player who is not in turn', () => {
+    const opponent = playerData('p2', 'Bob', 'CAMINO');
+    const state = buildState({
+      players: { p1: playerData('p1', 'A', 'PUERTA'), p2: { ...opponent, secretWord: reveal(opponent.secretWord, [0, 1, 2, 3]) } },
+      revealedThisTurn: true,
+    });
+    expect(guessMatchWord(state, 'p2', 'PUERTA')).toBe(state);
   });
 
   it('refuses to guess when the game is already finished', () => {
@@ -62,6 +81,7 @@ describe('guessMatchWord', () => {
     const state = buildState({
       players: { p1: playerData('p1', 'A', 'PUERTA'), p2: { ...opponent, secretWord: reveal(opponent.secretWord, [0, 1, 2, 3]) } },
       finished: true,
+      revealedThisTurn: true,
     });
     expect(isMatchGuessAllowed(state)).toBe(false);
   });
@@ -70,20 +90,24 @@ describe('guessMatchWord', () => {
     const opponent = playerData('p2', 'Bob', 'CAMINO');
     const state = buildState({
       currentPlayerId: 'p1',
+      revealedThisTurn: true,
       players: { p1: playerData('p1', 'Alice', 'PUERTA'), p2: { ...opponent, secretWord: reveal(opponent.secretWord, [0, 1, 2, 3]) } },
     });
-    const result = guessMatchWord(state, 'camino');
+    const result = guessMatchWord(state, 'p1', 'camino');
     expect(result.finished).toBe(true);
     expect(result.outcome).toBe('p1-wins');
+    expect(result.failedGuessBy).toBe(null);
   });
 
   it('marks p2 as winner when p1 fails the guess', () => {
     const opponent = playerData('p2', 'Bob', 'CAMINO');
     const state = buildState({
       currentPlayerId: 'p1',
+      revealedThisTurn: true,
       players: { p1: playerData('p1', 'Alice', 'PUERTA'), p2: { ...opponent, secretWord: reveal(opponent.secretWord, [0, 1, 2, 3]) } },
     });
-    const result = guessMatchWord(state, 'OTRO');
+    const result = guessMatchWord(state, 'p1', 'OTRO');
     expect(result.outcome).toBe('p2-wins');
+    expect(result.failedGuessBy).toBe('p1');
   });
 });

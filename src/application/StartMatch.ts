@@ -21,7 +21,7 @@ export function startMatch(deps: Dependencies, setup: MatchSetup): MatchState {
   const board: Board = {
     cubes: buildCubes(deps.random),
     lockedThisTurn: [],
-    lockedNextTurn: [],
+    touchedThisTurn: [],
   };
   const p1 = buildPlayerData('p1', setup.p1Name, setup.p1Word, deps);
   const p2 = buildPlayerData('p2', setup.p2Name, setup.p2Word, deps);
@@ -38,6 +38,7 @@ export function startMatch(deps: Dependencies, setup: MatchSetup): MatchState {
     revealedThisTurn: false,
     finished: false,
     outcome: null,
+    failedGuessBy: null,
   };
 }
 

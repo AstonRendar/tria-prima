@@ -2,6 +2,7 @@ import { endMatchTurn } from '@/application/EndMatchTurn';
 import { buildAppTurnSteps, playAppTurn } from '@/application/PlayAppTurn';
 import { rotateMatchCube } from '@/application/RotateMatchCube';
 import { startVersusMatch } from '@/application/StartVersus';
+import { findMatchedLine } from '@/domain/Objective';
 import { revealedCount, SecretWord } from '@/domain/SecretWord';
 import { StubRandom, StubWordRepository } from '../testdoubles';
 
@@ -27,7 +28,7 @@ describe('versus playthrough', () => {
     // Turno del humano: dos giros y fin de turno.
     state = rotateMatchCube(state, 3, 'spin-cw');
     state = rotateMatchCube(state, 4, 'spin-cw');
-    state = endMatchTurn(state, [3, 4]);
+    state = endMatchTurn(state);
     expect(state.currentPlayerId).toBe('p2');
 
     // Turno de la app: planifica, mueve, declara y cierra.
@@ -44,8 +45,12 @@ describe('versus playthrough', () => {
     for (const i of actionIndices) {
       const action = steps[i];
       if (action.kind !== 'action') continue;
-      const position = action.action.kind === 'swap' ? action.action.a : action.action.position;
-      expect(steps[i - 1]).toEqual({ kind: 'select', position });
+      if (action.action.kind === 'swap') {
+        expect(steps[i - 2]).toEqual({ kind: 'select', position: action.action.a });
+        expect(steps[i - 1]).toEqual({ kind: 'select', position: action.action.b });
+      } else {
+        expect(steps[i - 1]).toEqual({ kind: 'select', position: action.action.position });
+      }
     }
     expect(state.currentPlayerId).toBe('p1');
     expect(state.turn).toBe(2);
@@ -68,7 +73,7 @@ describe('versus playthrough', () => {
     expect(buildAppTurnSteps(state, dependencies)).toEqual([]);
   });
 
-  it('guesses and wins when only one candidate fits the revealed letters', () => {
+  it('does not guess at the start of its turn even with 4 letters revealed', () => {
     const dependencies = deps();
     let state = startVersusMatch(dependencies, { playerName: 'Alice', playerWord: 'CAMINO', level: 'master' });
     state = {
@@ -76,17 +81,55 @@ describe('versus playthrough', () => {
       currentPlayerId: 'p2',
       players: {
         ...state.players,
-        p1: {
-          ...state.players.p1,
-          secretWord: reveal(state.players.p1.secretWord, 4),
-        },
+        p1: { ...state.players.p1, secretWord: reveal(state.players.p1.secretWord, 4) },
       },
     };
-    expect(revealedCount(state.players.p1.secretWord)).toBe(4);
+    const steps = buildAppTurnSteps(state, dependencies);
+    expect(steps[0].kind).toBe('select');
+  });
+
+  it('guesses at the end of the turn in which it reveals a new letter', () => {
+    const dependencies = deps();
+    let state = startVersusMatch(dependencies, { playerName: 'Alice', playerWord: 'CAMINO', level: 'master' });
+    const almost: SecretWord = {
+      cards: state.players.p1.secretWord.cards.map((c, i) =>
+        i < 4 ? { ...c, revealed: true } : { ...c, markers: 1 }
+      ),
+    };
+    state = {
+      ...state,
+      currentPlayerId: 'p2',
+      canDeclareThisTurn: true,
+      players: { ...state.players, p1: { ...state.players.p1, secretWord: almost } },
+    };
 
     const result = playAppTurn(state, dependencies);
-    expect(result.steps).toEqual([{ kind: 'guess', input: 'CAMINO' }]);
+    const kinds = result.steps.map((s) => s.kind);
+    expect(kinds.indexOf('declare')).toBeLessThan(kinds.indexOf('guess'));
+    expect(result.steps[result.steps.length - 1]).toEqual({ kind: 'guess', input: 'CAMINO' });
     expect(result.state.finished).toBe(true);
     expect(result.state.outcome).toBe('p2-wins');
+  });
+});
+
+describe('versus playthrough when the app opens', () => {
+  it('does not leave lines formed for the human in its first turn (it cannot declare yet)', () => {
+    const dependencies = {
+      random: new StubRandom([0]),
+      wordRepository: new StubWordRepository('PUERTA', ['PUERTA', 'CAMINO']),
+    };
+    let state = startVersusMatch(dependencies, {
+      playerName: 'Alice',
+      playerWord: 'CAMINO',
+      level: 'master',
+      firstPlayer: 'p2',
+    });
+    expect(state.currentPlayerId).toBe('p2');
+    const initialFormed = state.objectives.filter((s) => findMatchedLine(state.board, s.objective)).length;
+
+    state = playAppTurn(state, dependencies).state;
+
+    const formed = state.objectives.filter((s) => findMatchedLine(state.board, s.objective)).length;
+    expect(formed).toBeLessThan(initialFormed);
   });
 });

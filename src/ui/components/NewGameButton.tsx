@@ -24,6 +24,8 @@ export function NewGameButton({ onConfirm, message }: Props) {
     <Pressable
       onPress={onPress}
       testID="new-game"
+      accessibilityRole="button"
+      hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
       style={({ pressed }) => [styles.btn, pressed && styles.pressed]}
     >
       <Text style={styles.label}>↻ Nueva partida</Text>

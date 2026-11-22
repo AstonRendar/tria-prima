@@ -96,19 +96,29 @@ export function plainText(word: SecretWord): string {
   return word.cards.map((c) => c.letter).join('');
 }
 
-export function normalizeGuess(input: string): string {
+// Pasa a mayúsculas sin tildes (conservando la Ñ, también si llega descompuesta
+// como N + tilde combinante).
+function toPlainLetters(input: string): string {
   return input
+    .normalize('NFC')
     .toUpperCase()
-    .replace(/[ÁÀÄÂ]/g, 'A')
+    .replace(/[ÁÀÄÂÃ]/g, 'A')
     .replace(/[ÉÈËÊ]/g, 'E')
     .replace(/[ÍÌÏÎ]/g, 'I')
-    .replace(/[ÓÒÖÔ]/g, 'O')
+    .replace(/[ÓÒÖÔÕ]/g, 'O')
     .replace(/[ÚÙÜÛ]/g, 'U')
-    .replace(/[^A-ZÑ]/g, '');
+    .replace(/Ç/g, 'C');
 }
 
+export function normalizeGuess(input: string): string {
+  return toPlainLetters(input).replace(/[^A-ZÑ]/g, '');
+}
+
+// Una palabra clave son exactamente 6 letras: se ignoran los espacios, pero
+// cualquier otro carácter (dígitos, signos) la invalida.
 export function isValidSecretWord(input: string): boolean {
-  return normalizeGuess(input).length === WORD_LENGTH;
+  const letters = toPlainLetters(input).replace(/\s/g, '');
+  return letters.length === WORD_LENGTH && /^[A-ZÑ]+$/.test(letters);
 }
 
 export function matchesGuess(word: SecretWord, guess: string): boolean {

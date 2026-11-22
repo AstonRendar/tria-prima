@@ -1,3 +1,4 @@
+import { isTurnComplete } from '@/domain/Board';
 import { otherPlayer } from '@/domain/Player';
 import { MatchState } from './MatchState';
 import { declareOnBoard } from './TurnRules';
@@ -13,7 +14,7 @@ export type DeclareMatchResult = {
 // común de TurnRules sobre la palabra del rival; los slots bloqueados por el
 // rival quedan fuera del alcance.
 export function declareMatchObjectives(state: MatchState): DeclareMatchResult {
-  if (state.finished || !state.canDeclareThisTurn) {
+  if (state.finished || !state.canDeclareThisTurn || !isTurnComplete(state.board)) {
     return { state, declared: 0, released: 0, revealedCardIndices: [] };
   }
 

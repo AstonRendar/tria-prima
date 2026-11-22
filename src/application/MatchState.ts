@@ -27,6 +27,8 @@ export type MatchState = {
   readonly revealedThisTurn: boolean;
   readonly finished: boolean;
   readonly outcome: MatchOutcome | null;
+  // Quién falló la adivinanza que cerró la partida (null si se cerró con un acierto).
+  readonly failedGuessBy: PlayerId | null;
 };
 
 export function opponentOf(state: MatchState, id: PlayerId): PlayerData {

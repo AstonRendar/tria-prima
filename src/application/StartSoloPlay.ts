@@ -10,7 +10,7 @@ export function startSoloPlay(deps: Dependencies): SoloPlayState {
   const board: Board = {
     cubes: buildCubes(deps.random),
     lockedThisTurn: [],
-    lockedNextTurn: [],
+    touchedThisTurn: [],
   };
   const objectives = buildInitialObjectiveSlots();
   const initialFreeObjectives = findAllSatisfied(board, objectives).length;

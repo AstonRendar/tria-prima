@@ -1,16 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
 import { TOUCHES_PER_TURN } from '@/domain/Board';
-import { RotationKind } from '@/domain/Cube';
-import { GRID_SIZE, Position } from '@/domain/Position';
 import { rankFor } from '@/domain/Score';
-import { canGuess, maskedText, revealedCount } from '@/domain/SecretWord';
+import { maskedText, plainText, revealedCount, WORD_LENGTH } from '@/domain/SecretWord';
 import { buildProductionDependencies } from '@/infrastructure/ProductionDependencies';
 import { audio } from '@/ui/audio/sound';
-import { useConfirm } from '@/ui/ConfirmProvider';
-import { ActionButton } from '@/ui/components/ActionButton';
-import { CubeAnimationKind, CubeView } from '@/ui/components/CubeView';
+import { CubeGrid } from '@/ui/components/CubeGrid';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
@@ -18,158 +14,71 @@ import { GuessBox } from '@/ui/components/GuessBox';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
+import { TurnActions } from '@/ui/components/TurnActions';
 import { WordTrack } from '@/ui/components/WordTrack';
-import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
+import { useExitGuard } from '@/ui/hooks/useExitGuard';
 import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useSoloPlay } from '@/ui/hooks/useSoloPlay';
+import { useTurnController } from '@/ui/hooks/useTurnController';
 import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
-import {
-  cancelAction,
-  cancelSwap,
-  canFinishTurn,
-  commitSwap,
-  describeDeclareResult,
-  describePhase,
-  pressCube,
-  rotateSelected,
-  rotationActions,
-  startSwap,
-  TurnPhase,
-  TurnState,
-  turnMessage,
-} from '@/ui/turnFlow';
+import { describePhase } from '@/ui/turnFlow';
+import { TutorialTip } from '@/ui/tutorial/TutorialTip';
+import { useTutorial } from '@/ui/tutorial/useTutorial';
 
 const dependencies = buildProductionDependencies();
-
-const ROTATIONS = rotationActions();
 
 export default function SoloPlay() {
   const router = useRouter();
   const navigation = useNavigation();
-  const confirm = useConfirm();
   const solo = useSoloPlay(dependencies);
   const { state } = solo;
-  const [phase, setPhase] = useState<TurnPhase>('select-cube');
-  const [selected, setSelected] = useState<Position | null>(null);
-  const [touched, setTouched] = useState<Set<Position>>(new Set());
   const [guess, setGuess] = useState('');
-  const [lastAnimation, setLastAnimation] = useState<{
-    positions: ReadonlySet<Position>;
-    kind: CubeAnimationKind;
-  } | null>(null);
   const flash = useFlash();
-  const autoDeclaredRef = useRef(false);
 
   const hasActiveGame = !state.finished;
-  useBeforeUnloadWarning(hasActiveGame);
+  useExitGuard(hasActiveGame, 'Salir del laboratorio');
   useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
   }, [router]);
 
-  const requestExit = useCallback(() => {
-    if (!hasActiveGame) {
-      goHome();
-      return;
-    }
-    confirm({
-      title: 'Salir del laboratorio',
-      message: 'Se perderá la partida en curso. ¿Quieres salir al menú principal?',
-      confirmLabel: 'Salir',
-      destructive: true,
-      onConfirm: goHome,
-    });
-  }, [confirm, goHome, hasActiveGame]);
-
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerLeft: () => <HeaderBackButton onPress={requestExit} />,
+      headerLeft: () => <HeaderBackButton onPress={goHome} />,
     });
-  }, [navigation, requestExit]);
+  }, [navigation, goHome]);
+
+  const turnCtl = useTurnController({
+    port: solo,
+    locked: state.board.lockedThisTurn,
+    canDeclare: state.canDeclareThisTurn,
+    enabled: hasActiveGame,
+    showMessage: flash.show,
+  });
+  const { turn } = turnCtl;
+  const tutorial = useTutorial(
+    hasActiveGame
+      ? {
+          isMyTurn: true,
+          phase: turn.phase,
+          touchedCount: turn.touched.size,
+          hasLockedCubes: state.board.lockedThisTurn.length > 0,
+          anyMarker: state.secretWord.cards.some((c) => c.markers > 0 || c.revealed),
+          canGuess: solo.canGuessNow,
+        }
+      : null
+  );
 
   useEffect(() => {
-    if (phase !== 'declare') {
-      autoDeclaredRef.current = false;
-      return;
-    }
-    if (autoDeclaredRef.current) return;
-    if (!state.canDeclareThisTurn) return;
-    autoDeclaredRef.current = true;
-    const result = solo.declare();
-    if (result.declared > 0) audio.play('objective');
-    if (result.revealedCardIndices.length > 0) {
-      setTimeout(() => audio.play('reveal'), result.declared > 0 ? 200 : 0);
-    }
-    const msg = describeDeclareResult(
-      result.declared,
-      result.released,
-      result.revealedCardIndices.length
-    );
-    if (msg) flash.show(msg);
-  }, [phase, state.canDeclareThisTurn, solo, flash.show]);
-
-  const applyTurn = (next: TurnState) => {
-    setPhase(next.phase);
-    setSelected(next.selected);
-    setTouched(next.touched as Set<Position>);
-  };
-
-  const resetTurn = () => {
-    setPhase('select-cube');
-    setSelected(null);
-    setTouched(new Set());
-  };
-
-  const onPressCube = (i: Position) => {
-    if (state.finished) return;
-    if (state.board.lockedThisTurn.includes(i)) return;
-    const current: TurnState = { phase, selected, touched };
-    const outcome = pressCube(current, i);
-    if (outcome.message) flash.show(turnMessage(outcome.message));
-    if (outcome.swap) {
-      const { a, b } = outcome.swap;
-      if (!solo.swap(a, b)) {
-        flash.show('Solo puedes intercambiar en la misma fila o columna');
-        return;
-      }
-      audio.play('swap');
-      setLastAnimation({ positions: new Set([a, b]), kind: 'swap' });
-      applyTurn(commitSwap(a, b));
-      return;
-    }
-    if (outcome.state !== current) applyTurn(outcome.state);
-  };
-
-  const onRotate = (kind: RotationKind) => {
-    if (selected === null) return;
-    const target = selected;
-    solo.rotate(target, kind);
-    audio.play(kind === 'spin-cw' || kind === 'spin-ccw' ? 'cube-spin' : 'cube-roll');
-    setLastAnimation({ positions: new Set([target]), kind });
-    applyTurn(rotateSelected({ phase, selected, touched }));
-  };
-
-  const onStartSwap = () => {
-    const outcome = startSwap({ phase, selected, touched });
-    if (outcome.message) flash.show(turnMessage(outcome.message));
-    applyTurn(outcome.state);
-  };
-
-  const onCancelAction = () => applyTurn(cancelAction({ phase, selected, touched }));
-
-  const onCancelSwap = () => applyTurn(cancelSwap({ phase, selected, touched }));
+    if (!state.finished) return;
+    audio.play(state.outcome === 'won' ? 'win' : 'lose');
+  }, [state.finished, state.outcome]);
 
   const onEndTurn = () => {
-    if (!canFinishTurn({ phase, selected, touched })) {
-      flash.show(`Hay que mover ${TOUCHES_PER_TURN} dados para acabar el turno`);
-      return;
-    }
-    audio.play('turn-end');
-    solo.finishTurn(Array.from(touched));
-    resetTurn();
-    setLastAnimation(null);
+    setGuess('');
+    turnCtl.onEndTurn();
   };
 
   const onGuess = () => {
@@ -179,40 +88,24 @@ export default function SoloPlay() {
 
   const onRestart = () => {
     solo.restart();
-    resetTurn();
+    turnCtl.reset();
     setGuess('');
-    setLastAnimation(null);
   };
-
-  const rows = useMemo(() => {
-    const r: number[][] = [];
-    for (let i = 0; i < GRID_SIZE; i++) {
-      r.push([i * GRID_SIZE, i * GRID_SIZE + 1, i * GRID_SIZE + 2]);
-    }
-    return r;
-  }, []);
-
-  useEffect(() => {
-    if (!state.finished) return;
-    audio.play(state.outcome === 'won' ? 'win' : 'lose');
-  }, [state.finished, state.outcome]);
 
   if (state.finished) {
     const score = state.finalScore ?? 0;
     const info = rankFor(score);
-    const won = state.outcome === 'won';
-    const fullWord = state.secretWord.cards.map((c) => c.letter).join('');
     return (
       <View style={styles.page}>
         <ParchmentBackground />
         <EndScreen
-          won={won}
-          word={fullWord}
+          won={state.outcome === 'won'}
+          word={plainText(state.secretWord)}
           onRestart={onRestart}
-          onHome={() => router.dismissTo('/')}
+          onHome={goHome}
         >
           <View style={styles.endStats}>
-            <Text style={styles.endStat}>Turnos: {state.turn}</Text>
+            <Text style={styles.endStat}>Turnos: {state.turn + 1}</Text>
             <Text style={styles.endStat}>
               Objetivos iniciales: {state.initialFreeObjectives}
             </Text>
@@ -224,8 +117,7 @@ export default function SoloPlay() {
     );
   }
 
-  const guessEligible = canGuess(state.secretWord);
-  const phaseHint = describePhase(phase, touched.size);
+  const phaseHint = describePhase(turn.phase, turn.touched.size, state.turn === 0);
   const myBlocked = state.objectives.filter((s) => s.blockedBy !== null);
   const availableSlots = state.objectives.filter((s) => s.blockedBy === null);
 
@@ -237,11 +129,8 @@ export default function SoloPlay() {
 
       <View style={styles.headerRow}>
         <Stat label="Turno" value={String(state.turn + 1)} />
-        <Stat label="Reveladas" value={`${revealedCount(state.secretWord)} / 6`} />
-        <Stat
-          label="Tocados"
-          value={`${touched.size} / ${TOUCHES_PER_TURN}`}
-        />
+        <Stat label="Reveladas" value={`${revealedCount(state.secretWord)} / ${WORD_LENGTH}`} />
+        <Stat label="Tocados" value={`${turn.touched.size} / ${TOUCHES_PER_TURN}`} />
       </View>
 
       <Text style={styles.heading}>El maestro ha sellado una palabra</Text>
@@ -255,67 +144,32 @@ export default function SoloPlay() {
       )}
       <Text style={styles.phaseHint}>{phaseHint}</Text>
 
-      <View style={styles.grid}>
-        {rows.map((row, ri) => (
-          <View key={ri} style={styles.gridRow}>
-            {row.map((i) => (
-              <CubeView
-                key={i}
-                cube={state.board.cubes[i]}
-                selected={selected === i}
-                locked={state.board.lockedThisTurn.includes(i)}
-                touched={touched.has(i)}
-                animationKind={lastAnimation?.positions.has(i) ? lastAnimation.kind : null}
-                onPress={() => onPressCube(i)}
-                testID={`cube/${i}`}
-              />
-            ))}
-          </View>
-        ))}
+      <View style={styles.boardRow}>
+        <CubeGrid
+          board={state.board}
+          selected={turn.selected === null ? [] : [turn.selected]}
+          touched={turn.touched}
+          animation={turnCtl.animation}
+          onPress={turnCtl.onPressCube}
+        />
       </View>
 
-      {phase === 'choose-action' && (
-        <OrnateFrame padding={spacing.sm} cornerScale={0.7} style={styles.actionPanel}>
-          {ROTATIONS.map((r) => (
-            <View key={r.kind} style={styles.actionBtn}>
-              <ActionButton
-                label={r.label}
-                onPress={() => onRotate(r.kind)}
-                testID={`action/${r.kind}`}
-              />
-            </View>
-          ))}
-          <View style={styles.actionBtn}>
-            <ActionButton label="Intercambiar…" onPress={onStartSwap} testID="action/swap" />
-          </View>
-          <View style={styles.actionBtn}>
-            <ActionButton label="Cancelar" onPress={onCancelAction} testID="action/cancel" />
-          </View>
-        </OrnateFrame>
-      )}
+      <TurnActions
+        phase={turn.phase}
+        onRotate={turnCtl.onRotate}
+        onStartSwap={turnCtl.onStartSwap}
+        onCancelAction={turnCtl.onCancelAction}
+        onCancelSwap={turnCtl.onCancelSwap}
+        onEndTurn={onEndTurn}
+      />
 
-      {phase === 'select-second-cube' && (
-        <OrnateFrame padding={spacing.md} style={styles.swapNotice}>
-          <Text style={styles.swapText}>
-            Toca otro dado en la misma fila o columna para intercambiarlos.
-          </Text>
-          <ActionButton
-            label="Cancelar"
-            onPress={onCancelSwap}
-            testID="action/cancel-swap"
-          />
-        </OrnateFrame>
-      )}
-
-      {phase === 'declare' && (
-        <View style={styles.actionRow}>
-          <ActionButton
-            label="Acabar turno"
-            variant="primary"
-            onPress={onEndTurn}
-            testID="turn/end"
-          />
-        </View>
+      {solo.canGuessNow && (
+        <GuessBox
+          value={guess}
+          onChangeText={setGuess}
+          onSubmit={onGuess}
+          hint={`Acabas de descubrir una letra y tienes ${revealedCount(state.secretWord)}. Puedes intentar adivinar antes de acabar el turno.`}
+        />
       )}
 
       <View style={styles.divider}>
@@ -343,18 +197,11 @@ export default function SoloPlay() {
         )}
       </View>
 
-      {guessEligible && (
-        <GuessBox
-          value={guess}
-          onChangeText={setGuess}
-          onSubmit={onGuess}
-          hint={`Tienes ${revealedCount(state.secretWord)} letras. Puedes intentar adivinar la palabra del maestro.`}
-        />
-      )}
 
       <Footer />
       </ScrollView>
 
+      <TutorialTip step={tutorial.step} onDismiss={tutorial.dismiss} onSkip={tutorial.skip} />
       <FlashMessage message={flash.message} />
     </View>
   );
@@ -370,6 +217,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  boardRow: {
+    alignItems: 'center',
+    marginVertical: spacing.lg,
+  },
   page: {
     flex: 1,
   },
@@ -441,38 +292,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginHorizontal: spacing.lg,
     opacity: 0.85,
-  },
-  grid: {
-    alignItems: 'center',
-    marginVertical: spacing.lg,
-  },
-  gridRow: {
-    flexDirection: 'row',
-  },
-  actionPanel: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  actionBtn: {
-    marginBottom: spacing.xs,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginVertical: spacing.md,
-  },
-  swapNotice: {
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  swapText: {
-    fontFamily: fonts.serif,
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
   },
   sectionTitle: {
     fontFamily: fonts.serif,

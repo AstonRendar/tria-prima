@@ -292,7 +292,7 @@ function WordStep({
         <FieldInput
           value={value}
           onChangeText={(text) => onChange(text.toUpperCase())}
-          placeholder="ESCRIBE AQUI"
+          placeholder="ESCRIBE AQUÍ"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="characters"
           autoCorrect={false}

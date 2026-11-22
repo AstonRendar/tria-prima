@@ -25,7 +25,7 @@ function reveal(word: SecretWord, indices: number[]): SecretWord {
 
 function buildState(overrides: Partial<SoloPlayState> = {}): SoloPlayState {
   return {
-    board: { cubes: [], lockedThisTurn: [], lockedNextTurn: [] },
+    board: { cubes: [], lockedThisTurn: [], touchedThisTurn: [] },
     objectives: [],
     secretWord: buildSecretWord(assignments('CAMINO')),
     turn: 5,
@@ -47,16 +47,25 @@ describe('guessSoloWord', () => {
     expect(isSoloGuessAllowed(state)).toBe(false);
   });
 
-  it('marks the game as won and computes the score on correct guess', () => {
+  it('refuses to guess in a turn that did not reveal a new letter', () => {
+    const state = buildState({
+      secretWord: reveal(buildSecretWord(assignments('CAMINO')), [0, 1, 2, 3]),
+      revealedThisTurn: false,
+    });
+    expect(isSoloGuessAllowed(state)).toBe(false);
+  });
+
+  it('marks the game as won and counts the turn in progress in the score', () => {
     const state = buildState({
       secretWord: reveal(buildSecretWord(assignments('CAMINO')), [0, 1, 2, 3]),
       turn: 6,
       initialFreeObjectives: 1,
+      revealedThisTurn: true,
     });
     const result = guessSoloWord(state, 'camíno');
     expect(result.finished).toBe(true);
     expect(result.outcome).toBe('won');
-    expect(result.finalScore).toBe(7);
+    expect(result.finalScore).toBe(8);
   });
 
   it('marks the game as lost on a wrong guess and still computes the score', () => {
@@ -64,11 +73,12 @@ describe('guessSoloWord', () => {
       secretWord: reveal(buildSecretWord(assignments('CAMINO')), [0, 1, 2, 3]),
       turn: 9,
       initialFreeObjectives: 2,
+      revealedThisTurn: true,
     });
     const result = guessSoloWord(state, 'OTRO');
     expect(result.finished).toBe(true);
     expect(result.outcome).toBe('lost');
-    expect(result.finalScore).toBe(11);
+    expect(result.finalScore).toBe(12);
   });
 
   it('is a no-op when the game is already finished', () => {

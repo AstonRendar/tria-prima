@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, radius, shadows, spacing } from '@/ui/styles/tokens';
 
@@ -7,6 +7,13 @@ const DEFAULT_TIMEOUT_MS = 1800;
 export function useFlash(timeout: number = DEFAULT_TIMEOUT_MS) {
   const [message, setMessage] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    []
+  );
 
   const show = useCallback(
     (msg: string) => {
@@ -40,7 +47,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.goldBright,
-    zIndex: 30,
+    zIndex: 50,
     ...shadows.raised,
   },
   text: {

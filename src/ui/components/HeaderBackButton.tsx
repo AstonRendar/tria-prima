@@ -10,6 +10,7 @@ export function HeaderBackButton({ onPress }: Props) {
     <Pressable
       onPress={onPress}
       testID="header/back"
+      accessibilityRole="button"
       accessibilityLabel="Volver al menú"
       style={({ pressed }) => [styles.btn, pressed && styles.pressed]}
     >

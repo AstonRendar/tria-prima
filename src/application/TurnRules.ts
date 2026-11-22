@@ -1,4 +1,4 @@
-import { advanceLocks, Board, isValidTurnTouch, lockTouchedCubes, swapPositions } from '@/domain/Board';
+import { Board, swapPositions } from '@/domain/Board';
 import { findMatchedLine, ObjectiveSlot } from '@/domain/Objective';
 import { PlayerId } from '@/domain/Player';
 import { Position } from '@/domain/Position';
@@ -15,16 +15,6 @@ export function swapOnBoard(
 ): { board: Board; applied: boolean } {
   const next = swapPositions(board, a, b);
   return { board: next, applied: next !== board };
-}
-
-// Devuelve el tablero listo para el turno siguiente, o null si el turno no
-// tocó exactamente 2 dados distintos.
-export function boardAfterTurn(
-  board: Board,
-  touched: ReadonlyArray<Position>
-): Board | null {
-  if (!isValidTurnTouch(touched)) return null;
-  return advanceLocks(lockTouchedCubes(board, touched));
 }
 
 export type DeclarationOutcome = {
