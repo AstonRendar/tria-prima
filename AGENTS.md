@@ -141,6 +141,13 @@ Comunes:
   `SetupScreen`, `CubeGrid`, `TurnActions`, `RulesBook` —las reglas, compartidas por la
   pantalla de reglas y el panel en partida— y `RulesButton` —botón «?» de la cabecera que
   abre las reglas en un modal sin salir de la partida—).
+- Accesibilidad: dados, cartas de objetivo y cartas de palabra llevan `accessibilityLabel`
+  con su estado (cara superior y la que saldría al voltear; objetivo y si está
+  bloqueado; insignia y letra o marcadores). Sirven a lectores de pantalla y permiten
+  leer la partida con `uiautomator` al probar en un móvil.
+- `GuessBox` solo envía con exactamente 6 letras (contador visible), también con Intro, y
+  siempre pide confirmación. En Android `softwareKeyboardLayoutMode: pan` evita que el
+  teclado tape la casilla.
 - `tutorial/` — tutorial de la primera partida (versus, duelo y desafío; no en el modo
   físico): `tutorialSteps.ts` define los consejos y cuándo aplican (`nextTutorialStep`,
   puro y testeado en el proyecto logic), `useTutorial` los muestra uno a uno y

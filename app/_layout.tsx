@@ -55,7 +55,7 @@ export default function RootLayout() {
           name="instructions"
           options={{ title: 'Reglas', headerRight: () => <AudioControls /> }}
         />
-        <Stack.Screen name="play" options={{ title: 'Duelo' }} />
+        <Stack.Screen name="play" options={{ title: 'Duelo a dos' }} />
         <Stack.Screen name="versus" options={{ title: 'Contra el maestro' }} />
         <Stack.Screen name="solo" options={{ title: 'Desafío' }} />
         <Stack.Screen name="tracker" options={{ title: 'Con el juego físico' }} />

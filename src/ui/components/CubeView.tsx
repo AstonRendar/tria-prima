@@ -153,9 +153,9 @@ export function CubeView({
     <Pressable
       onPress={onPress}
       testID={testID}
-      disabled={locked || !onPress}
+      disabled={!onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Dado con ${cubeSymbolLabel[top.symbol]} ${cubeColorLabel[top.color]} arriba${locked ? ', bloqueado' : ''}`}
+      accessibilityLabel={`Dado con ${cubeSymbolLabel[top.symbol]} ${cubeColorLabel[top.color]} arriba; al voltear, ${cubeSymbolLabel[back.symbol]} ${cubeColorLabel[back.color]}${locked ? '; bloqueado' : ''}`}
       accessibilityState={{ disabled: locked || !onPress, selected: !!selected }}
       style={({ pressed }) => [
         styles.outer,

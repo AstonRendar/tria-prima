@@ -8,6 +8,7 @@ import {
   fonts,
   radius,
   shadows,
+  signName,
   spacing,
 } from '@/ui/styles/tokens';
 
@@ -29,17 +30,22 @@ export function ObjectiveCard({ slot, compact }: Props) {
   const { objective, blockedBy } = slot;
   const blocked = blockedBy !== null;
   const isColor = objective.kind === 'color';
+  const a11y = {
+    accessible: true,
+    accessibilityLabel: `Objetivo ${signName(objective)}${blocked ? ', bloqueado' : ''}`,
+    testID: `objective-card/${objective.id}`,
+  };
 
   if (compact) {
     return (
-      <View style={[styles.compactGlyphBox, blocked && styles.blocked]}>
+      <View style={[styles.compactGlyphBox, blocked && styles.blocked]} {...a11y}>
         <ObjectiveBadge slot={slot} size={26} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.card, blocked && styles.blocked]}>
+    <View style={[styles.card, blocked && styles.blocked]} {...a11y}>
       <View style={styles.glyphBox}>
         <ObjectiveBadge slot={slot} size={34} />
       </View>
