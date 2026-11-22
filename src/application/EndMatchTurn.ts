@@ -1,14 +1,10 @@
-import { Position } from '@/domain/Position';
+import { closeTurn } from '@/domain/Board';
 import { otherPlayer } from '@/domain/Player';
 import { MatchState } from './MatchState';
-import { boardAfterTurn } from './TurnRules';
 
-export function endMatchTurn(
-  state: MatchState,
-  touched: ReadonlyArray<Position>
-): MatchState {
+export function endMatchTurn(state: MatchState): MatchState {
   if (state.finished) return state;
-  const board = boardAfterTurn(state.board, touched);
+  const board = closeTurn(state.board);
   if (!board) return state;
   return {
     ...state,

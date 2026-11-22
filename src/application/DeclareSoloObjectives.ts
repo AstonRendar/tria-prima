@@ -1,3 +1,4 @@
+import { isTurnComplete } from '@/domain/Board';
 import { SoloPlayState } from './SoloPlayState';
 import { declareOnBoard } from './TurnRules';
 
@@ -13,7 +14,7 @@ const SOLO_OWNER = 'p1' as const;
 // Misma regla que en duelo, aplicada con el algoritmo común de TurnRules:
 // los marcadores caen sobre la propia palabra y no hay slots de rival.
 export function declareSoloObjectives(state: SoloPlayState): DeclareSoloResult {
-  if (state.finished || !state.canDeclareThisTurn) {
+  if (state.finished || !state.canDeclareThisTurn || !isTurnComplete(state.board)) {
     return { state, declared: 0, released: 0, revealedCardIndices: [] };
   }
 

@@ -28,7 +28,7 @@ function buildBoardWithTopFaces(faces: Face[]): Board {
   return {
     cubes: faces.map((f, i) => cubeWithTopFace(i, f)),
     lockedThisTurn: [],
-    lockedNextTurn: [],
+    touchedThisTurn: [],
   };
 }
 

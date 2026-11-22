@@ -70,7 +70,7 @@ function almostSulfurBoard(): Board {
       cubeWithTop(8, { symbol: 'mercury', color: 'rubedo' }),
     ],
     lockedThisTurn: [],
-    lockedNextTurn: [],
+    touchedThisTurn: [],
   };
 }
 
@@ -91,7 +91,7 @@ function sulfurRowBoard(): Board {
       cubeWithTop(8, { symbol: 'mercury', color: 'citrinitas' }),
     ],
     lockedThisTurn: [],
-    lockedNextTurn: [],
+    touchedThisTurn: [],
   };
 }
 
@@ -110,6 +110,7 @@ function buildState(overrides: Partial<MatchState> = {}): MatchState {
     revealedThisTurn: false,
     finished: false,
     outcome: null,
+    failedGuessBy: null,
     ...overrides,
   };
 }
@@ -201,8 +202,14 @@ describe('chooseAppGuess', () => {
     expect(chooseAppGuess(state, ['CAMINO'], new StubRandom([0]))).toBe(null);
   });
 
-  it('guesses the only candidate compatible with the revealed letters', () => {
+  it('does not trust a single candidate with only 4 letters: the word may be outside the list', () => {
     const state = stateWithRevealed([0, 1, 2, 3]);
+    const words = ['CAMINO', 'PUERTA', 'CASTOR'];
+    expect(chooseAppGuess(state, words, new StubRandom([0]))).toBe(null);
+  });
+
+  it('guesses the only candidate compatible with 5 revealed letters', () => {
+    const state = stateWithRevealed([0, 1, 2, 3, 4]);
     const words = ['CAMINO', 'PUERTA', 'CASTOR'];
     expect(chooseAppGuess(state, words, new StubRandom([0]))).toBe('CAMINO');
   });

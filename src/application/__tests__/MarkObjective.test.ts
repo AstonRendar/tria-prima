@@ -29,13 +29,12 @@ describe('markObjective', () => {
     expect(result.state.secretWord.cards[0].revealed).toBe(true);
   });
 
-  it('keeps counting declarations on a revealed card without changing it', () => {
+  it('ignores marks on a revealed card so the count can always be undone', () => {
     const twice = markObjective(markObjective(buildState(), FIRST).state, FIRST).state;
     const result = markObjective(twice, FIRST);
-    expect(result.applied).toBe(true);
-    expect(result.revealedCardIndex).toBe(null);
-    expect(result.state.secretWord.cards[0].revealed).toBe(true);
-    expect(result.state.declaredCount.get(FIRST.id)).toBe(3);
+    expect(result.applied).toBe(false);
+    expect(result.state).toBe(twice);
+    expect(twice.declaredCount.get(FIRST.id)).toBe(2);
   });
 
   it('is a no-op when the game is finished', () => {
@@ -54,9 +53,12 @@ describe('unmarkObjective', () => {
     expect(undone.declaredCount.get(FIRST.id)).toBe(0);
   });
 
-  it('cannot undo a revealed letter', () => {
+  it('hides again a letter revealed by a mistaken mark', () => {
     const revealed = markObjective(markObjective(buildState(), FIRST).state, FIRST).state;
-    expect(unmarkObjective(revealed, FIRST)).toBe(revealed);
+    const undone = unmarkObjective(revealed, FIRST);
+    expect(undone.secretWord.cards[0].revealed).toBe(false);
+    expect(undone.secretWord.cards[0].markers).toBe(1);
+    expect(undone.declaredCount.get(FIRST.id)).toBe(1);
   });
 
   it('does nothing when the card has no markers', () => {
