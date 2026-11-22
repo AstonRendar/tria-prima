@@ -94,15 +94,19 @@ Modo contra el maestro (humano vs app, reutiliza `MatchState` y los casos de uso
   +1 por objetivo declarable, +1 si revela letra, y en negativo las líneas que el
   rival mantiene bloqueadas mientras sigan formadas, con −1 extra si re-declararlas
   revelaría letra propia; empata al azar) y `chooseAppGuess`
-  (solo información pública: 6 reveladas → palabra exacta; 1 candidata → la arriesga;
-  5 reveladas y varias → una al azar; si no, sigue jugando). Dos niveles (`AppLevel`):
+  (solo información pública: 6 reveladas → palabra exacta; con 5 reveladas, 1 candidata →
+  la arriesga y varias → una al azar; con 4 no se fía, porque la palabra del rival puede
+  no estar en la lista). En el primer turno (no puede declarar) toda línea que deje
+  formada resta, porque la aprovecharía el rival. Dos niveles (`AppLevel`):
   **maestro** (siempre la mejor jugada) y **aprendiz** (50 % de despiste con jugada
-  aleatoria; solo arriesga la única candidata con 5+ letras). El nivel se elige en el
+  aleatoria; solo arriesga la única candidata con 5+ letras).
+  La adivinanza va al final del turno, tras declarar, y solo si en ese turno ha revelado
+  letra (misma regla que el humano). El nivel se elige en el
   setup y viaja en `VersusSetup`.
 - `PlayAppTurn` — `buildAppTurnSteps` / `applyAppStep` / `playAppTurn`: el turno de la
   app como lista de pasos que la UI reproduce con retardo. Cada acción va precedida
-  de un paso `select` (no-op en el estado) que la UI remarca y anima como si el dado
-  lo hubiera tocado un humano. Mientras juega el maestro (no es el turno del humano),
+  de pasos `select` (no-op en el estado; dos en un intercambio) que la UI remarca y anima
+  como si el dado lo hubiera tocado un humano. Mientras juega el maestro (no es el turno del humano),
   la pantalla cubre el tablero con un velo translúcido (`versus/master-veil`) que deja
   claro que no hay que tocar nada hasta que termine sus movimientos.
 
@@ -134,14 +138,27 @@ Comunes:
 - `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveCard`,
   `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
   `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `Footer`,
-  `SetupScreen`). `FlashMessage` flota fijo en la parte superior (fuera del `ScrollView`,
+  `SetupScreen`, `CubeGrid`, `TurnActions`, `RulesBook` —las reglas, compartidas por la
+  pantalla de reglas y el panel en partida— y `RulesButton` —botón «?» de la cabecera que
+  abre las reglas en un modal sin salir de la partida—).
+- `tutorial/` — tutorial de la primera partida (versus, duelo y desafío; no en el modo
+  físico): `tutorialSteps.ts` define los consejos y cuándo aplican (`nextTutorialStep`,
+  puro y testeado en el proyecto logic), `useTutorial` los muestra uno a uno y
+  `TutorialTip` los pinta abajo sin bloquear el tablero. Al verlos todos o pulsar
+  «Saltar tutorial» se guarda `tria-prima/tutorial-done`; la pantalla de reglas permite
+  repetirlo. `FlashMessage` flota fijo en la parte superior (fuera del `ScrollView`,
   `position:absolute`) para verse aunque haya scroll.
 - No hay transición visual al empezar / reiniciar / terminar partida: el cambio entre
   setup / partida / fin es directo, igual que volver al menú (navegación normal del
   `Stack`, `router.dismissTo('/')`). Se probó un velo negro con fundido y se descartó
   por no convencer; lo único que se conserva es la coordinación de la música.
 - `hooks/` — `useMatch` (duelo), `useVersus` (contra el maestro: igual que `useMatch`
-  más la reproducción automática y retardada del turno de la app), `useSoloPlay`
+  más la reproducción automática y retardada del turno de la app), `useTurnController`
+  (control del turno del humano común a versus/duelo/desafío: estado de `turnFlow`,
+  sonido, animación y declaración automática; las pantallas solo pintan `CubeGrid` y
+  `TurnActions`), `useExitGuard` (con partida en curso, cualquier salida —flecha, botón
+  atrás de Android, gesto de iOS, recarga web— pide confirmación vía `usePreventRemove`),
+  `useSoloPlay`
   (solitario digital), `useTracker` (tracker físico), `useGameMusic`
   (coordina la música con el estado de la partida: pista de partida mientras hay una
   en curso —`active`—, pista de menú al terminar o al salir de la pantalla). Las cuatro
@@ -150,7 +167,6 @@ Comunes:
   `sfxSpecs.ts` (efectos) y `score.ts` (partituras). Hay dos pistas de música (`MusicTrack`):
   `menu` y `game` (misma cadencia andaluza en Re menor; la de partida con pulso más vivo y
   melodía propia). `MusicPlayer.setTrack` cambia de pista respetando la preferencia y
-  `MusicPlayer.pause` detiene la reproducción sin tocar la preferencia;
   `useGameMusic` coordina la música con el estado de la partida: al empezar (o reiniciar)
   cambia a la pista de partida (`setTrack('game')` + `start` si la preferencia está activa)
   y, al terminar la partida o salir de la pantalla, vuelve a `menu`.
@@ -160,8 +176,10 @@ Comunes:
   `expo-audio`; la melodía nativa usa triángulo y un eco horneado en lugar del filtro+delay
   de la web. En nativo no hay política de autoplay: la música arranca con la app si la
   preferencia está activa. Los toggles ♪ / 🔊 viven en `AudioControls` (headerRight del
-  Stack). Preferencias en `localStorage` vía `audio/preferences.ts` (en nativo no hay
-  `localStorage`: el try/catch deja el valor por defecto, activado, sin persistir).
+  Stack). Preferencias (audio y tutorial) persistentes con
+  `@react-native-async-storage/async-storage` vía `audio/preferences.ts`: `_layout` las
+  carga al arrancar (`loadPreferences`) antes de pintar nada y después se leen de forma
+  síncrona desde memoria. Los toggles deciden por la preferencia, no por si suena.
   En jest, `expo-audio` está mockeado vía `moduleNameMapper` del proyecto ui
   (`src/ui/audio/__mocks__/expo-audio.ts`).
 - `ornaments/` — biblioteca decorativa SVG (estilo grimorio: interior de los libros de
@@ -191,6 +209,9 @@ Comunes:
 
 ### `app/` — Rutas (expo-router)
 - `_layout.tsx` — Stack con `ConfirmProvider`.
+- Títulos de la cabecera iguales a los botones de la home («Desafío», «Con el juego
+  físico»). La cabecera de toda pantalla salvo la home y las reglas lleva «?» (reglas) y
+  los toggles de audio.
 - `index.tsx` — Home: cinco botones (Contra el maestro —principal, destacado—, Duelo, Desafío, Con el juego físico, Reglas).
 - `instructions.tsx` — manual con vocabulario propio.
 - `play.tsx` — modo Duelo. Muestra `SetupScreen` si no hay partida.
@@ -246,7 +267,11 @@ La transición entre fases vive como funciones puras en `src/ui/turnFlow.ts` (`T
 (`versus`, `play`, `solo`). Las pantallas solo ejecutan los efectos (audio, animación,
 dominio); la decisión es pura y está cubierta por `src/ui/__tests__/turnFlow.test.ts`
 (en el proyecto **logic**). Regla clave: un dado ya movido este turno no puede volver a
-tocarse (el turno son 2 dados **distintos**).
+tocarse (el turno son 2 dados **distintos**). La regla la hace cumplir también el
+dominio: `Board.touchedThisTurn` registra los dados movidos; `rotateCubeAt` rechaza
+repetir dado o un tercero, `swapPositions` solo vale como única acción, solo se declara
+con el turno completo (`isTurnComplete`) y `closeTurn` convierte los movidos en
+`lockedThisTurn` del rival. `endMatchTurn`/`endSoloTurn` ya no reciben los dados.
 
 ## Reglas del juego (resumen funcional)
 
@@ -264,25 +289,33 @@ tocarse (el turno son 2 dados **distintos**).
   fila o columna. Cada objetivo declarado pasa a tu zona de bloqueo.
 - Por cada objetivo declarado, se marca la carta del rival cuya insignia coincide.
   2 marcadores en una carta → letra revelada.
-- En cada nueva declaración, el jugador conserva sus bloqueos que aún se cumplen en
-  el tablero, libera los que ya no, y añade los nuevos. Los del rival no se tocan.
+- En su fase de declaración, el jugador devuelve primero sus propios bloqueos al grupo
+  disponible y después declara todo lo cumplido: si una alineación suya ha sobrevivido
+  (ni el rival ni él la han deshecho), la vuelve a declarar y vuelve a puntuar. Los
+  bloqueos del rival no se tocan y no se pueden declarar.
 - La declaración se aplica automáticamente al cerrar la fase de movimiento (no hay
   botón "declarar").
-- Con 4 o más letras del rival reveladas, en cualquier momento de su turno el jugador
-  puede intentar adivinar. Acierto → gana; fallo → gana el rival.
+- Adivinar: con 4 o más letras del rival reveladas y **solo al final de un turno en el
+  que acaba de revelar una letra nueva** (`revealedThisTurn`). Un único intento:
+  acierto → gana; fallo → gana el rival (`MatchState.failedGuessBy` dice quién falló,
+  para el mensaje final). `guessMatchWord` recibe quién adivina y lo valida. En el
+  tracker no hay turnos digitales: se puede adivinar en cuanto hay 4 letras.
 - Primer turno del aprendiz inicial: solo manipulación, no se declara.
 
 ### Modo solitario digital
 - Un solo jugador. La app esconde una palabra y gestiona todo en pantalla.
 - Mismo flujo de turno que el duelo (4 fases, dos dados, declaración automática).
 - Marcadores van sobre la palabra escondida del propio jugador.
-- Al adivinar, puntuación = turnos + objetivos en disposición inicial. Rango
+- Al adivinar, puntuación = turnos jugados (incluido el turno en curso) + objetivos en
+  disposición inicial. Rango
   según `domain/Score.ts` (Genio · Alumno supera al maestro · Sigue practicando · Vuelve a intentarlo).
 
 ### Modo tracker (con el juego físico)
 - La app esconde una palabra clave. El jugador juega físicamente con el juego de mesa
   y pulsa ＋ en el objetivo correspondiente cada vez que lo cumple en la mesa.
 - No hay puntuación digital ni contador de turnos: solo gestión de letras reveladas.
+- ＋ sobre una carta ya revelada no cuenta; − deshace la última marca, y si esa marca
+  reveló la letra, la vuelve a ocultar.
 - Las insignias usan la variante visual `physical` (componente `SignGlyph` +
   tokens `physical*`): colores planos turquesa/blanco/naranja y letras griegas
   Δ Θ Ξ para que coincidan con los componentes del juego de mesa real. Solo
@@ -327,6 +360,22 @@ npm test            # toda la suite
 npm run test:watch  # modo watch
 npm run typecheck   # tsc --noEmit
 ```
+
+## Publicación en Google Play
+
+- Paquete `com.astonrendar.triaprima` (proyecto personal). `versionCode`
+  en `app.json` (`android.versionCode`): incrementarlo antes de cada subida.
+- `/android` se genera con `npx expo prebuild --platform android` (está en `.gitignore`).
+  Los ajustes de release viven en el config plugin `plugins/withAndroidRelease.js`:
+  minificación R8 + `shrinkResources` y firma con la clave de subida, leída de
+  `~/.gradle/gradle.properties` (`TRIAPRIMA_UPLOAD_*`); sin ella firma con la de debug.
+- Permisos: `expo-audio` sin micrófono ni reproducción en segundo plano, y
+  `android.blockedPermissions` quita el resto de permisos que no se usan.
+- Compilar con **JDK 17** (`JAVA_HOME=/opt/homebrew/opt/openjdk@17/...`); con el JDK 25 de
+  Android Studio falla el plugin foojay de Gradle 9.
+- `docs/privacy.html` es la política de privacidad (GitHub Pages, carpeta `/docs` de
+  `main`); `store/google-play.md` tiene los textos de la ficha, los formularios y los
+  pasos de firma.
 
 ## Flujo de trabajo git
 
