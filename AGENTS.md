@@ -144,9 +144,12 @@ Comunes:
   de estado (de quién es el turno; no hay botón de nueva partida: se sale con la flecha o
   el botón atrás, que piden confirmación, y la pantalla final ofrece «Nueva partida» y
   «Volver al inicio»), la palabra del rival en una sola fila (`WordTrack
-  compact`, sin repetirla como texto), el tablero con `ObjectiveRail` al lado —los seis
-  objetivos con su dueño: libre, propio (★, borde dorado) o del rival (⊘, atenuado),
-  en lugar de las antiguas zonas de bloqueo— y la palabra propia en una fila. Debajo,
+  compact`, sin repetirla como texto), la zona de bloqueo del rival (`LockZone`), el
+  tablero con `ObjectiveRail` al lado (columna de los seis objetivos centrada respecto a
+  los dados; el declarado deja un hueco punteado, sin iconos de estado), tu zona de
+  bloqueo y la palabra propia en una fila: como en la mesa, cada carta declarada está
+  del lado de quien la declaró, entre los dados y su palabra. El contenido se centra en
+  vertical. Debajo,
   fuera del scroll, `TurnActions` es una barra fija de altura constante con la ayuda de
   la fase y los botones; en la fase de declarar ofrece «Adivinar» cuando la regla lo
   permite y abre `GuessSheet` (modal con `GuessBox`), así la casilla nunca queda fuera
