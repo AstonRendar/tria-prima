@@ -8,12 +8,15 @@ import { AudioControls } from '@/ui/components/AudioControls';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { RulesButton } from '@/ui/components/RulesButton';
 import { ConfirmProvider } from '@/ui/ConfirmProvider';
+import { TourTarget, TourTargetsProvider } from '@/ui/tutorial/TourTargets';
 import { colors, fonts } from '@/ui/styles/tokens';
 
 function HeaderActions() {
   return (
     <View style={styles.headerActions}>
-      <RulesButton />
+      <TourTarget id="rules">
+        <RulesButton />
+      </TourTarget>
       <AudioControls />
     </View>
   );
@@ -35,6 +38,7 @@ export default function RootLayout() {
   if (!ready) return null;
   return (
     <ConfirmProvider>
+      <TourTargetsProvider>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -60,6 +64,7 @@ export default function RootLayout() {
         <Stack.Screen name="solo" options={{ title: 'Desafío' }} />
         <Stack.Screen name="tracker" options={{ title: 'Con el juego físico' }} />
       </Stack>
+      </TourTargetsProvider>
     </ConfirmProvider>
   );
 }

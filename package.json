@@ -48,6 +48,7 @@
       "src/application/**/*.ts",
       "src/ui/turnFlow.ts",
       "src/ui/tutorial/tutorialSteps.ts",
+      "src/ui/tutorial/tourSteps.ts",
       "!**/__tests__/**"
     ],
     "projects": [

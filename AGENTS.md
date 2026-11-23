@@ -165,7 +165,18 @@ Comunes:
   puro y testeado en el proyecto logic), `useTutorial` los muestra uno a uno y
   `TutorialTip` los pinta arriba sin tapar el tablero ni el panel de acciones. Al verlos todos o pulsar
   «Saltar tutorial» se guarda `tria-prima/tutorial-done`; la pantalla de reglas permite
-  repetirlo. `FlashMessage` flota fijo en la parte superior (fuera del `ScrollView`,
+  repetirlo (también reinicia los tours).
+- Tour de presentación (`tutorial/tourSteps.ts`, `useTour`, `TourOverlay`, `TourTargets`):
+  antes de los consejos, la primera partida recorre cada zona iluminándola (resto de la
+  pantalla oscurecido, `Modal` transparente que cubre también la cabecera) con un globo
+  «Siguiente / Saltar». Hay dos tours con flag propio: `game` (palabra del rival, dado
+  central, tablero, objetivos, tu palabra —no en el desafío—, barra de acciones y botón
+  «?») y `tracker` (palabra, contadores, adivinar y «?»), guardados en
+  `tria-prima/tour-{kind}-done`. Las zonas se marcan con `<TourTarget id>` y se registran
+  en `TourTargetsProvider` (layout raíz); la capa las mide con `measureInWindow` y, sin
+  medida (tests), centra el globo. Los consejos esperan a que acabe el tour; en contra el
+  maestro el tour espera al turno del humano y en el duelo a que no haya «pasa el
+  dispositivo». `FlashMessage` flota fijo en la parte superior (fuera del `ScrollView`,
   `position:absolute`) para verse aunque haya scroll.
 - No hay transición visual al empezar / reiniciar / terminar partida: el cambio entre
   setup / partida / fin es directo, igual que volver al menú (navegación normal del

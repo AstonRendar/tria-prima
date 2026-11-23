@@ -18,6 +18,10 @@ import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useTracker } from '@/ui/hooks/useTracker';
 import { ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, shadows, spacing } from '@/ui/styles/tokens';
+import { TRACKER_TOUR } from '@/ui/tutorial/tourSteps';
+import { TourOverlay } from '@/ui/tutorial/TourOverlay';
+import { TourTarget } from '@/ui/tutorial/TourTargets';
+import { useTour } from '@/ui/tutorial/useTour';
 
 const dependencies = buildProductionDependencies();
 
@@ -43,6 +47,7 @@ export default function Tracker() {
   const hasActiveGame = !state.finished;
   useExitGuard(hasActiveGame, 'Salir de la partida');
   useGameMusic(hasActiveGame);
+  const tour = useTour('tracker', TRACKER_TOUR, hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
@@ -109,13 +114,15 @@ export default function Tracker() {
         </View>
 
         <Text style={styles.sectionLabel}>Palabra sellada por el maestro</Text>
-        <WordTrack word={state.secretWord} variant="physical" />
+        <TourTarget id="word">
+          <WordTrack word={state.secretWord} variant="physical" />
+        </TourTarget>
 
         <Text style={styles.hint}>
           Pulsa ＋ cada vez que cumplas un objetivo en tu mesa y − si te equivocaste. Con 2
           marcas se revela la letra.
         </Text>
-        <View style={styles.counters}>
+        <TourTarget id="counters" style={styles.counters}>
           {ALL_OBJECTIVES.map((objective) => (
             <ObjectiveCounter
               key={objective.id}
@@ -128,10 +135,10 @@ export default function Tracker() {
               style={styles.counter}
             />
           ))}
-        </View>
+        </TourTarget>
       </ScrollView>
 
-      <View style={[styles.bar, { paddingBottom: spacing.sm + insets.bottom }]}>
+      <TourTarget id="guess" style={[styles.bar, { paddingBottom: spacing.sm + insets.bottom }]}>
         <Text style={styles.barHint}>
           {tracker.canGuessNow
             ? 'Ya puedes intentar adivinar. Solo hay un intento.'
@@ -144,7 +151,7 @@ export default function Tracker() {
           disabled={!tracker.canGuessNow}
           testID="guess/open"
         />
-      </View>
+      </TourTarget>
 
       <GuessSheet
         visible={guessOpen && tracker.canGuessNow}
@@ -154,6 +161,13 @@ export default function Tracker() {
           setGuessOpen(false);
           tracker.guess(value);
         }}
+      />
+      <TourOverlay
+        step={tour.step}
+        index={tour.index}
+        total={tour.total}
+        onNext={tour.next}
+        onSkip={tour.skip}
       />
       <FlashMessage message={flash.message} />
     </View>
