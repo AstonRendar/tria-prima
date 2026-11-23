@@ -136,12 +136,14 @@ Comunes:
 
 ### `src/ui/`
 - `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveRail`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
-  `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `GuessSheet`, `Footer`,
+  `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `GuessSheet`, `Footer`,
   `SetupScreen`, `CubeGrid`, `TurnActions`, `RulesBook` —las reglas, compartidas por la
   pantalla de reglas y el panel en partida— y `RulesButton` —botón «?» de la cabecera que
   abre las reglas en un modal sin salir de la partida—).
 - **Disposición compacta de partida** (todo en una pantalla, sin plegables): una línea
-  de estado (Nueva partida + turno), la palabra del rival en una sola fila (`WordTrack
+  de estado (de quién es el turno; no hay botón de nueva partida: se sale con la flecha o
+  el botón atrás, que piden confirmación, y la pantalla final ofrece «Nueva partida» y
+  «Volver al inicio»), la palabra del rival en una sola fila (`WordTrack
   compact`, sin repetirla como texto), el tablero con `ObjectiveRail` al lado —los seis
   objetivos con su dueño: libre, propio (★, borde dorado) o del rival (⊘, atenuado),
   en lugar de las antiguas zonas de bloqueo— y la palabra propia en una fila. Debajo,

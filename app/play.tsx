@@ -12,7 +12,6 @@ import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
-import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveRail } from '@/ui/components/ObjectiveRail';
 import { SetupScreen } from '@/ui/components/SetupScreen';
 import { SignCounters } from '@/ui/components/SignCounters';
@@ -139,7 +138,6 @@ export default function Play() {
       <ParchmentBackground />
       <ScrollView style={styles.main} contentContainerStyle={styles.container}>
         <View style={styles.topRow}>
-          <NewGameButton onConfirm={onRestart} />
           <Text style={styles.turnBadge} numberOfLines={1}>
             Turno de <Text style={styles.turnBadgeName}>{state.players[me].name}</Text>
           </Text>
@@ -239,14 +237,13 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: spacing.xs,
   },
   turnBadge: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
     fontSize: 13,
-    maxWidth: '55%',
   },
   turnBadgeName: {
     color: colors.accent,
