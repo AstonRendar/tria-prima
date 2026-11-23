@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { DropCap, FiligreeDivider, OrnateFrame } from '@/ui/ornaments';
-import { colors, fonts, shadows, spacing } from '@/ui/styles/tokens';
+import { CubeColor } from '@/domain/Color';
+import { colors, cubeColorHex, fonts, shadows, spacing } from '@/ui/styles/tokens';
 
 const startsWithLetter = (body: string) => /^[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(body);
 
@@ -15,7 +16,7 @@ export const RULE_SECTIONS: ReadonlyArray<Section> = [
   {
     title: 'Lo que hay en juego',
     body:
-      '· Nueve cubos. Cada cara muestra un símbolo alquímico (azufre 🜍, mercurio ☿ o sal 🜔) sobre uno de los tres colores de la Gran Obra (nigredo negro, citrinitas oro o rubedo rojo).\n· Seis cartas de objetivo: una por cada símbolo y una por cada color.\n· Doce cartas de jugador (seis por aprendiz). Cada carta lleva una letra oculta por detrás y, por delante, una insignia única: o bien uno de los tres símbolos, o bien uno de los tres colores.\n· Doce marcadores (seis por jugador).\n· Dos anillos de bloqueo y un indicador.',
+      '· Nueve cubos. Cada cara muestra un símbolo alquímico (azufre 🜍, mercurio ☿ o sal 🜔) sobre uno de los tres colores de la Gran Obra (nigredo, citrinitas o rubedo).\n· Seis cartas de objetivo: una por cada símbolo y una por cada color.\n· Doce cartas de jugador (seis por aprendiz). Cada carta lleva una letra oculta por detrás y, por delante, una insignia única: o bien uno de los tres símbolos, o bien uno de los tres colores.\n· Doce marcadores (seis por jugador).\n· Dos anillos de bloqueo y un indicador.',
   },
   {
     title: 'Antes de empezar',
@@ -74,6 +75,37 @@ export const RULE_SECTIONS: ReadonlyArray<Section> = [
   },
 ];
 
+// Los nombres de los colores de la Gran Obra no dicen nada por sí solos: en el
+// texto se escriben en negrita y con su propio color.
+const COLOR_WORDS = /(nigredo|citrinitas|rubedo)/i;
+
+export type RuleSpan = { text: string; color?: CubeColor };
+
+// Al partir por un grupo capturado, los nombres de color quedan en las
+// posiciones impares.
+export function splitColorWords(body: string): RuleSpan[] {
+  return body
+    .split(COLOR_WORDS)
+    .map((text, i) => (i % 2 === 1 ? { text, color: text.toLowerCase() as CubeColor } : { text }))
+    .filter((span) => span.text.length > 0);
+}
+
+function RuleText({ body }: { body: string }) {
+  return (
+    <>
+      {splitColorWords(body).map((span, i) =>
+        span.color ? (
+          <Text key={i} style={[styles.colorWord, { color: cubeColorHex[span.color] }]} testID={`rules/color/${span.color}`}>
+            {span.text}
+          </Text>
+        ) : (
+          span.text
+        )
+      )}
+    </>
+  );
+}
+
 // Las reglas completas, sección a sección. Se usan en la pantalla de reglas y
 // en el panel que se abre durante la partida.
 export function RulesBook() {
@@ -88,10 +120,14 @@ export function RulesBook() {
           {startsWithLetter(s.body) ? (
             <View style={styles.bodyRow}>
               <DropCap letter={s.body[0]} />
-              <Text style={[styles.sectionBody, styles.bodyAfterCap]}>{s.body.slice(1)}</Text>
+              <Text style={[styles.sectionBody, styles.bodyAfterCap]}>
+                <RuleText body={s.body.slice(1)} />
+              </Text>
             </View>
           ) : (
-            <Text style={styles.sectionBody}>{s.body}</Text>
+            <Text style={styles.sectionBody}>
+              <RuleText body={s.body} />
+            </Text>
           )}
         </OrnateFrame>
       ))}
@@ -120,6 +156,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 16,
     lineHeight: 26,
+  },
+  colorWord: {
+    fontWeight: '800',
   },
   bodyRow: {
     flexDirection: 'row',

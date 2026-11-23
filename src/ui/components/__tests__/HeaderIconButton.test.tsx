@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { AudioControls } from '@/ui/components/AudioControls';
 import { HeaderIconButton } from '@/ui/components/HeaderIconButton';
 import { RulesButton } from '@/ui/components/RulesButton';
@@ -10,6 +11,10 @@ jest.mock('@/ui/audio/music', () => ({
     isEnabled: () => mockMusic.enabled,
     toggle: () => (mockMusic.enabled = !mockMusic.enabled),
   },
+}));
+const mockInsets = { top: 48, bottom: 24, left: 0, right: 0 };
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => mockInsets,
 }));
 jest.mock('@/ui/audio/sound', () => ({
   audio: {
@@ -64,5 +69,14 @@ describe('header icons', () => {
     expect(mockSfx.enabled).toBe(false);
     expect(screen.getByTestId('audio/sfx/icon-off')).toBeTruthy();
     expect(screen.getByTestId('audio/sfx').props.accessibilityState).toEqual({ checked: false });
+  });
+});
+
+describe('rules panel', () => {
+  it('keeps its header below the status bar', async () => {
+    await render(<RulesButton />);
+    await fireEvent.press(screen.getByTestId('rules/open'));
+    const header = screen.getByTestId('rules/header');
+    expect(StyleSheet.flatten(header.props.style).paddingTop).toBeGreaterThan(mockInsets.top);
   });
 });

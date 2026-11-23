@@ -173,11 +173,16 @@ export default function Versus() {
       <View style={styles.main}>
         <ScrollView contentContainerStyle={styles.container}>
           <View style={styles.topRow}>
-            <Text style={styles.turnBadge} numberOfLines={1}>
-              Turno de{' '}
-              <Text style={styles.turnBadgeName} testID="versus/turn-name">
-                {isMyTurn ? 'Tú' : APP_PLAYER_NAME}
-              </Text>
+            <Text style={styles.turnBadge} numberOfLines={1} testID="versus/turn">
+              {isMyTurn ? (
+                <>
+                  <Text style={styles.turnBadgeName}>Tu</Text> turno
+                </>
+              ) : (
+                <>
+                  Turno del <Text style={styles.turnBadgeName}>maestro</Text>
+                </>
+              )}
             </Text>
           </View>
 
