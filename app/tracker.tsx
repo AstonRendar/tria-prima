@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ALL_OBJECTIVES, Objective } from '@/domain/Objective';
-import { maskedText, plainText, revealedCount } from '@/domain/SecretWord';
+import { MIN_REVEALED_TO_GUESS, plainText, revealedCount, WORD_LENGTH } from '@/domain/SecretWord';
 import { buildProductionDependencies } from '@/infrastructure/ProductionDependencies';
 import { audio } from '@/ui/audio/sound';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
-import { Footer } from '@/ui/components/Footer';
-import { GuessBox } from '@/ui/components/GuessBox';
+import { ActionButton } from '@/ui/components/ActionButton';
+import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCounter } from '@/ui/components/ObjectiveCounter';
@@ -16,8 +17,8 @@ import { WordTrack } from '@/ui/components/WordTrack';
 import { useExitGuard } from '@/ui/hooks/useExitGuard';
 import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useTracker } from '@/ui/hooks/useTracker';
-import { FiligreeDivider, ParchmentBackground } from '@/ui/ornaments';
-import { colors, fonts, spacing } from '@/ui/styles/tokens';
+import { ParchmentBackground } from '@/ui/ornaments';
+import { colors, fonts, shadows, spacing } from '@/ui/styles/tokens';
 
 const dependencies = buildProductionDependencies();
 
@@ -26,7 +27,8 @@ export default function Tracker() {
   const navigation = useNavigation();
   const tracker = useTracker(dependencies);
   const { state } = tracker;
-  const [guess, setGuess] = useState('');
+  const [guessOpen, setGuessOpen] = useState(false);
+  const insets = useSafeAreaInsets();
   const flash = useFlash();
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -72,14 +74,9 @@ export default function Tracker() {
     }
   };
 
-  const onGuess = () => {
-    if (guess.trim().length === 0) return;
-    tracker.guess(guess);
-  };
-
   const onRestart = () => {
     tracker.restart();
-    setGuess('');
+    setGuessOpen(false);
   };
 
   if (state.finished) {
@@ -97,53 +94,69 @@ export default function Tracker() {
   }
 
 
+  const revealed = revealedCount(state.secretWord);
+
   return (
     <View style={styles.page}>
       <ParchmentBackground />
-      <ScrollView contentContainerStyle={styles.container}>
-      <NewGameButton onConfirm={onRestart} />
-      <Text style={styles.heading}>Tracker para jugar con el juego físico</Text>
-      <Text style={styles.subheading}>
-        La app esconde la palabra clave. Cuando completes un objetivo en tu mesa, márcalo aquí.
-      </Text>
+      <ScrollView style={styles.main} contentContainerStyle={styles.container}>
+        <View style={styles.topRow}>
+          <NewGameButton onConfirm={onRestart} />
+          <Text style={styles.status}>
+            Reveladas{' '}
+            <Text style={styles.statusValue}>
+              {revealed}/{WORD_LENGTH}
+            </Text>
+          </Text>
+        </View>
 
-      <Text style={styles.maskedWord}>{maskedText(state.secretWord)}</Text>
-      <WordTrack word={state.secretWord} variant="physical" />
+        <Text style={styles.sectionLabel}>Palabra sellada por el maestro</Text>
+        <WordTrack word={state.secretWord} variant="physical" />
 
-      <View style={styles.divider}>
-        <FiligreeDivider width={170} />
-      </View>
-      <Text style={styles.sectionTitle}>Objetivos</Text>
-      <Text style={styles.sectionHint}>
-        Pulsa ＋ cuando cumplas el objetivo en tu mesa; − si te equivocaste (también oculta una letra revelada por error).
-        Al acumular 2 marcas se revela la letra de esa carta.
-      </Text>
-      {ALL_OBJECTIVES.map((objective) => (
-        <ObjectiveCounter
-          key={objective.id}
-          objective={objective}
-          count={state.declaredCount.get(objective.id) ?? 0}
-          onIncrement={() => onMark(objective)}
-          onDecrement={() => tracker.unmark(objective)}
-          variant="physical"
-        />
-      ))}
-
-      <Text style={styles.statusLine}>
-        Reveladas {revealedCount(state.secretWord)} / 6
-      </Text>
-
-      {tracker.canGuessNow && (
-        <GuessBox
-          value={guess}
-          onChangeText={setGuess}
-          onSubmit={onGuess}
-        />
-      )}
-
-      <Footer />
+        <Text style={styles.hint}>
+          Pulsa ＋ cada vez que cumplas un objetivo en tu mesa y − si te equivocaste. Con 2
+          marcas se revela la letra.
+        </Text>
+        <View style={styles.counters}>
+          {ALL_OBJECTIVES.map((objective) => (
+            <ObjectiveCounter
+              key={objective.id}
+              objective={objective}
+              count={state.declaredCount.get(objective.id) ?? 0}
+              onIncrement={() => onMark(objective)}
+              onDecrement={() => tracker.unmark(objective)}
+              variant="physical"
+              compact
+              style={styles.counter}
+            />
+          ))}
+        </View>
       </ScrollView>
 
+      <View style={[styles.bar, { paddingBottom: spacing.sm + insets.bottom }]}>
+        <Text style={styles.barHint}>
+          {tracker.canGuessNow
+            ? 'Ya puedes intentar adivinar. Solo hay un intento.'
+            : `Necesitas ${MIN_REVEALED_TO_GUESS} letras para adivinar.`}
+        </Text>
+        <ActionButton
+          label="Adivinar la palabra"
+          variant="danger"
+          onPress={() => setGuessOpen(true)}
+          disabled={!tracker.canGuessNow}
+          testID="guess/open"
+        />
+      </View>
+
+      <GuessSheet
+        visible={guessOpen && tracker.canGuessNow}
+        hint={`Tienes ${revealed} letras. Solo hay un intento.`}
+        onClose={() => setGuessOpen(false)}
+        onSubmit={(value) => {
+          setGuessOpen(false);
+          tracker.guess(value);
+        }}
+      />
       <FlashMessage message={flash.message} />
     </View>
   );
@@ -153,62 +166,68 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
   },
+  main: {
+    flex: 1,
+  },
   container: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
-  divider: {
+  topRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.md,
-    opacity: 0.8,
-  },
-  heading: {
-    fontFamily: fonts.serif,
-    color: colors.accent,
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  subheading: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 13,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  maskedWord: {
-    fontFamily: fonts.serif,
-    color: colors.accent,
-    textAlign: 'center',
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: 4,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: spacing.lg,
+    justifyContent: 'space-between',
     marginBottom: spacing.xs,
   },
-  sectionHint: {
+  status: {
+    fontFamily: fonts.serif,
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+  statusValue: {
+    color: colors.accent,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  sectionLabel: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
     fontSize: 12,
     fontStyle: 'italic',
-    marginBottom: spacing.sm,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
   },
-  statusLine: {
+  hint: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
-    textAlign: 'center',
     fontSize: 13,
-    marginTop: spacing.sm,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginVertical: spacing.md,
+  },
+  counters: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  counter: {
+    width: '48.5%',
+  },
+  bar: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1.5,
+    borderTopColor: colors.gold,
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    alignItems: 'center',
+    ...shadows.raised,
+  },
+  barHint: {
+    fontFamily: fonts.serif,
+    color: colors.textMuted,
+    fontSize: 13,
+    fontStyle: 'italic',
+    marginBottom: spacing.xs,
   },
 });

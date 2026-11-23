@@ -1,26 +1,24 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
-import { TOUCHES_PER_TURN } from '@/domain/Board';
 import { rankFor } from '@/domain/Score';
-import { maskedText, plainText, revealedCount, WORD_LENGTH } from '@/domain/SecretWord';
+import { plainText, revealedCount, WORD_LENGTH } from '@/domain/SecretWord';
 import { buildProductionDependencies } from '@/infrastructure/ProductionDependencies';
 import { audio } from '@/ui/audio/sound';
 import { CubeGrid } from '@/ui/components/CubeGrid';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
-import { Footer } from '@/ui/components/Footer';
-import { GuessBox } from '@/ui/components/GuessBox';
+import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
-import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
+import { ObjectiveRail } from '@/ui/components/ObjectiveRail';
 import { TurnActions } from '@/ui/components/TurnActions';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useExitGuard } from '@/ui/hooks/useExitGuard';
 import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useSoloPlay } from '@/ui/hooks/useSoloPlay';
 import { useTurnController } from '@/ui/hooks/useTurnController';
-import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
+import { ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
 import { describePhase } from '@/ui/turnFlow';
 import { TutorialTip } from '@/ui/tutorial/TutorialTip';
@@ -33,7 +31,7 @@ export default function SoloPlay() {
   const navigation = useNavigation();
   const solo = useSoloPlay(dependencies);
   const { state } = solo;
-  const [guess, setGuess] = useState('');
+  const [guessOpen, setGuessOpen] = useState(false);
   const flash = useFlash();
 
   const hasActiveGame = !state.finished;
@@ -76,20 +74,12 @@ export default function SoloPlay() {
     audio.play(state.outcome === 'won' ? 'win' : 'lose');
   }, [state.finished, state.outcome]);
 
-  const onEndTurn = () => {
-    setGuess('');
-    turnCtl.onEndTurn();
-  };
-
-  const onGuess = () => {
-    if (guess.trim().length === 0) return;
-    solo.guess(guess);
-  };
+  const onEndTurn = () => turnCtl.onEndTurn();
 
   const onRestart = () => {
     solo.restart();
     turnCtl.reset();
-    setGuess('');
+    setGuessOpen(false);
   };
 
   if (state.finished) {
@@ -117,205 +107,111 @@ export default function SoloPlay() {
     );
   }
 
-  const phaseHint = describePhase(turn.phase, turn.touched.size, state.turn === 0);
-  const myBlocked = state.objectives.filter((s) => s.blockedBy !== null);
-  const availableSlots = state.objectives.filter((s) => s.blockedBy === null);
+  const firstTurn = state.turn === 0;
+  const hint = describePhase(turn.phase, turn.touched.size, firstTurn);
 
   return (
     <View style={styles.page}>
       <ParchmentBackground />
-      <ScrollView contentContainerStyle={styles.container}>
-      <NewGameButton onConfirm={onRestart} />
+      <ScrollView style={styles.main} contentContainerStyle={styles.container}>
+        <View style={styles.topRow}>
+          <NewGameButton onConfirm={onRestart} />
+          <Text style={styles.status}>
+            Turno <Text style={styles.statusValue}>{state.turn + 1}</Text>
+            {'  ·  '}Reveladas{' '}
+            <Text style={styles.statusValue}>
+              {revealedCount(state.secretWord)}/{WORD_LENGTH}
+            </Text>
+          </Text>
+        </View>
 
-      <View style={styles.headerRow}>
-        <Stat label="Turno" value={String(state.turn + 1)} />
-        <Stat label="Reveladas" value={`${revealedCount(state.secretWord)} / ${WORD_LENGTH}`} />
-        <Stat label="Tocados" value={`${turn.touched.size} / ${TOUCHES_PER_TURN}`} />
-      </View>
+        <Text style={styles.sectionLabel}>Palabra sellada por el maestro</Text>
+        <WordTrack word={state.secretWord} compact />
 
-      <Text style={styles.heading}>El maestro ha sellado una palabra</Text>
-      <Text style={styles.maskedWord}>{maskedText(state.secretWord)}</Text>
-      <WordTrack word={state.secretWord} />
-
-      {state.turn === 0 && (
-        <Text style={styles.firstTurnNotice} testID="first-turn-notice">
-          Primer turno: solo movimiento. No se declaran objetivos.
-        </Text>
-      )}
-      <Text style={styles.phaseHint}>{phaseHint}</Text>
-
-      <View style={styles.boardRow}>
-        <CubeGrid
-          board={state.board}
-          selected={turn.selected === null ? [] : [turn.selected]}
-          touched={turn.touched}
-          animation={turnCtl.animation}
-          onPress={turnCtl.onPressCube}
-        />
-      </View>
+        <View style={styles.boardRow}>
+          <CubeGrid
+            board={state.board}
+            selected={turn.selected === null ? [] : [turn.selected]}
+            touched={turn.touched}
+            animation={turnCtl.animation}
+            onPress={turnCtl.onPressCube}
+          />
+          <ObjectiveRail
+            slots={state.objectives}
+            ownerOf={(slot) => (slot.blockedBy === null ? 'free' : 'mine')}
+          />
+        </View>
+      </ScrollView>
 
       <TurnActions
         phase={turn.phase}
+        hint={hint}
+        hintTestID={firstTurn ? 'first-turn-notice' : undefined}
+        enabled
         onRotate={turnCtl.onRotate}
         onStartSwap={turnCtl.onStartSwap}
         onCancelAction={turnCtl.onCancelAction}
         onCancelSwap={turnCtl.onCancelSwap}
         onEndTurn={onEndTurn}
+        onGuess={solo.canGuessNow ? () => setGuessOpen(true) : undefined}
       />
 
-      {solo.canGuessNow && (
-        <GuessBox
-          value={guess}
-          onChangeText={setGuess}
-          onSubmit={onGuess}
-          hint={`Acabas de descubrir una letra y tienes ${revealedCount(state.secretWord)}. Puedes intentar adivinar antes de acabar el turno.`}
-        />
-      )}
-
-      <View style={styles.divider}>
-        <FiligreeDivider width={170} />
-      </View>
-      <Text style={styles.sectionTitle}>Objetivos disponibles</Text>
-      <View style={styles.objectiveRow}>
-        {availableSlots.length === 0 ? (
-          <Text style={styles.empty}>Todos los objetivos están bloqueados.</Text>
-        ) : (
-          availableSlots.map((slot) => (
-            <ObjectiveCard key={slot.objective.id} slot={slot} />
-          ))
-        )}
-      </View>
-
-      <Text style={styles.sectionTitle}>Tu zona de bloqueo</Text>
-      <View style={styles.objectiveRow}>
-        {myBlocked.length === 0 ? (
-          <Text style={styles.empty}>Sin objetivos bloqueados.</Text>
-        ) : (
-          myBlocked.map((slot) => (
-            <ObjectiveCard key={slot.objective.id} slot={slot} />
-          ))
-        )}
-      </View>
-
-
-      <Footer />
-      </ScrollView>
-
+      <GuessSheet
+        visible={guessOpen && solo.canGuessNow}
+        hint={`Acabas de descubrir una letra y tienes ${revealedCount(state.secretWord)}. Solo hay un intento.`}
+        onClose={() => setGuessOpen(false)}
+        onSubmit={(value) => {
+          setGuessOpen(false);
+          solo.guess(value);
+        }}
+      />
       <TutorialTip step={tutorial.step} onDismiss={tutorial.dismiss} onSkip={tutorial.skip} />
       <FlashMessage message={flash.message} />
     </View>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <OrnateFrame padding={spacing.sm} cornerScale={0.5} style={styles.stat}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
-    </OrnateFrame>
-  );
-}
-
 const styles = StyleSheet.create({
-  boardRow: {
-    alignItems: 'center',
-    marginVertical: spacing.lg,
-  },
   page: {
     flex: 1,
   },
-  container: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
-  divider: {
-    alignItems: 'center',
-    marginTop: spacing.md,
-    opacity: 0.8,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  stat: {
+  main: {
     flex: 1,
-    alignItems: 'center',
-    marginHorizontal: spacing.xs,
   },
-  statLabel: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  container: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
-  statValue: {
-    fontFamily: fonts.serif,
-    color: colors.text,
-    fontWeight: '700',
-    fontSize: 18,
-    marginTop: 2,
-  },
-  heading: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 12,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  maskedWord: {
-    fontFamily: fonts.serif,
-    color: colors.accent,
-    textAlign: 'center',
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: 4,
-    marginTop: 2,
-    marginBottom: spacing.sm,
-  },
-  phaseHint: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 13,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  firstTurnNotice: {
-    fontFamily: fonts.serif,
-    color: colors.danger,
-    fontSize: 12,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    marginHorizontal: spacing.lg,
-    opacity: 0.85,
-  },
-  sectionTitle: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    textAlign: 'center',
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  objectiveRow: {
+  topRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    rowGap: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
   },
-  empty: {
+  status: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
-    fontStyle: 'italic',
     fontSize: 13,
-    paddingHorizontal: spacing.sm,
+  },
+  statusValue: {
+    color: colors.accent,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  sectionLabel: {
+    fontFamily: fonts.serif,
+    color: colors.textMuted,
+    fontSize: 12,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  boardRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginTop: spacing.md,
   },
   endStats: {
     alignItems: 'center',

@@ -8,20 +8,32 @@ type Props = {
   onPress?: () => void;
   disabled?: boolean;
   variant?: Variant;
+  // Para barras con varios botones en una fila: sin ancho mínimo y con menos relleno.
+  compact?: boolean;
+  accessibilityLabel?: string;
   testID?: string;
 };
 
-export function ActionButton({ label, onPress, disabled, variant = 'secondary', testID }: Props) {
+export function ActionButton({
+  label,
+  onPress,
+  disabled,
+  variant = 'secondary',
+  compact,
+  accessibilityLabel,
+  testID,
+}: Props) {
   return (
     <Pressable
       onPress={onPress}
       testID={testID}
       disabled={disabled || !onPress}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: disabled || !onPress }}
       style={({ pressed }) => [
         styles.btn,
+        compact && styles.compact,
         variant === 'primary' && styles.primary,
         variant === 'danger' && styles.danger,
         disabled && styles.disabled,
@@ -53,6 +65,11 @@ const styles = StyleSheet.create({
     minWidth: 96,
     alignItems: 'center',
     ...shadows.card,
+  },
+  compact: {
+    minWidth: 0,
+    paddingHorizontal: spacing.sm + 2,
+    marginHorizontal: 3,
   },
   primary: {
     backgroundColor: colors.accent,

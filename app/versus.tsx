@@ -7,7 +7,6 @@ import { APP_PLAYER_NAME } from '@/application/StartVersus';
 import { Position } from '@/domain/Position';
 import {
   isValidSecretWord,
-  maskedText,
   normalizeGuess,
   plainText,
   revealedCount,
@@ -20,11 +19,10 @@ import { CubeGrid } from '@/ui/components/CubeGrid';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
-import { GuessBox } from '@/ui/components/GuessBox';
+import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
 import { NewGameButton } from '@/ui/components/NewGameButton';
-import { ObjectiveBlockedZone } from '@/ui/components/ObjectiveBlockedZone';
-import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
+import { ObjectiveRail } from '@/ui/components/ObjectiveRail';
 import { SignCounters } from '@/ui/components/SignCounters';
 import { TurnActions } from '@/ui/components/TurnActions';
 import { WordTrack } from '@/ui/components/WordTrack';
@@ -33,7 +31,7 @@ import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { CubeAnimation, rotationSfx, useTurnController } from '@/ui/hooks/useTurnController';
 import { useVersus } from '@/ui/hooks/useVersus';
 import { FiligreeDivider, ParchmentBackground } from '@/ui/ornaments';
-import { colors, fonts, radius, shadows, spacing } from '@/ui/styles/tokens';
+import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
 import { describePhase } from '@/ui/turnFlow';
 import { TutorialTip } from '@/ui/tutorial/TutorialTip';
 import { useTutorial } from '@/ui/tutorial/useTutorial';
@@ -45,7 +43,7 @@ export default function Versus() {
   const navigation = useNavigation();
   const versus = useVersus(dependencies);
   const { state } = versus;
-  const [guess, setGuess] = useState('');
+  const [guessOpen, setGuessOpen] = useState(false);
   const flash = useFlash();
 
   const hasActiveGame = state !== null && !state.finished;
@@ -135,20 +133,12 @@ export default function Versus() {
 
   const { turn } = turnCtl;
 
-  const onEndTurn = () => {
-    setGuess('');
-    turnCtl.onEndTurn();
-  };
-
-  const onGuess = () => {
-    if (guess.trim().length === 0) return;
-    versus.guess(guess);
-  };
+  const onEndTurn = () => turnCtl.onEndTurn();
 
   const onRestart = () => {
     versus.restart();
     turnCtl.reset();
-    setGuess('');
+    setGuessOpen(false);
   };
 
   if (state.finished) {
@@ -167,103 +157,73 @@ export default function Versus() {
 
   const opponent = state.players.p2;
   const animation = appAnimation ?? turnCtl.animation;
-  const phaseHint = isMyTurn
-    ? describePhase(turn.phase, turn.touched.size, state.turn === 0)
-    : 'El maestro estudia el tablero…';
-  const mySlots = state.objectives.filter((s) => s.blockedBy === 'p1');
-  const opponentSlots = state.objectives.filter((s) => s.blockedBy === 'p2');
-  const availableSlots = state.objectives.filter((s) => s.blockedBy === null);
+  const firstTurn = state.turn === 0;
+  const hint = isMyTurn
+    ? describePhase(turn.phase, turn.touched.size, firstTurn)
+    : 'El maestro juega… espera a que termine sus movimientos.';
 
   return (
     <View style={styles.page}>
       <ParchmentBackground />
-      <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.topRow}>
-        <NewGameButton onConfirm={onRestart} />
-        <View style={[styles.turnBadge, !isMyTurn && styles.turnBadgeApp]}>
-          <Text style={styles.turnBadgeLabel}>Turno de</Text>
-          <Text style={styles.turnBadgeName} numberOfLines={1} testID="versus/turn-name">
-            {isMyTurn ? 'Tú' : APP_PLAYER_NAME}
-          </Text>
-        </View>
+      <View style={styles.main}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.topRow}>
+            <NewGameButton onConfirm={onRestart} />
+            <Text style={styles.turnBadge} numberOfLines={1}>
+              Turno de{' '}
+              <Text style={styles.turnBadgeName} testID="versus/turn-name">
+                {isMyTurn ? 'Tú' : APP_PLAYER_NAME}
+              </Text>
+            </Text>
+          </View>
+
+          <Text style={styles.sectionLabel}>Palabra del maestro</Text>
+          <WordTrack word={opponent.secretWord} compact />
+
+          <View style={styles.boardRow}>
+            <CubeGrid
+              board={state.board}
+              selected={isMyTurn ? (turn.selected === null ? [] : [turn.selected]) : appSelected}
+              touched={turn.touched}
+              animation={animation}
+              onPress={isMyTurn ? turnCtl.onPressCube : undefined}
+            />
+            <ObjectiveRail
+              slots={state.objectives}
+              ownerOf={(slot) => (slot.blockedBy === null ? 'free' : slot.blockedBy === 'p1' ? 'mine' : 'rival')}
+            />
+          </View>
+
+          <View style={styles.myRow}>
+            <Text style={styles.sectionLabel}>Tu palabra</Text>
+            <SignCounters word={state.players.p1.secretWord} />
+          </View>
+        </ScrollView>
+        {!isMyTurn && <View style={styles.masterVeil} testID="versus/master-veil" />}
       </View>
 
-      <ObjectiveBlockedZone
-        playerName={`Bloqueados de ${APP_PLAYER_NAME}`}
-        slots={opponentSlots}
-        testID="blocked/opponent"
+      <TurnActions
+        phase={turn.phase}
+        hint={hint}
+        hintTestID={isMyTurn && firstTurn ? 'first-turn-notice' : undefined}
+        enabled={isMyTurn}
+        onRotate={turnCtl.onRotate}
+        onStartSwap={turnCtl.onStartSwap}
+        onCancelAction={turnCtl.onCancelAction}
+        onCancelSwap={turnCtl.onCancelSwap}
+        onEndTurn={onEndTurn}
+        onGuess={versus.canGuessNow ? () => setGuessOpen(true) : undefined}
       />
 
-      <Text style={styles.opponentLine}>Palabra de {APP_PLAYER_NAME}</Text>
-      <Text style={styles.maskedWord}>{maskedText(opponent.secretWord)}</Text>
-      <WordTrack word={opponent.secretWord} />
-
-      {state.turn === 0 && (
-        <Text style={styles.firstTurnNotice} testID="first-turn-notice">
-          Primer turno: solo movimiento. No se pueden declarar objetivos.
-        </Text>
-      )}
-      <Text style={styles.phaseHint}>{phaseHint}</Text>
-
-      <View style={styles.boardRow}>
-        <CubeGrid
-          board={state.board}
-          selected={isMyTurn ? (turn.selected === null ? [] : [turn.selected]) : appSelected}
-          touched={turn.touched}
-          animation={animation}
-          onPress={isMyTurn ? turnCtl.onPressCube : undefined}
-        />
-        <View style={styles.availableColumn}>
-          <Text style={styles.availableTitle}>Libres</Text>
-          {availableSlots.length === 0 ? (
-            <Text style={styles.empty}>—</Text>
-          ) : (
-            availableSlots.map((slot) => (
-              <ObjectiveCard key={slot.objective.id} slot={slot} compact />
-            ))
-          )}
-        </View>
-      </View>
-
-      {isMyTurn && (
-        <TurnActions
-          phase={turn.phase}
-          onRotate={turnCtl.onRotate}
-          onStartSwap={turnCtl.onStartSwap}
-          onCancelAction={turnCtl.onCancelAction}
-          onCancelSwap={turnCtl.onCancelSwap}
-          onEndTurn={onEndTurn}
-        />
-      )}
-
-      {versus.canGuessNow && (
-        <GuessBox
-          value={guess}
-          onChangeText={setGuess}
-          onSubmit={onGuess}
-          hint={`Acabas de descubrir una letra y tienes ${revealedCount(opponent.secretWord)} del maestro. Puedes intentar adivinar antes de acabar el turno.`}
-        />
-      )}
-
-      <View style={styles.divider}>
-        <FiligreeDivider width={170} />
-      </View>
-      <ObjectiveBlockedZone playerName="Tus bloqueados" slots={mySlots} testID="blocked/me" />
-      <Text style={[styles.opponentLine, styles.myWordLine]}>Tu palabra</Text>
-      <SignCounters word={state.players.p1.secretWord} />
-
-      <Footer />
-      </ScrollView>
-
-      {!isMyTurn && (
-        <View style={styles.masterVeil} testID="versus/master-veil">
-          <View style={styles.masterVeilPanel}>
-            <Text style={styles.masterVeilText}>El maestro juega…</Text>
-            <Text style={styles.masterVeilHint}>Espera a que termine sus movimientos</Text>
-          </View>
-        </View>
-      )}
-
+      <GuessSheet
+        visible={guessOpen && versus.canGuessNow}
+        hint={`Acabas de descubrir una letra y tienes ${revealedCount(opponent.secretWord)} del maestro. Solo hay un intento.`}
+        onClose={() => setGuessOpen(false)}
+        onSubmit={(value) => {
+          setGuessOpen(false);
+          versus.guess(value);
+        }}
+      />
       <TutorialTip step={tutorial.step} onDismiss={tutorial.dismiss} onSkip={tutorial.skip} />
       <FlashMessage message={flash.message} />
     </View>
@@ -386,77 +346,47 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
   },
-  container: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+  main: {
+    flex: 1,
   },
-  divider: {
-    alignItems: 'center',
-    marginTop: spacing.md,
-    opacity: 0.8,
+  container: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   turnBadge: {
-    alignItems: 'flex-end',
+    fontFamily: fonts.serif,
+    color: colors.textMuted,
+    fontSize: 13,
     maxWidth: '55%',
   },
-  turnBadgeApp: {
-    opacity: 0.85,
+  turnBadgeName: {
+    color: colors.accent,
+    fontSize: 17,
+    fontWeight: '800',
   },
-  turnBadgeLabel: {
+  sectionLabel: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
     fontSize: 12,
-  },
-  turnBadgeName: {
-    fontFamily: fonts.serif,
-    color: colors.accent,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  opponentLine: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  myWordLine: {
-    marginTop: spacing.lg,
-  },
-  maskedWord: {
-    fontFamily: fonts.serif,
-    color: colors.text,
-    fontSize: 28,
-    letterSpacing: 6,
-    textAlign: 'center',
-    fontWeight: '700',
-  },
-  firstTurnNotice: {
-    fontFamily: fonts.serif,
-    color: colors.danger,
-    fontSize: 13,
     fontStyle: 'italic',
     textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  phaseHint: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 14,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginVertical: spacing.md,
+    marginBottom: spacing.xs,
   },
   boardRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'flex-start',
+    marginTop: spacing.md,
+  },
+  myRow: {
+    marginTop: spacing.md,
   },
   masterVeil: {
     position: 'absolute',
@@ -464,49 +394,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(15, 20, 33, 0.5)',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingBottom: spacing.xxl,
+    backgroundColor: 'rgba(15, 20, 33, 0.25)',
     zIndex: 25,
-  },
-  masterVeilPanel: {
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.goldBright,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    ...shadows.raised,
-  },
-  masterVeilText: {
-    fontFamily: fonts.serif,
-    color: colors.goldBright,
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  masterVeilHint: {
-    fontFamily: fonts.serif,
-    color: colors.parchmentLight,
-    fontSize: 13,
-    fontStyle: 'italic',
-    marginTop: spacing.xs,
-  },
-  availableColumn: {
-    marginLeft: spacing.md,
-    alignItems: 'center',
-  },
-  availableTitle: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 12,
-    marginBottom: spacing.xs,
-  },
-  empty: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 18,
   },
   endStats: {
     alignItems: 'center',
