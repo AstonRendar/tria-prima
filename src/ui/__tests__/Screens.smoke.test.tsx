@@ -84,5 +84,11 @@ describe('app smoke', () => {
     expect(screen.getByTestId('setup/level-apprentice')).toBeTruthy();
     expect(screen.getByTestId('setup/level-master')).toBeTruthy();
     expect(screen.getByTestId('setup/start')).toBeTruthy();
+
+    // Empezando el jugador, el marcador de turno lo trata de tú.
+    await fireEvent.changeText(screen.getByTestId('setup/word'), 'CANTOR');
+    await fireEvent.press(screen.getByTestId('setup/first-p1'));
+    await fireEvent.press(screen.getByTestId('setup/start'));
+    expect(await screen.findByTestId('versus/turn')).toHaveTextContent('Tu turno');
   });
 });
