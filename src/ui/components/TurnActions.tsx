@@ -60,7 +60,7 @@ export function TurnActions({
               testID={`action/${r.kind}`}
             />
           ))}
-          <ActionButton compact label="Intercambiar" onPress={onStartSwap} testID="action/swap" />
+          <ActionButton compact label="Intercambiar ⇄" onPress={onStartSwap} testID="action/swap" />
           <ActionButton
             compact
             label="✕"

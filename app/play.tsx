@@ -12,7 +12,7 @@ import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
-import { ObjectiveRail } from '@/ui/components/ObjectiveRail';
+import { LockZone, ObjectiveRail } from '@/ui/components/ObjectiveRail';
 import { SetupScreen } from '@/ui/components/SetupScreen';
 import { SignCounters } from '@/ui/components/SignCounters';
 import { TurnActions } from '@/ui/components/TurnActions';
@@ -153,6 +153,11 @@ export default function Play() {
         <TourTarget id="word">
           <WordTrack word={opponent.secretWord} compact />
         </TourTarget>
+        <LockZone
+          slots={state.objectives.filter((slot) => slot.blockedBy !== null && slot.blockedBy !== me)}
+          label={`Zona de bloqueo de ${opponent.name}`}
+          testID="lock-zone/rival"
+        />
 
         <View style={styles.boardRow}>
           <TourTarget id="board">
@@ -171,6 +176,11 @@ export default function Play() {
             />
           </TourTarget>
         </View>
+        <LockZone
+          slots={state.objectives.filter((slot) => slot.blockedBy === me)}
+          label="Tu zona de bloqueo"
+          testID="lock-zone/mine"
+        />
 
         <TourTarget id="my-word" style={styles.myRow}>
           <Text style={styles.sectionLabel}>Tu palabra, {state.players[me].name}</Text>
@@ -251,6 +261,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
+    flexGrow: 1,
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
@@ -282,7 +294,7 @@ const styles = StyleSheet.create({
   boardRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginTop: spacing.md,
   },
   myRow: {

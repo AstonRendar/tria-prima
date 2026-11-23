@@ -59,8 +59,8 @@ export function gameTourSteps(mode: TourMode): ReadonlyArray<TourStep> {
       target: 'objectives',
       title: 'Los objetivos',
       body: solo
-        ? 'Tres dados en fila o columna con el mismo símbolo o el mismo color cumplen el objetivo. Los marcados con ★ ya los has declarado y están en tu zona de bloqueo.'
-        : 'Tres dados en fila o columna con el mismo símbolo o el mismo color cumplen el objetivo. ★: está en tu zona de bloqueo. ⊘: lo tiene el rival y no puedes usarlo.',
+        ? 'Tres dados en fila o columna con el mismo símbolo o el mismo color cumplen el objetivo. Su carta sale de la columna y va a tu zona de bloqueo, bajo el tablero, hasta tu siguiente turno.'
+        : 'Tres dados en fila o columna con el mismo símbolo o el mismo color cumplen el objetivo. Su carta pasa a la zona de bloqueo de quien lo cumplió, junto a su palabra: las que están en la del rival no puedes usarlas.',
     },
   ];
   if (!solo) {

@@ -21,7 +21,7 @@ import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
 import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
-import { ObjectiveRail } from '@/ui/components/ObjectiveRail';
+import { LockZone, ObjectiveRail } from '@/ui/components/ObjectiveRail';
 import { SignCounters } from '@/ui/components/SignCounters';
 import { TurnActions } from '@/ui/components/TurnActions';
 import { WordTrack } from '@/ui/components/WordTrack';
@@ -190,6 +190,11 @@ export default function Versus() {
           <TourTarget id="word">
             <WordTrack word={opponent.secretWord} compact />
           </TourTarget>
+          <LockZone
+            slots={state.objectives.filter((slot) => slot.blockedBy === 'p2')}
+            label="Zona de bloqueo del maestro"
+            testID="lock-zone/rival"
+          />
 
           <View style={styles.boardRow}>
             <TourTarget id="board">
@@ -208,6 +213,11 @@ export default function Versus() {
               />
             </TourTarget>
           </View>
+          <LockZone
+            slots={state.objectives.filter((slot) => slot.blockedBy === 'p1')}
+            label="Tu zona de bloqueo"
+            testID="lock-zone/mine"
+          />
 
           <TourTarget id="my-word" style={styles.myRow}>
             <Text style={styles.sectionLabel}>Tu palabra</Text>
@@ -374,6 +384,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
+    flexGrow: 1,
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
@@ -405,7 +417,7 @@ const styles = StyleSheet.create({
   boardRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginTop: spacing.md,
   },
   myRow: {
