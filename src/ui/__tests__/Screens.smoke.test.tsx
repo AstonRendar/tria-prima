@@ -1,6 +1,7 @@
 import { act, fireEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { renderRouter, screen } from 'expo-router/testing-library';
+import { gameTourSteps, TRACKER_TOUR } from '@/ui/tutorial/tourSteps';
 
 // Smoke test de recorrido: el store de navegación de expo-router es global y
 // renderRouter no lo reinicia entre tests, así que un único render recorre
@@ -44,7 +45,16 @@ describe('app smoke', () => {
     }
     expect(screen.getByTestId('first-turn-notice')).toBeTruthy();
 
-    // Primera partida: el tutorial explica el objetivo.
+    // Primera partida: antes que los consejos, el tour presenta cada zona.
+    expect(await screen.findByTestId('tour/overlay')).toBeTruthy();
+    expect(screen.queryByTestId('tutorial/tip')).toBeNull();
+    for (const step of gameTourSteps('solo')) {
+      expect(screen.getByTestId('tour/title')).toHaveTextContent(step.title);
+      await fireEvent.press(screen.getByTestId('tour/next'));
+    }
+    expect(screen.queryByTestId('tour/overlay')).toBeNull();
+
+    // Acabado el tour, el tutorial explica el objetivo.
     expect(await screen.findByTestId('tutorial/tip')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('tutorial/skip'));
 
@@ -53,8 +63,12 @@ describe('app smoke', () => {
     expect(await screen.findByTestId('action/spin-cw')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('action/cancel'));
 
-    // Tracker: los seis contadores de objetivo.
+    // Tracker: su propio tour, que se puede saltar, y los seis contadores.
     await goTo('/tracker');
+    expect(await screen.findByTestId('tour/overlay')).toBeTruthy();
+    expect(screen.getByTestId('tour/title')).toHaveTextContent(TRACKER_TOUR[0].title);
+    await fireEvent.press(screen.getByTestId('tour/skip'));
+    expect(screen.queryByTestId('tour/overlay')).toBeNull();
     expect(await screen.findByTestId('objective/sym:sulfur/+')).toBeTruthy();
     for (const id of ['sym:mercury', 'sym:salt', 'col:nigredo', 'col:citrinitas', 'col:rubedo']) {
       expect(screen.getByTestId(`objective/${id}/+`)).toBeTruthy();

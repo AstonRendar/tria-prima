@@ -32,10 +32,15 @@ import { useVersus } from '@/ui/hooks/useVersus';
 import { FiligreeDivider, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
 import { describePhase } from '@/ui/turnFlow';
+import { gameTourSteps } from '@/ui/tutorial/tourSteps';
+import { TourOverlay } from '@/ui/tutorial/TourOverlay';
+import { TourTarget } from '@/ui/tutorial/TourTargets';
 import { TutorialTip } from '@/ui/tutorial/TutorialTip';
+import { useTour } from '@/ui/tutorial/useTour';
 import { useTutorial } from '@/ui/tutorial/useTutorial';
 
 const dependencies = buildProductionDependencies();
+const TOUR_STEPS = gameTourSteps('versus');
 
 export default function Versus() {
   const router = useRouter();
@@ -69,8 +74,9 @@ export default function Versus() {
     showMessage: flash.show,
   });
 
+  const tour = useTour('game', TOUR_STEPS, isMyTurn);
   const tutorial = useTutorial(
-    hasActiveGame
+    hasActiveGame && !tour.active
       ? {
           isMyTurn,
           phase: turnCtl.turn.phase,
@@ -176,42 +182,50 @@ export default function Versus() {
           </View>
 
           <Text style={styles.sectionLabel}>Palabra del maestro</Text>
-          <WordTrack word={opponent.secretWord} compact />
+          <TourTarget id="word">
+            <WordTrack word={opponent.secretWord} compact />
+          </TourTarget>
 
           <View style={styles.boardRow}>
-            <CubeGrid
-              board={state.board}
-              selected={isMyTurn ? (turn.selected === null ? [] : [turn.selected]) : appSelected}
-              touched={turn.touched}
-              animation={animation}
-              onPress={isMyTurn ? turnCtl.onPressCube : undefined}
-            />
-            <ObjectiveRail
-              slots={state.objectives}
-              ownerOf={(slot) => (slot.blockedBy === null ? 'free' : slot.blockedBy === 'p1' ? 'mine' : 'rival')}
-            />
+            <TourTarget id="board">
+              <CubeGrid
+                board={state.board}
+                selected={isMyTurn ? (turn.selected === null ? [] : [turn.selected]) : appSelected}
+                touched={turn.touched}
+                animation={animation}
+                onPress={isMyTurn ? turnCtl.onPressCube : undefined}
+              />
+            </TourTarget>
+            <TourTarget id="objectives">
+              <ObjectiveRail
+                slots={state.objectives}
+                ownerOf={(slot) => (slot.blockedBy === null ? 'free' : slot.blockedBy === 'p1' ? 'mine' : 'rival')}
+              />
+            </TourTarget>
           </View>
 
-          <View style={styles.myRow}>
+          <TourTarget id="my-word" style={styles.myRow}>
             <Text style={styles.sectionLabel}>Tu palabra</Text>
             <SignCounters word={state.players.p1.secretWord} />
-          </View>
+          </TourTarget>
         </ScrollView>
         {!isMyTurn && <View style={styles.masterVeil} testID="versus/master-veil" />}
       </View>
 
-      <TurnActions
-        phase={turn.phase}
-        hint={hint}
-        hintTestID={isMyTurn && firstTurn ? 'first-turn-notice' : undefined}
-        enabled={isMyTurn}
-        onRotate={turnCtl.onRotate}
-        onStartSwap={turnCtl.onStartSwap}
-        onCancelAction={turnCtl.onCancelAction}
-        onCancelSwap={turnCtl.onCancelSwap}
-        onEndTurn={onEndTurn}
-        onGuess={versus.canGuessNow ? () => setGuessOpen(true) : undefined}
-      />
+      <TourTarget id="actions">
+        <TurnActions
+          phase={turn.phase}
+          hint={hint}
+          hintTestID={isMyTurn && firstTurn ? 'first-turn-notice' : undefined}
+          enabled={isMyTurn}
+          onRotate={turnCtl.onRotate}
+          onStartSwap={turnCtl.onStartSwap}
+          onCancelAction={turnCtl.onCancelAction}
+          onCancelSwap={turnCtl.onCancelSwap}
+          onEndTurn={onEndTurn}
+          onGuess={versus.canGuessNow ? () => setGuessOpen(true) : undefined}
+        />
+      </TourTarget>
 
       <GuessSheet
         visible={guessOpen && versus.canGuessNow}
@@ -221,6 +235,13 @@ export default function Versus() {
           setGuessOpen(false);
           versus.guess(value);
         }}
+      />
+      <TourOverlay
+        step={tour.step}
+        index={tour.index}
+        total={tour.total}
+        onNext={tour.next}
+        onSkip={tour.skip}
       />
       <TutorialTip step={tutorial.step} onDismiss={tutorial.dismiss} onSkip={tutorial.skip} />
       <FlashMessage message={flash.message} />

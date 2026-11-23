@@ -20,10 +20,15 @@ import { useTurnController } from '@/ui/hooks/useTurnController';
 import { ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
 import { describePhase } from '@/ui/turnFlow';
+import { gameTourSteps } from '@/ui/tutorial/tourSteps';
+import { TourOverlay } from '@/ui/tutorial/TourOverlay';
+import { TourTarget } from '@/ui/tutorial/TourTargets';
 import { TutorialTip } from '@/ui/tutorial/TutorialTip';
+import { useTour } from '@/ui/tutorial/useTour';
 import { useTutorial } from '@/ui/tutorial/useTutorial';
 
 const dependencies = buildProductionDependencies();
+const TOUR_STEPS = gameTourSteps('solo');
 
 export default function SoloPlay() {
   const router = useRouter();
@@ -55,8 +60,9 @@ export default function SoloPlay() {
     showMessage: flash.show,
   });
   const { turn } = turnCtl;
+  const tour = useTour('game', TOUR_STEPS, hasActiveGame);
   const tutorial = useTutorial(
-    hasActiveGame
+    hasActiveGame && !tour.active
       ? {
           isMyTurn: true,
           phase: turn.phase,
@@ -124,35 +130,43 @@ export default function SoloPlay() {
         </View>
 
         <Text style={styles.sectionLabel}>Palabra sellada por el maestro</Text>
-        <WordTrack word={state.secretWord} compact />
+        <TourTarget id="word">
+          <WordTrack word={state.secretWord} compact />
+        </TourTarget>
 
         <View style={styles.boardRow}>
-          <CubeGrid
-            board={state.board}
-            selected={turn.selected === null ? [] : [turn.selected]}
-            touched={turn.touched}
-            animation={turnCtl.animation}
-            onPress={turnCtl.onPressCube}
-          />
-          <ObjectiveRail
-            slots={state.objectives}
-            ownerOf={(slot) => (slot.blockedBy === null ? 'free' : 'mine')}
-          />
+          <TourTarget id="board">
+            <CubeGrid
+              board={state.board}
+              selected={turn.selected === null ? [] : [turn.selected]}
+              touched={turn.touched}
+              animation={turnCtl.animation}
+              onPress={turnCtl.onPressCube}
+            />
+          </TourTarget>
+          <TourTarget id="objectives">
+            <ObjectiveRail
+              slots={state.objectives}
+              ownerOf={(slot) => (slot.blockedBy === null ? 'free' : 'mine')}
+            />
+          </TourTarget>
         </View>
       </ScrollView>
 
-      <TurnActions
-        phase={turn.phase}
-        hint={hint}
-        hintTestID={firstTurn ? 'first-turn-notice' : undefined}
-        enabled
-        onRotate={turnCtl.onRotate}
-        onStartSwap={turnCtl.onStartSwap}
-        onCancelAction={turnCtl.onCancelAction}
-        onCancelSwap={turnCtl.onCancelSwap}
-        onEndTurn={onEndTurn}
-        onGuess={solo.canGuessNow ? () => setGuessOpen(true) : undefined}
-      />
+      <TourTarget id="actions">
+        <TurnActions
+          phase={turn.phase}
+          hint={hint}
+          hintTestID={firstTurn ? 'first-turn-notice' : undefined}
+          enabled
+          onRotate={turnCtl.onRotate}
+          onStartSwap={turnCtl.onStartSwap}
+          onCancelAction={turnCtl.onCancelAction}
+          onCancelSwap={turnCtl.onCancelSwap}
+          onEndTurn={onEndTurn}
+          onGuess={solo.canGuessNow ? () => setGuessOpen(true) : undefined}
+        />
+      </TourTarget>
 
       <GuessSheet
         visible={guessOpen && solo.canGuessNow}
@@ -162,6 +176,13 @@ export default function SoloPlay() {
           setGuessOpen(false);
           solo.guess(value);
         }}
+      />
+      <TourOverlay
+        step={tour.step}
+        index={tour.index}
+        total={tour.total}
+        onNext={tour.next}
+        onSkip={tour.skip}
       />
       <TutorialTip step={tutorial.step} onDismiss={tutorial.dismiss} onSkip={tutorial.skip} />
       <FlashMessage message={flash.message} />
