@@ -48,7 +48,7 @@ Recomendado: 13 años o más (evita aplicar la política de familias, que exige 
 ## Recursos gráficos pendientes
 - Icono 512×512: `store/graphics/icon-512.png`.
 - Gráfico destacado 1024×500: `store/graphics/feature-1024x500.jpg` (fuente en `feature.html`, se renderiza con Chrome headless).
-- Capturas de teléfono: pendientes (mínimo 2; lado largo ≤ 2× el corto).
+- Capturas de teléfono (1080×2160, Pixel 8 sin barras del sistema): `store/graphics/screenshots/`.
 
 ## Firma
 La clave de subida ya existe: `~/keys/tria-prima-upload.jks` (alias `tria-prima`), con las contraseñas en `~/.gradle/gradle.properties`. Ambos fuera del repo; guardar copia de seguridad.
