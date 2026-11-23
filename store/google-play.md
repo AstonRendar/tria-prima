@@ -6,7 +6,7 @@
 - **Categoría**: Juegos › Juegos de mesa (alternativa: Puzles)
 - **Gratuita**, sin anuncios ni compras integradas
 - **Política de privacidad**: `https://astonrendar.github.io/tria-prima/privacy.html`
-  (requiere activar GitHub Pages en el repo, rama `main`, carpeta `/docs`)
+  (GitHub Pages activo: rama `develop`, carpeta `/docs`)
 
 ## Descripción breve (máx. 80 caracteres)
 Descifra la palabra secreta alineando dados alquímicos. Duelo de lógica.
@@ -46,11 +46,13 @@ Sin violencia, sin lenguaje malsonante, sin interacción entre usuarios, sin com
 Recomendado: 13 años o más (evita aplicar la política de familias, que exige requisitos extra). Si se quiere incluir a menores, revisar la política de familias de Google Play antes.
 
 ## Recursos gráficos pendientes
-- Icono 512×512 PNG (se puede exportar de `assets/icon.png`).
-- Gráfico destacado 1024×500.
-- Al menos 2 capturas de teléfono (recomendadas 4–8, 9:16).
+- Icono 512×512: `store/graphics/icon-512.png`.
+- Gráfico destacado 1024×500: `store/graphics/feature-1024x500.jpg` (fuente en `feature.html`, se renderiza con Chrome headless).
+- Capturas de teléfono: pendientes (mínimo 2; lado largo ≤ 2× el corto).
 
 ## Firma
+La clave de subida ya existe: `~/keys/tria-prima-upload.jks` (alias `tria-prima`), con las contraseñas en `~/.gradle/gradle.properties`. Ambos fuera del repo; guardar copia de seguridad.
+
 1. Generar la clave de subida (fuera del repo):
    `keytool -genkeypair -v -keystore ~/keys/tria-prima-upload.jks -alias tria-prima -keyalg RSA -keysize 2048 -validity 10000`
 2. Añadir a `~/.gradle/gradle.properties`:
