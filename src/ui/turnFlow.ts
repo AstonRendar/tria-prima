@@ -160,16 +160,17 @@ export function describePhase(
 ): string {
   if (phase === 'declare') {
     return firstTurn
-      ? 'Primer turno: no se declara. Pulsa "Acabar turno".'
-      : 'Objetivos cumplidos declarados. Pulsa "Acabar turno" cuando estés listo.';
+      ? 'Primer turno: no se declara. Pulsa «Acabar turno».'
+      : 'Objetivos cumplidos declarados. Pulsa «Acabar turno».';
   }
+  const prefix = firstTurn ? 'Primer turno, solo mover. ' : '';
   if (phase === 'choose-action') {
-    return 'Elige qué hacer con el dado seleccionado.';
+    return `${prefix}¿Qué haces con este dado?`;
   }
   if (phase === 'select-second-cube') {
-    return 'Selecciona otro dado en la misma fila o columna.';
+    return 'Toca otro dado de la misma fila o columna.';
   }
   return touchedCount === 0
-    ? 'Selecciona un dado para empezar tu jugada.'
-    : 'Selecciona un segundo dado.';
+    ? `${prefix}Toca un dado para empezar.`
+    : `${prefix}Toca un segundo dado distinto.`;
 }

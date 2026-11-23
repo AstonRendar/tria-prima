@@ -179,7 +179,7 @@ describe('presentation helpers', () => {
   it('describes each phase', () => {
     expect(describePhase('select-cube', 0)).toContain('empezar');
     expect(describePhase('select-cube', 1)).toContain('segundo');
-    expect(describePhase('choose-action', 0)).toContain('dado seleccionado');
+    expect(describePhase('choose-action', 0)).toContain('este dado');
     expect(describePhase('select-second-cube', 0)).toContain('misma fila');
     expect(describePhase('declare', 2)).toContain('Acabar turno');
   });

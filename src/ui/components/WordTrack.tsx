@@ -7,9 +7,10 @@ import { cardStateLabel, colors, fonts, radius, signName } from '@/ui/styles/tok
 type Props = {
   word: SecretWord;
   variant?: SignVariant;
+  compact?: boolean;
 };
 
-export function WordTrack({ word, variant }: Props) {
+export function WordTrack({ word, variant, compact }: Props) {
   return (
     <View style={styles.row}>
       {word.cards.map((card, i) => {
@@ -21,12 +22,16 @@ export function WordTrack({ word, variant }: Props) {
             accessible
             accessibilityLabel={`Carta ${i + 1}, ${signName(card.faceSign, variant)}: ${cardStateLabel(card)}`}
           >
-            <View style={styles.signBox}>
-              <SignGlyph sign={card.faceSign} size={32} variant={variant} />
+            <View style={[styles.signBox, compact && styles.signBoxCompact]}>
+              <SignGlyph sign={card.faceSign} size={compact ? 24 : 32} variant={variant} />
             </View>
             <RevealFlip
               revealed={card.revealed}
-              style={[styles.letterBox, card.revealed && styles.letterRevealed]}
+              style={[
+                styles.letterBox,
+                compact && styles.letterBoxCompact,
+                card.revealed && styles.letterRevealed,
+              ]}
             >
               <Text style={[styles.letter, card.revealed && styles.letterRevealedText]}>
                 {card.revealed ? card.letter : '·'}
@@ -61,6 +66,15 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  signBoxCompact: {
+    width: 34,
+    height: 34,
+  },
+  letterBoxCompact: {
+    width: 34,
+    height: 30,
+    marginTop: 3,
   },
   letterBox: {
     width: 40,

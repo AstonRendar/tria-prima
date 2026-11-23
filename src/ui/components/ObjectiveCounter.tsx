@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Objective } from '@/domain/Objective';
 import { OrnateFrame } from '@/ui/ornaments';
 import { SignGlyph, SignVariant } from './SignGlyph';
@@ -20,6 +20,9 @@ type Props = {
   onIncrement: () => void;
   onDecrement: () => void;
   variant?: SignVariant;
+  // Ficha vertical para la cuadrícula de 2 columnas del modo físico.
+  compact?: boolean;
+  style?: StyleProp<ViewStyle>;
 };
 
 export function ObjectiveCounter({
@@ -28,6 +31,8 @@ export function ObjectiveCounter({
   onIncrement,
   onDecrement,
   variant = 'alchemy',
+  compact,
+  style,
 }: Props) {
   const physical = variant === 'physical';
   const label =
@@ -36,11 +41,15 @@ export function ObjectiveCounter({
       : (physical ? physicalSymbolLabel : cubeSymbolLabel)[objective.value];
 
   return (
-    <OrnateFrame padding={spacing.sm + 2} cornerScale={0.55} style={[styles.row, shadows.card]}>
+    <OrnateFrame
+      padding={spacing.sm + 2}
+      cornerScale={0.55}
+      style={[compact ? styles.tile : styles.row, shadows.card, style]}
+    >
       <View style={styles.sign}>
         <SignGlyph sign={objective} size={36} variant={variant} />
       </View>
-      <View style={styles.middle}>
+      <View style={compact ? styles.middleCompact : styles.middle}>
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.count}>{count} {count === 1 ? 'declaración' : 'declaraciones'}</Text>
       </View>
@@ -84,6 +93,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  tile: {
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  middleCompact: {
+    alignItems: 'center',
+    marginVertical: spacing.xs,
+  },
   middle: {
     flex: 1,
     paddingHorizontal: spacing.md,
@@ -104,8 +121,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   btn: {
-    width: 40,
-    height: 40,
+    width: 46,
+    height: 46,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,

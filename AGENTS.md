@@ -107,8 +107,8 @@ Modo contra el maestro (humano vs app, reutiliza `MatchState` y los casos de uso
   app como lista de pasos que la UI reproduce con retardo. Cada acción va precedida
   de pasos `select` (no-op en el estado; dos en un intercambio) que la UI remarca y anima
   como si el dado lo hubiera tocado un humano. Mientras juega el maestro (no es el turno del humano),
-  la pantalla cubre el tablero con un velo translúcido (`versus/master-veil`) que deja
-  claro que no hay que tocar nada hasta que termine sus movimientos.
+  un velo translúcido (`versus/master-veil`) cubre el tablero y bloquea los toques, y la
+  barra de acciones dice que el maestro está jugando.
 
 Modo solitario digital (1 jugador, todo en la app):
 - `SoloPlayState` (board, objectives, palabra elegida por la app, turno, puntuación).
@@ -135,12 +135,22 @@ Comunes:
 - `ProductionDependencies` — factoría del bundle real.
 
 ### `src/ui/`
-- `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveCard`,
-  `ObjectiveBlockedZone`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
-  `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `Footer`,
+- `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveRail`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
+  `NewGameButton`, `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `GuessSheet`, `Footer`,
   `SetupScreen`, `CubeGrid`, `TurnActions`, `RulesBook` —las reglas, compartidas por la
   pantalla de reglas y el panel en partida— y `RulesButton` —botón «?» de la cabecera que
   abre las reglas en un modal sin salir de la partida—).
+- **Disposición compacta de partida** (todo en una pantalla, sin plegables): una línea
+  de estado (Nueva partida + turno), la palabra del rival en una sola fila (`WordTrack
+  compact`, sin repetirla como texto), el tablero con `ObjectiveRail` al lado —los seis
+  objetivos con su dueño: libre, propio (★, borde dorado) o del rival (⊘, atenuado),
+  en lugar de las antiguas zonas de bloqueo— y la palabra propia en una fila. Debajo,
+  fuera del scroll, `TurnActions` es una barra fija de altura constante con la ayuda de
+  la fase y los botones; en la fase de declarar ofrece «Adivinar» cuando la regla lo
+  permite y abre `GuessSheet` (modal con `GuessBox`), así la casilla nunca queda fuera
+  de pantalla. El pie de atribución solo está en la home, las reglas y las pantallas de
+  preparación. El modo físico sigue la misma idea: palabra arriba, los 6 contadores en
+  cuadrícula 2×3 (`ObjectiveCounter compact`) y una barra fija con «Adivinar la palabra».
 - Accesibilidad: dados, cartas de objetivo y cartas de palabra llevan `accessibilityLabel`
   con su estado (cara superior y la que saldría al voltear; objetivo y si está
   bloqueado; insignia y letra o marcadores). Sirven a lectores de pantalla y permiten
@@ -249,7 +259,8 @@ Formato `dominio/identificador[/sub]` en minúsculas.
 | Footer | `footer`, `footer/store` | — |
 | Audio (cabecera) | `audio/{music\|sfx}` | — |
 | Contadores por insignia | `sign-counter/{kind}:{value}` | `sign-counter/symbol:sulfur`, `sign-counter/color:rubedo` |
-| Zonas de bloqueo (duelo) | `blocked/{opponent\|me}` | — |
+| Objetivos (carril) | `objective-card/{objId}` | `objective-card/sym:sulfur` |
+| Barra de acciones | `turn-actions`, `guess/open` | — |
 
 ## Flujo del turno (modo Duelo)
 
