@@ -44,6 +44,7 @@ describe('app smoke', () => {
       expect(screen.getByTestId(`cube/${i}`)).toBeTruthy();
     }
     expect(screen.getByTestId('first-turn-notice')).toBeTruthy();
+    expect(screen.getByTestId('lock-zone/mine')).toBeTruthy();
 
     // Primera partida: antes que los consejos, el tour presenta cada zona.
     expect(await screen.findByTestId('tour/overlay')).toBeTruthy();
@@ -90,5 +91,8 @@ describe('app smoke', () => {
     await fireEvent.press(screen.getByTestId('setup/first-p1'));
     await fireEvent.press(screen.getByTestId('setup/start'));
     expect(await screen.findByTestId('versus/turn')).toHaveTextContent('Tu turno');
+    // Una zona de bloqueo a cada lado del tablero, junto a cada palabra.
+    expect(screen.getByText('Zona de bloqueo del maestro')).toBeTruthy();
+    expect(screen.getByText('Tu zona de bloqueo')).toBeTruthy();
   });
 });

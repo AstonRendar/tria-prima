@@ -25,9 +25,9 @@ function ObjectiveBadge({ slot, size }: { slot: ObjectiveSlot; size: number }) {
   );
 }
 
-// Los seis objetivos en una columna junto al tablero, cada uno con su estado:
-// libre, en la zona de bloqueo propia (borde dorado) o en la del rival
-// (atenuado y tachado). Sustituye a las zonas de bloqueo separadas.
+// Los seis objetivos en una columna junto al tablero. Como en la mesa, la
+// carta de un objetivo declarado sale de la columna (queda su hueco) y pasa a
+// la zona de bloqueo de quien lo declaró, junto a su palabra (LockZone).
 export function ObjectiveRail({ slots, ownerOf }: Props) {
   return (
     <View style={styles.rail}>
@@ -36,17 +36,39 @@ export function ObjectiveRail({ slots, ownerOf }: Props) {
         return (
           <View
             key={slot.objective.id}
-            style={[styles.box, owner === 'mine' && styles.mine, owner === 'rival' && styles.rival]}
+            style={[styles.box, owner !== 'free' && styles.gap]}
             accessible
             accessibilityLabel={`Objetivo ${signName(slot.objective)}, ${OWNER_LABEL[owner]}`}
             testID={`objective-card/${slot.objective.id}`}
           >
-            <ObjectiveBadge slot={slot} size={24} />
-            {owner === 'rival' && <Text style={styles.mark}>⊘</Text>}
-            {owner === 'mine' && <Text style={[styles.mark, styles.markMine]}>★</Text>}
+            {owner === 'free' && <ObjectiveBadge slot={slot} size={24} />}
           </View>
         );
       })}
+    </View>
+  );
+}
+
+type ZoneProps = {
+  slots: ReadonlyArray<ObjectiveSlot>;
+  label: string;
+  testID: string;
+};
+
+// Zona de bloqueo de un jugador: las cartas de objetivo que ha declarado y
+// que el otro no puede usar hasta que vuelvan a la columna. Altura fija para
+// que el tablero no salte al llenarse o vaciarse.
+export function LockZone({ slots, label, testID }: ZoneProps) {
+  return (
+    <View style={styles.zone} testID={testID} accessibilityLabel={label}>
+      <Text style={styles.zoneLabel}>{label}</Text>
+      <View style={styles.zoneCards}>
+        {slots.map((slot) => (
+          <View key={slot.objective.id} style={styles.zoneBox} testID={`${testID}/${slot.objective.id}`}>
+            <ObjectiveBadge slot={slot} size={20} />
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -67,23 +89,42 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.xs,
   },
-  mine: {
-    borderWidth: 2.5,
-    borderColor: colors.goldBright,
-    backgroundColor: colors.parchmentLight,
+  gap: {
+    backgroundColor: 'transparent',
+    borderStyle: 'dashed',
+    borderColor: colors.border,
   },
-  rival: {
-    opacity: 0.4,
+  zone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    minHeight: 36,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
   },
-  mark: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    fontSize: 12,
-    color: colors.danger,
+  zoneLabel: {
     fontFamily: fonts.serif,
+    fontStyle: 'italic',
+    color: colors.textMuted,
+    fontSize: 12,
+    marginRight: spacing.sm,
   },
-  markMine: {
-    color: colors.gold,
+  zoneCards: {
+    flexDirection: 'row',
+    columnGap: spacing.xs,
+  },
+  zoneBox: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.sm,
+    backgroundColor: colors.parchment,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

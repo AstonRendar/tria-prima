@@ -10,7 +10,7 @@ import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
-import { ObjectiveRail } from '@/ui/components/ObjectiveRail';
+import { LockZone, ObjectiveRail } from '@/ui/components/ObjectiveRail';
 import { TurnActions } from '@/ui/components/TurnActions';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useExitGuard } from '@/ui/hooks/useExitGuard';
@@ -151,6 +151,11 @@ export default function SoloPlay() {
             />
           </TourTarget>
         </View>
+        <LockZone
+          slots={state.objectives.filter((slot) => slot.blockedBy !== null)}
+          label="Tu zona de bloqueo"
+          testID="lock-zone/mine"
+        />
       </ScrollView>
 
       <TourTarget id="actions">
@@ -198,6 +203,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
+    flexGrow: 1,
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
@@ -229,7 +236,7 @@ const styles = StyleSheet.create({
   boardRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginTop: spacing.md,
   },
   endStats: {
