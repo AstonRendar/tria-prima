@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/ui/components/ActionButton';
+import { HeaderIconButton } from '@/ui/components/HeaderIconButton';
 import { RulesBook } from '@/ui/components/RulesBook';
 import { ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
@@ -10,15 +11,12 @@ export function RulesButton() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Pressable
-        style={styles.button}
+      <HeaderIconButton
+        icon="rules"
         onPress={() => setOpen(true)}
         testID="rules/open"
-        accessibilityRole="button"
         accessibilityLabel="Consultar las reglas"
-      >
-        <Text style={styles.icon}>?</Text>
-      </Pressable>
+      />
       <Modal
         visible={open}
         animationType="slide"
@@ -41,18 +39,6 @@ export function RulesButton() {
 }
 
 const styles = StyleSheet.create({
-  button: {
-    minWidth: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: {
-    fontFamily: fonts.serif,
-    color: colors.accent,
-    fontSize: 22,
-    fontWeight: '800',
-  },
   page: {
     flex: 1,
     backgroundColor: colors.background,
