@@ -21,7 +21,6 @@ import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { Footer } from '@/ui/components/Footer';
 import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
-import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveRail } from '@/ui/components/ObjectiveRail';
 import { SignCounters } from '@/ui/components/SignCounters';
 import { TurnActions } from '@/ui/components/TurnActions';
@@ -168,7 +167,6 @@ export default function Versus() {
       <View style={styles.main}>
         <ScrollView contentContainerStyle={styles.container}>
           <View style={styles.topRow}>
-            <NewGameButton onConfirm={onRestart} />
             <Text style={styles.turnBadge} numberOfLines={1}>
               Turno de{' '}
               <Text style={styles.turnBadgeName} testID="versus/turn-name">
@@ -357,14 +355,13 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: spacing.xs,
   },
   turnBadge: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
     fontSize: 13,
-    maxWidth: '55%',
   },
   turnBadgeName: {
     color: colors.accent,

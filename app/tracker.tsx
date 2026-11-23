@@ -11,7 +11,6 @@ import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { ActionButton } from '@/ui/components/ActionButton';
 import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
-import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCounter } from '@/ui/components/ObjectiveCounter';
 import { WordTrack } from '@/ui/components/WordTrack';
 import { useExitGuard } from '@/ui/hooks/useExitGuard';
@@ -101,7 +100,6 @@ export default function Tracker() {
       <ParchmentBackground />
       <ScrollView style={styles.main} contentContainerStyle={styles.container}>
         <View style={styles.topRow}>
-          <NewGameButton onConfirm={onRestart} />
           <Text style={styles.status}>
             Reveladas{' '}
             <Text style={styles.statusValue}>
@@ -177,7 +175,7 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: spacing.xs,
   },
   status: {

@@ -10,7 +10,6 @@ import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
 import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
-import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveRail } from '@/ui/components/ObjectiveRail';
 import { TurnActions } from '@/ui/components/TurnActions';
 import { WordTrack } from '@/ui/components/WordTrack';
@@ -115,7 +114,6 @@ export default function SoloPlay() {
       <ParchmentBackground />
       <ScrollView style={styles.main} contentContainerStyle={styles.container}>
         <View style={styles.topRow}>
-          <NewGameButton onConfirm={onRestart} />
           <Text style={styles.status}>
             Turno <Text style={styles.statusValue}>{state.turn + 1}</Text>
             {'  ·  '}Reveladas{' '}
@@ -186,7 +184,7 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: spacing.xs,
   },
   status: {
