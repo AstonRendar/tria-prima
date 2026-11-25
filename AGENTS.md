@@ -138,7 +138,10 @@ Comunes:
 - `components/` — átomos de UI (`CubeView`, `FaceTile`, `ObjectiveRail`, `ObjectiveCounter`, `WordTrack`, `SignCounters`, `SignGlyph`, `RevealFlip`, `ActionButton`,
   `ConfirmDialog`, `EndScreen`, `FlashMessage`, `GuessBox`, `GuessSheet`, `Footer`,
   `SetupScreen`, `CubeGrid`, `TurnActions`, `RulesBook` —las reglas, compartidas por la
-  pantalla de reglas y el panel en partida— y `RulesButton` —botón «?» de la cabecera que
+  pantalla de reglas y el panel en partida; se redactan en términos de la app y todo el
+  manejo físico (componentes, preparación, anillos, marcadores a mano) va solo en la
+  sección «Si tienes el juego de mesa», tras el modo «Con el juego físico»
+  (decisión del 2026-11-25)— y `RulesButton` —botón «?» de la cabecera que
   abre las reglas en un modal sin salir de la partida—).
 - **Disposición compacta de partida** (todo en una pantalla, sin plegables): una línea
   de estado (de quién es el turno; no hay botón de nueva partida: se sale con la flecha o
@@ -309,7 +312,7 @@ con el turno completo (`isTurnComplete`) y `closeTurn` convierte los movidos en
 
 ## Reglas del juego (resumen funcional)
 
-> El texto formal y narrativo está en `app/instructions.tsx`. Aquí solo el resumen
+> El texto formal y narrativo está en `RulesBook` (`src/ui/components/RulesBook.tsx`). Aquí solo el resumen
 > funcional para referencia rápida.
 
 - 9 cubos con 6 caras = (símbolo `sulfur/mercury/salt`, color `nigredo/citrinitas/rubedo`).

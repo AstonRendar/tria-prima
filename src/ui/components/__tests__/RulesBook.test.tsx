@@ -40,4 +40,15 @@ describe('RulesBook', () => {
     const text = RULE_SECTIONS.map((s) => s.body).join(' ');
     expect(text).not.toMatch(/nigredo negro|citrinitas oro|rubedo rojo/);
   });
+
+  it('keeps the board-game handling in its own section, after the physical mode', () => {
+    const titles = RULE_SECTIONS.map((s) => s.title);
+    const physicalMode = titles.indexOf('Modo «Con el juego físico»');
+    const board = titles.indexOf('Si tienes el juego de mesa');
+    expect(board).toBe(physicalMode + 1);
+    const physical = /anillo|tirad|dorso|boca abajo|sobre la mesa|a la mesa|dadle la vuelta|retiradlo/i;
+    RULE_SECTIONS.filter((_, i) => i !== board && i !== physicalMode).forEach((s) => {
+      expect(`${s.title}: ${s.body}`).not.toMatch(physical);
+    });
+  });
 });
