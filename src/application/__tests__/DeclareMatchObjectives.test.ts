@@ -29,7 +29,7 @@ function boardWithRowOfSulfurs(): Board {
       cubeWithTop(8, { symbol: 'mercury', color: 'citrinitas' }),
     ],
     lockedThisTurn: [],
-    lockedNextTurn: [],
+    touchedThisTurn: [7, 8],
   };
 }
 
@@ -65,6 +65,7 @@ function buildState(overrides: Partial<MatchState> = {}): MatchState {
     revealedThisTurn: false,
     finished: false,
     outcome: null,
+    failedGuessBy: null,
     ...overrides,
   };
 }
@@ -115,7 +116,7 @@ describe('declareMatchObjectives', () => {
         cubeWithTop(8, { symbol: 'salt', color: 'rubedo' }),
       ],
       lockedThisTurn: [],
-      lockedNextTurn: [],
+      touchedThisTurn: [7, 8],
     };
     const state = buildState({
       board,
@@ -147,7 +148,7 @@ describe('declareMatchObjectives', () => {
         cubeWithTop(8, { symbol: 'mercury', color: 'nigredo' }),
       ],
       lockedThisTurn: [],
-      lockedNextTurn: [],
+      touchedThisTurn: [7, 8],
     };
     const state = buildState({
       board,
@@ -178,7 +179,7 @@ describe('declareMatchObjectives', () => {
         cubeWithTop(8, { symbol: 'mercury', color: 'citrinitas' }),
       ],
       lockedThisTurn: [],
-      lockedNextTurn: [],
+      touchedThisTurn: [7, 8],
     };
     const state = buildState({
       board,

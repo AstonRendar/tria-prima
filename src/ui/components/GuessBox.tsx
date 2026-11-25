@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TextInput } from 'react-native';
 import { useConfirm } from '@/ui/ConfirmProvider';
 import { OrnateFrame } from '@/ui/ornaments';
+import { normalizeGuess, WORD_LENGTH } from '@/domain/SecretWord';
 import { ActionButton } from './ActionButton';
 import { colors, fonts, radius, spacing } from '@/ui/styles/tokens';
 
@@ -22,6 +23,16 @@ export function GuessBox({
   submitDisabled,
 }: Props) {
   const confirm = useConfirm();
+  const letters = normalizeGuess(value).length;
+  const canSubmit = !submitDisabled && letters === WORD_LENGTH;
+  const askConfirmation = () =>
+    confirm({
+      title: 'Confirmar',
+      message: '¿Seguro que quieres adivinar? Si fallas, pierdes la partida.',
+      confirmLabel: 'Adivinar',
+      destructive: true,
+      onConfirm: onSubmit,
+    });
   return (
     <OrnateFrame padding={spacing.md} style={styles.box}>
       <Text style={styles.title}>Adivina la palabra (6 letras)</Text>
@@ -29,28 +40,27 @@ export function GuessBox({
       <TextInput
         value={value}
         onChangeText={(text) => onChangeText(text.toUpperCase())}
-        placeholder="ESCRIBE AQUI"
+        placeholder="ESCRIBE AQUÍ"
         placeholderTextColor={colors.textMuted}
         autoCapitalize="characters"
         autoCorrect={false}
+        autoComplete="off"
+        spellCheck={false}
+        returnKeyType="done"
+        onSubmitEditing={canSubmit ? askConfirmation : undefined}
         maxLength={10}
         editable={!inputDisabled}
         testID="guess/input"
         style={[styles.input, inputDisabled && styles.inputDisabled]}
       />
+      <Text style={styles.counter}>
+        Letras: {letters} / {WORD_LENGTH}
+      </Text>
       <ActionButton
         label="Adivinar"
         variant="primary"
-        onPress={() =>
-          confirm({
-            title: 'Confirmar',
-            message: '¿Seguro que quieres adivinar? Si fallas, pierdes la partida.',
-            confirmLabel: 'Adivinar',
-            destructive: true,
-            onConfirm: onSubmit,
-          })
-        }
-        disabled={submitDisabled || value.trim().length === 0}
+        onPress={askConfirmation}
+        disabled={!canSubmit}
         testID="guess/submit"
       />
     </OrnateFrame>
@@ -58,6 +68,12 @@ export function GuessBox({
 }
 
 const styles = StyleSheet.create({
+  counter: {
+    fontFamily: fonts.serif,
+    color: colors.textMuted,
+    fontSize: 12,
+    marginBottom: spacing.sm,
+  },
   box: {
     marginTop: spacing.xl,
   },

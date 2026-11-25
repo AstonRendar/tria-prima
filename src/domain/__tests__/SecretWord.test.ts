@@ -5,6 +5,7 @@ import {
   canGuess,
   CardAssignment,
   FaceSign,
+  isValidSecretWord,
   matchesGuess,
   maskedText,
   normalizeGuess,
@@ -107,3 +108,22 @@ describe('SecretWord', () => {
     expect(matchesGuess(word, 'OTRO')).toBe(false);
   });
 });
+
+describe('word normalization edge cases', () => {
+  it('keeps the Ñ when it arrives decomposed (N + combining tilde)', () => {
+    expect(normalizeGuess('ARAN\u0303AS')).toBe('ARAÑAS');
+  });
+
+  it('rejects secret words with digits or symbols', () => {
+    expect(isValidSecretWord('a1b2c3d4e5f6')).toBe(false);
+    expect(isValidSecretWord('CAMIN0')).toBe(false);
+  });
+
+  it('accepts secret words with accents, Ñ or surrounding spaces', () => {
+    expect(isValidSecretWord(' camión ')).toBe(true);
+    expect(isValidSecretWord(' cañada ')).toBe(true);
+    expect(isValidSecretWord('ÁRBOLES')).toBe(false);
+    expect(isValidSecretWord('árbole')).toBe(true);
+  });
+});
+

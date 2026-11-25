@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { SecretWord } from '@/domain/SecretWord';
 import { AlchemicalSigil, ColorSeal } from '@/ui/ornaments';
-import { colors, fonts, radius } from '@/ui/styles/tokens';
+import { cardStateLabel, colors, fonts, radius, signName } from '@/ui/styles/tokens';
 import { RevealFlip } from './RevealFlip';
 
 type Props = {
@@ -18,7 +18,13 @@ export function SignCounters({ word }: Props) {
         const isColor = card.faceSign.kind === 'color';
         const sign = `${card.faceSign.kind}:${card.faceSign.value}`;
         return (
-          <View key={sign} style={styles.cell} testID={`sign-counter/${sign}`}>
+          <View
+            key={sign}
+            style={styles.cell}
+            testID={`sign-counter/${sign}`}
+            accessible
+            accessibilityLabel={`Tu carta ${signName(card.faceSign)}: ${cardStateLabel(card)}`}
+          >
             <RevealFlip revealed={card.revealed} style={styles.cellContent}>
               <View style={[styles.signBox, card.revealed && styles.signRevealed]}>
                 {isColor ? (

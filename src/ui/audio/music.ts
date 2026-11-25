@@ -10,13 +10,15 @@ export interface MusicPlayer {
   stop(): void;
   toggle(): boolean;
   isEnabled(): boolean;
-  // Detiene la reproducción sin tocar la preferencia (para los fundidos).
-  pause(): void;
   // Cambia de pista (menú / partida) respetando la preferencia de encendido.
   setTrack(track: MusicTrack): void;
 }
 
 const STORAGE_KEY = 'tria-prima/music-enabled';
+
+// Entrada del máster: corta para que al cambiar de pista la nueva suene enseguida
+// y solape con el apagado de la anterior (≈ 0,8 s), sin hueco de silencio.
+const FADE_IN_S = 0.6;
 
 type WebAudioCtor = new () => AudioContext;
 type LegacyWindow = Window & { webkitAudioContext?: WebAudioCtor };
@@ -28,28 +30,27 @@ class WebMusicPlayer implements MusicPlayer {
   private loopTimer: ReturnType<typeof setTimeout> | null = null;
   private playing = false;
   private track: MusicTrack = 'menu';
-  private enabled = readFlag(STORAGE_KEY);
 
   isEnabled(): boolean {
-    return this.enabled;
+    return readFlag(STORAGE_KEY);
   }
 
   init(): void {
-    if (!this.enabled || typeof window === 'undefined') return;
+    if (!readFlag(STORAGE_KEY) || typeof window === 'undefined') return;
     // El navegador bloquea el audio hasta un gesto del usuario.
     window.addEventListener(
       'pointerdown',
       () => {
-        if (this.enabled && !this.playing) this.start();
+        if (readFlag(STORAGE_KEY) && !this.playing) this.start();
       },
       { once: true }
     );
   }
 
   toggle(): boolean {
-    if (this.playing) this.stop();
+    if (readFlag(STORAGE_KEY)) this.stop();
     else this.start();
-    return this.enabled;
+    return readFlag(STORAGE_KEY);
   }
 
   setTrack(track: MusicTrack): void {
@@ -61,19 +62,13 @@ class WebMusicPlayer implements MusicPlayer {
   }
 
   start(): void {
-    this.enabled = true;
     writeFlag(STORAGE_KEY, true);
     if (this.playing) return;
     this.begin();
   }
 
   stop(): void {
-    this.enabled = false;
     writeFlag(STORAGE_KEY, false);
-    this.halt();
-  }
-
-  pause(): void {
     this.halt();
   }
 
@@ -84,7 +79,7 @@ class WebMusicPlayer implements MusicPlayer {
 
     const master = ctx.createGain();
     master.gain.setValueAtTime(0, ctx.currentTime);
-    master.gain.linearRampToValueAtTime(1, ctx.currentTime + 2);
+    master.gain.linearRampToValueAtTime(1, ctx.currentTime + FADE_IN_S);
     master.connect(ctx.destination);
 
     // Eco suave para la atmósfera de laboratorio.

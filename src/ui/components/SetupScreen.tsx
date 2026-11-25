@@ -251,7 +251,7 @@ function Handoff({
         <Text style={styles.handoffName}>{name}</Text>
         <Text style={styles.handoffBody}>{message}</Text>
         <ActionButton
-          label="Estoy listo"
+          label="Empezar"
           variant="primary"
           onPress={onContinue}
           testID="setup/handoff-continue"
@@ -292,7 +292,7 @@ function WordStep({
         <FieldInput
           value={value}
           onChangeText={(text) => onChange(text.toUpperCase())}
-          placeholder="ESCRIBE AQUI"
+          placeholder="ESCRIBE AQUÍ"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="characters"
           autoCorrect={false}

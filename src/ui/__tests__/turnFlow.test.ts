@@ -179,8 +179,21 @@ describe('presentation helpers', () => {
   it('describes each phase', () => {
     expect(describePhase('select-cube', 0)).toContain('empezar');
     expect(describePhase('select-cube', 1)).toContain('segundo');
-    expect(describePhase('choose-action', 0)).toContain('dado seleccionado');
+    expect(describePhase('choose-action', 0)).toContain('este dado');
     expect(describePhase('select-second-cube', 0)).toContain('misma fila');
     expect(describePhase('declare', 2)).toContain('Acabar turno');
+  });
+});
+
+describe('turn flow guards', () => {
+  it('warns when touching a cube locked by the rival', () => {
+    const outcome = pressCube(initialTurnState, 4, [4, 5]);
+    expect(outcome.state).toBe(initialTurnState);
+    expect(outcome.message).toBe('locked');
+  });
+
+  it('does not claim a declaration in the first turn', () => {
+    expect(describePhase('declare', 2, true)).toMatch(/Primer turno/);
+    expect(describePhase('declare', 2, false)).toMatch(/declarados/);
   });
 });

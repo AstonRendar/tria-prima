@@ -1,69 +1,63 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ALL_OBJECTIVES, Objective } from '@/domain/Objective';
-import { canGuess, maskedText, revealedCount } from '@/domain/SecretWord';
+import { MIN_REVEALED_TO_GUESS, plainText, revealedCount, WORD_LENGTH } from '@/domain/SecretWord';
 import { buildProductionDependencies } from '@/infrastructure/ProductionDependencies';
 import { audio } from '@/ui/audio/sound';
-import { useConfirm } from '@/ui/ConfirmProvider';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
-import { Footer } from '@/ui/components/Footer';
-import { GuessBox } from '@/ui/components/GuessBox';
+import { ActionButton } from '@/ui/components/ActionButton';
+import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
-import { NewGameButton } from '@/ui/components/NewGameButton';
 import { ObjectiveCounter } from '@/ui/components/ObjectiveCounter';
 import { WordTrack } from '@/ui/components/WordTrack';
-import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
-import { useGameStartTransition } from '@/ui/hooks/useGameStartTransition';
+import { useExitGuard } from '@/ui/hooks/useExitGuard';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useTracker } from '@/ui/hooks/useTracker';
-import { FiligreeDivider, ParchmentBackground } from '@/ui/ornaments';
-import { colors, fonts, spacing } from '@/ui/styles/tokens';
+import { ParchmentBackground } from '@/ui/ornaments';
+import { colors, fonts, shadows, spacing } from '@/ui/styles/tokens';
+import { TRACKER_TOUR } from '@/ui/tutorial/tourSteps';
+import { TourOverlay } from '@/ui/tutorial/TourOverlay';
+import { TourTarget } from '@/ui/tutorial/TourTargets';
+import { useTour } from '@/ui/tutorial/useTour';
 
 const dependencies = buildProductionDependencies();
 
 export default function Tracker() {
   const router = useRouter();
   const navigation = useNavigation();
-  const confirm = useConfirm();
   const tracker = useTracker(dependencies);
   const { state } = tracker;
-  const [guess, setGuess] = useState('');
+  const [guessOpen, setGuessOpen] = useState(false);
+  const insets = useSafeAreaInsets();
   const flash = useFlash();
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+    },
+    []
+  );
 
   // Mismo criterio que duelo y solitario: partida sin terminar = confirmar
   // la salida (al entrar ya hay una palabra escondida en juego).
   const hasActiveGame = !state.finished;
-  useBeforeUnloadWarning(hasActiveGame);
-  const { fadeThroughBlack, revealFromBlack } = useGameStartTransition(hasActiveGame);
-
-  useLayoutEffect(() => {
-    revealFromBlack();
-  }, [revealFromBlack]);
+  useExitGuard(hasActiveGame, 'Salir de la partida');
+  useGameMusic(hasActiveGame);
+  const tour = useTour('tracker', TRACKER_TOUR, hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
   }, [router]);
 
-  const requestExit = useCallback(() => {
-    if (!hasActiveGame) {
-      goHome();
-      return;
-    }
-    confirm({
-      title: 'Salir de la partida',
-      message: 'Se perderá el progreso actual. ¿Quieres salir al menú principal?',
-      confirmLabel: 'Salir',
-      destructive: true,
-      onConfirm: goHome,
-    });
-  }, [confirm, goHome, hasActiveGame]);
-
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerLeft: () => <HeaderBackButton onPress={requestExit} />,
+      headerLeft: () => <HeaderBackButton onPress={goHome} />,
     });
-  }, [navigation, requestExit]);
+  }, [navigation, goHome]);
 
   useEffect(() => {
     if (!state.finished) return;
@@ -78,87 +72,103 @@ export default function Tracker() {
     }
     audio.play('objective');
     if (result.revealedCardIndex !== null) {
-      setTimeout(() => audio.play('reveal'), 200);
+      if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+      revealTimerRef.current = setTimeout(() => audio.play('reveal'), 200);
       flash.show('Letra revelada');
     }
   };
 
-  const onGuess = () => {
-    if (guess.trim().length === 0) return;
-    tracker.guess(guess);
-  };
-
   const onRestart = () => {
-    fadeThroughBlack(() => {
-      tracker.restart();
-      setGuess('');
-    });
+    tracker.restart();
+    setGuessOpen(false);
   };
 
   if (state.finished) {
-    const fullWord = state.secretWord.cards.map((c) => c.letter).join('');
     return (
       <View style={styles.page}>
         <ParchmentBackground />
         <EndScreen
           won={state.outcome === 'won'}
-          word={fullWord}
+          word={plainText(state.secretWord)}
           onRestart={onRestart}
-          onHome={() => router.dismissTo('/')}
+          onHome={goHome}
         />
       </View>
     );
   }
 
-  const guessEligible = canGuess(state.secretWord);
+
+  const revealed = revealedCount(state.secretWord);
 
   return (
     <View style={styles.page}>
       <ParchmentBackground />
-      <ScrollView contentContainerStyle={styles.container}>
-      <NewGameButton onConfirm={onRestart} />
-      <Text style={styles.heading}>Tracker para jugar con el juego físico</Text>
-      <Text style={styles.subheading}>
-        La app esconde la palabra clave. Cuando completes un objetivo en tu mesa, márcalo aquí.
-      </Text>
+      <ScrollView style={styles.main} contentContainerStyle={styles.container}>
+        <View style={styles.topRow}>
+          <Text style={styles.status}>
+            Reveladas{' '}
+            <Text style={styles.statusValue}>
+              {revealed}/{WORD_LENGTH}
+            </Text>
+          </Text>
+        </View>
 
-      <Text style={styles.maskedWord}>{maskedText(state.secretWord)}</Text>
-      <WordTrack word={state.secretWord} variant="physical" />
+        <Text style={styles.sectionLabel}>Palabra sellada por el maestro</Text>
+        <TourTarget id="word">
+          <WordTrack word={state.secretWord} variant="physical" />
+        </TourTarget>
 
-      <View style={styles.divider}>
-        <FiligreeDivider width={170} />
-      </View>
-      <Text style={styles.sectionTitle}>Objetivos</Text>
-      <Text style={styles.sectionHint}>
-        Pulsa ＋ cuando cumplas el objetivo en tu mesa; − si te equivocaste.
-        Al acumular 2 marcas se revela la letra de esa carta.
-      </Text>
-      {ALL_OBJECTIVES.map((objective) => (
-        <ObjectiveCounter
-          key={objective.id}
-          objective={objective}
-          count={state.declaredCount.get(objective.id) ?? 0}
-          onIncrement={() => onMark(objective)}
-          onDecrement={() => tracker.unmark(objective)}
-          variant="physical"
-        />
-      ))}
-
-      <Text style={styles.statusLine}>
-        Reveladas {revealedCount(state.secretWord)} / 6
-      </Text>
-
-      {guessEligible && (
-        <GuessBox
-          value={guess}
-          onChangeText={setGuess}
-          onSubmit={onGuess}
-        />
-      )}
-
-      <Footer />
+        <Text style={styles.hint}>
+          Pulsa ＋ cada vez que cumplas un objetivo en tu mesa y − si te equivocaste. Con 2
+          marcas se revela la letra.
+        </Text>
+        <TourTarget id="counters" style={styles.counters}>
+          {ALL_OBJECTIVES.map((objective) => (
+            <ObjectiveCounter
+              key={objective.id}
+              objective={objective}
+              count={state.declaredCount.get(objective.id) ?? 0}
+              onIncrement={() => onMark(objective)}
+              onDecrement={() => tracker.unmark(objective)}
+              variant="physical"
+              compact
+              style={styles.counter}
+            />
+          ))}
+        </TourTarget>
       </ScrollView>
 
+      <TourTarget id="guess" style={[styles.bar, { paddingBottom: spacing.sm + insets.bottom }]}>
+        <Text style={styles.barHint}>
+          {tracker.canGuessNow
+            ? 'Ya puedes intentar adivinar. Solo hay un intento.'
+            : `Necesitas ${MIN_REVEALED_TO_GUESS} letras para adivinar.`}
+        </Text>
+        <ActionButton
+          label="Adivinar la palabra"
+          variant="danger"
+          onPress={() => setGuessOpen(true)}
+          disabled={!tracker.canGuessNow}
+          testID="guess/open"
+        />
+      </TourTarget>
+
+      <GuessSheet
+        visible={guessOpen && tracker.canGuessNow}
+        hint={`Tienes ${revealed} letras. Solo hay un intento.`}
+        onClose={() => setGuessOpen(false)}
+        onSubmit={(value) => {
+          setGuessOpen(false);
+          tracker.guess(value);
+        }}
+      />
+      <TourOverlay
+        step={tour.step}
+        index={tour.index}
+        total={tour.total}
+        onNext={tour.next}
+        onSkip={tour.skip}
+      />
       <FlashMessage message={flash.message} />
     </View>
   );
@@ -168,62 +178,68 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
   },
+  main: {
+    flex: 1,
+  },
   container: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
-  divider: {
+  topRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.md,
-    opacity: 0.8,
-  },
-  heading: {
-    fontFamily: fonts.serif,
-    color: colors.accent,
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  subheading: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 13,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  maskedWord: {
-    fontFamily: fonts.serif,
-    color: colors.accent,
-    textAlign: 'center',
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: 4,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: spacing.lg,
+    justifyContent: 'center',
     marginBottom: spacing.xs,
   },
-  sectionHint: {
+  status: {
+    fontFamily: fonts.serif,
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+  statusValue: {
+    color: colors.accent,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  sectionLabel: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
     fontSize: 12,
     fontStyle: 'italic',
-    marginBottom: spacing.sm,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
   },
-  statusLine: {
+  hint: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
-    textAlign: 'center',
     fontSize: 13,
-    marginTop: spacing.sm,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginVertical: spacing.md,
+  },
+  counters: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  counter: {
+    width: '48.5%',
+  },
+  bar: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1.5,
+    borderTopColor: colors.gold,
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    alignItems: 'center',
+    ...shadows.raised,
+  },
+  barHint: {
+    fontFamily: fonts.serif,
+    color: colors.textMuted,
+    fontSize: 13,
+    fontStyle: 'italic',
+    marginBottom: spacing.xs,
   },
 });

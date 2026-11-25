@@ -1,6 +1,7 @@
 import { act, fireEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { renderRouter, screen } from 'expo-router/testing-library';
+import { gameTourSteps, TRACKER_TOUR } from '@/ui/tutorial/tourSteps';
 
 // Smoke test de recorrido: el store de navegación de expo-router es global y
 // renderRouter no lo reinicia entre tests, así que un único render recorre
@@ -43,14 +44,32 @@ describe('app smoke', () => {
       expect(screen.getByTestId(`cube/${i}`)).toBeTruthy();
     }
     expect(screen.getByTestId('first-turn-notice')).toBeTruthy();
+    expect(screen.getByTestId('lock-zone/mine')).toBeTruthy();
+
+    // Primera partida: antes que los consejos, el tour presenta cada zona.
+    expect(await screen.findByTestId('tour/overlay')).toBeTruthy();
+    expect(screen.queryByTestId('tutorial/tip')).toBeNull();
+    for (const step of gameTourSteps('solo')) {
+      expect(screen.getByTestId('tour/title')).toHaveTextContent(step.title);
+      await fireEvent.press(screen.getByTestId('tour/next'));
+    }
+    expect(screen.queryByTestId('tour/overlay')).toBeNull();
+
+    // Acabado el tour, el tutorial explica el objetivo.
+    expect(await screen.findByTestId('tutorial/tip')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('tutorial/skip'));
 
     // Interacción básica: seleccionar un dado abre el panel de acciones.
-    fireEvent.press(screen.getByTestId('cube/0'));
+    await fireEvent.press(screen.getByTestId('cube/0'));
     expect(await screen.findByTestId('action/spin-cw')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('action/cancel'));
+    await fireEvent.press(screen.getByTestId('action/cancel'));
 
-    // Tracker: los seis contadores de objetivo.
+    // Tracker: su propio tour, que se puede saltar, y los seis contadores.
     await goTo('/tracker');
+    expect(await screen.findByTestId('tour/overlay')).toBeTruthy();
+    expect(screen.getByTestId('tour/title')).toHaveTextContent(TRACKER_TOUR[0].title);
+    await fireEvent.press(screen.getByTestId('tour/skip'));
+    expect(screen.queryByTestId('tour/overlay')).toBeNull();
     expect(await screen.findByTestId('objective/sym:sulfur/+')).toBeTruthy();
     for (const id of ['sym:mercury', 'sym:salt', 'col:nigredo', 'col:citrinitas', 'col:rubedo']) {
       expect(screen.getByTestId(`objective/${id}/+`)).toBeTruthy();
@@ -66,5 +85,14 @@ describe('app smoke', () => {
     expect(screen.getByTestId('setup/level-apprentice')).toBeTruthy();
     expect(screen.getByTestId('setup/level-master')).toBeTruthy();
     expect(screen.getByTestId('setup/start')).toBeTruthy();
+
+    // Empezando el jugador, el marcador de turno lo trata de tú.
+    await fireEvent.changeText(screen.getByTestId('setup/word'), 'CANTOR');
+    await fireEvent.press(screen.getByTestId('setup/first-p1'));
+    await fireEvent.press(screen.getByTestId('setup/start'));
+    expect(await screen.findByTestId('versus/turn')).toHaveTextContent('Tu turno');
+    // Una zona de bloqueo a cada lado del tablero, junto a cada palabra.
+    expect(screen.getByText('Zona de bloqueo del maestro')).toBeTruthy();
+    expect(screen.getByText('Tu zona de bloqueo')).toBeTruthy();
   });
 });

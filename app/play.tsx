@@ -1,102 +1,85 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
-import { TOUCHES_PER_TURN } from '@/domain/Board';
-import { RotationKind } from '@/domain/Cube';
-import { GRID_SIZE, Position } from '@/domain/Position';
 import { otherPlayer, PlayerId } from '@/domain/Player';
-import { canGuess, maskedText, revealedCount } from '@/domain/SecretWord';
+import { plainText, revealedCount } from '@/domain/SecretWord';
 import { buildProductionDependencies } from '@/infrastructure/ProductionDependencies';
 import { opponentOf } from '@/application/MatchState';
 import { audio } from '@/ui/audio/sound';
-import { useConfirm } from '@/ui/ConfirmProvider';
 import { ActionButton } from '@/ui/components/ActionButton';
-import { CubeAnimationKind, CubeView } from '@/ui/components/CubeView';
+import { CubeGrid } from '@/ui/components/CubeGrid';
 import { EndScreen } from '@/ui/components/EndScreen';
 import { FlashMessage, useFlash } from '@/ui/components/FlashMessage';
-import { Footer } from '@/ui/components/Footer';
-import { GuessBox } from '@/ui/components/GuessBox';
+import { GuessSheet } from '@/ui/components/GuessSheet';
 import { HeaderBackButton } from '@/ui/components/HeaderBackButton';
-import { NewGameButton } from '@/ui/components/NewGameButton';
-import { ObjectiveBlockedZone } from '@/ui/components/ObjectiveBlockedZone';
-import { ObjectiveCard } from '@/ui/components/ObjectiveCard';
+import { LockZone, ObjectiveRail } from '@/ui/components/ObjectiveRail';
 import { SetupScreen } from '@/ui/components/SetupScreen';
 import { SignCounters } from '@/ui/components/SignCounters';
+import { TurnActions } from '@/ui/components/TurnActions';
 import { WordTrack } from '@/ui/components/WordTrack';
-import { useBeforeUnloadWarning } from '@/ui/hooks/useBeforeUnloadWarning';
-import { useGameStartTransition } from '@/ui/hooks/useGameStartTransition';
+import { useExitGuard } from '@/ui/hooks/useExitGuard';
+import { useGameMusic } from '@/ui/hooks/useGameMusic';
 import { useMatch } from '@/ui/hooks/useMatch';
-import { FiligreeDivider, OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
+import { useTurnController } from '@/ui/hooks/useTurnController';
+import { OrnateFrame, ParchmentBackground } from '@/ui/ornaments';
 import { colors, fonts, spacing } from '@/ui/styles/tokens';
-import {
-  cancelAction,
-  cancelSwap,
-  canFinishTurn,
-  commitSwap,
-  describeDeclareResult,
-  describePhase,
-  pressCube,
-  rotateSelected,
-  rotationActions,
-  startSwap,
-  TurnPhase,
-  TurnState,
-  turnMessage,
-} from '@/ui/turnFlow';
+import { describePhase } from '@/ui/turnFlow';
+import { gameTourSteps } from '@/ui/tutorial/tourSteps';
+import { TourOverlay } from '@/ui/tutorial/TourOverlay';
+import { TourTarget } from '@/ui/tutorial/TourTargets';
+import { TutorialTip } from '@/ui/tutorial/TutorialTip';
+import { useTour } from '@/ui/tutorial/useTour';
+import { useTutorial } from '@/ui/tutorial/useTutorial';
 
 const dependencies = buildProductionDependencies();
-
-const ROTATIONS = rotationActions();
+const TOUR_STEPS = gameTourSteps('duel');
 
 export default function Play() {
   const router = useRouter();
   const navigation = useNavigation();
-  const confirm = useConfirm();
   const match = useMatch(dependencies);
-  const [phase, setPhase] = useState<TurnPhase>('select-cube');
-  const [selected, setSelected] = useState<Position | null>(null);
-  const [touched, setTouched] = useState<Set<Position>>(new Set());
-  const [guess, setGuess] = useState('');
+  const { state } = match;
+  const [guessOpen, setGuessOpen] = useState(false);
   const [handoffPlayerId, setHandoffPlayerId] = useState<PlayerId | null>(null);
-  const [lastAnimation, setLastAnimation] = useState<{
-    positions: ReadonlySet<Position>;
-    kind: CubeAnimationKind;
-  } | null>(null);
   const flash = useFlash();
   const previousTurnRef = useRef(0);
-  const autoDeclaredRef = useRef(false);
 
-  const hasActiveGame = match.state !== null && !match.state.finished;
-  useBeforeUnloadWarning(hasActiveGame);
-  const { fadeThroughBlack } = useGameStartTransition(hasActiveGame);
+  const hasActiveGame = state !== null && !state.finished;
+  useExitGuard(hasActiveGame, 'Salir del duelo');
+  useGameMusic(hasActiveGame);
 
   const goHome = useCallback(() => {
     router.dismissTo('/');
   }, [router]);
 
-  const requestExit = useCallback(() => {
-    if (!hasActiveGame) {
-      goHome();
-      return;
-    }
-    confirm({
-      title: 'Salir del duelo',
-      message: 'Se perderá la partida en curso. ¿Quieres salir al menú principal?',
-      confirmLabel: 'Salir',
-      destructive: true,
-      onConfirm: goHome,
-    });
-  }, [confirm, goHome, hasActiveGame]);
-
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerLeft: () => <HeaderBackButton onPress={requestExit} />,
+      headerLeft: () => <HeaderBackButton onPress={goHome} />,
     });
-  }, [navigation, requestExit]);
+  }, [navigation, goHome]);
 
-  const state = match.state;
-  const turnNumber = state?.turn ?? 0;
-  const currentPid = state?.currentPlayerId;
+  const turnCtl = useTurnController({
+    port: match,
+    locked: state?.board.lockedThisTurn ?? [],
+    canDeclare: state?.canDeclareThisTurn ?? false,
+    enabled: hasActiveGame,
+    showMessage: flash.show,
+  });
+
+  const opponentWord = state ? opponentOf(state, state.currentPlayerId).secretWord : null;
+  const tour = useTour('game', TOUR_STEPS, hasActiveGame && handoffPlayerId === null);
+  const tutorial = useTutorial(
+    hasActiveGame && !tour.active && opponentWord && handoffPlayerId === null
+      ? {
+          isMyTurn: true,
+          phase: turnCtl.turn.phase,
+          touchedCount: turnCtl.turn.touched.size,
+          hasLockedCubes: state.board.lockedThisTurn.length > 0,
+          anyMarker: opponentWord.cards.some((c) => c.markers > 0 || c.revealed),
+          canGuess: match.canGuessNow,
+        }
+      : null
+  );
 
   // Tras avanzar de turno, abre el "pasa el dispositivo".
   useEffect(() => {
@@ -108,286 +91,137 @@ export default function Play() {
       setHandoffPlayerId(state.currentPlayerId);
     }
     previousTurnRef.current = state.turn;
-  }, [state, turnNumber, currentPid]);
-
-  // Al entrar en la fase de declaración, declara automáticamente todos los
-  // objetivos cumplidos. El jugador no tiene que pulsar nada.
-  useEffect(() => {
-    if (phase !== 'declare') {
-      autoDeclaredRef.current = false;
-      return;
-    }
-    if (autoDeclaredRef.current) return;
-    if (!state || !state.canDeclareThisTurn) return;
-    autoDeclaredRef.current = true;
-    const result = match.declare();
-    if (result.declared > 0) audio.play('objective');
-    if (result.revealedCardIndices.length > 0) {
-      setTimeout(() => audio.play('reveal'), result.declared > 0 ? 200 : 0);
-    }
-    const msg = describeDeclareResult(result.declared, result.released, result.revealedCardIndices.length);
-    if (msg) flash.show(msg);
-  }, [phase, state, match, flash.show]);
-
-  const rows = useMemo(() => {
-    const r: number[][] = [];
-    for (let i = 0; i < GRID_SIZE; i++) {
-      r.push([i * GRID_SIZE, i * GRID_SIZE + 1, i * GRID_SIZE + 2]);
-    }
-    return r;
-  }, []);
+  }, [state]);
 
   useEffect(() => {
     if (!state?.finished) return;
-    const winnerId = state.outcome === 'p1-wins' ? 'p1' : 'p2';
-    audio.play(winnerId === state.currentPlayerId ? 'win' : 'lose');
-  }, [state?.finished, state?.outcome, state?.currentPlayerId]);
+    audio.play(state.failedGuessBy === null ? 'win' : 'lose');
+  }, [state?.finished, state?.failedGuessBy]);
 
   if (!state) {
-    return <SetupScreen onStart={(setup) => fadeThroughBlack(() => match.start(setup))} />;
+    return <SetupScreen onStart={(setup) => match.start(setup)} />;
   }
 
   const me = state.currentPlayerId;
   const opponent = opponentOf(state, me);
+  const { turn } = turnCtl;
 
-  const applyTurn = (next: TurnState) => {
-    setPhase(next.phase);
-    setSelected(next.selected);
-    setTouched(next.touched as Set<Position>);
-  };
-
-  const resetTurn = () => {
-    setPhase('select-cube');
-    setSelected(null);
-    setTouched(new Set());
-  };
-
-  const onPressCube = (i: Position) => {
-    if (state.finished) return;
-    if (state.board.lockedThisTurn.includes(i)) return;
-    const current: TurnState = { phase, selected, touched };
-    const outcome = pressCube(current, i);
-    if (outcome.message) flash.show(turnMessage(outcome.message));
-    if (outcome.swap) {
-      const { a, b } = outcome.swap;
-      if (!match.swap(a, b)) {
-        flash.show('Solo puedes intercambiar en la misma fila o columna');
-        return;
-      }
-      audio.play('swap');
-      setLastAnimation({ positions: new Set([a, b]), kind: 'swap' });
-      applyTurn(commitSwap(a, b));
-      return;
-    }
-    if (outcome.state !== current) applyTurn(outcome.state);
-  };
-
-  const onRotate = (kind: RotationKind) => {
-    if (selected === null) return;
-    const target = selected;
-    match.rotate(target, kind);
-    audio.play(kind === 'spin-cw' || kind === 'spin-ccw' ? 'cube-spin' : 'cube-roll');
-    setLastAnimation({ positions: new Set([target]), kind });
-    applyTurn(rotateSelected({ phase, selected, touched }));
-  };
-
-  const onStartSwap = () => {
-    const outcome = startSwap({ phase, selected, touched });
-    if (outcome.message) flash.show(turnMessage(outcome.message));
-    applyTurn(outcome.state);
-  };
-
-  const onCancelAction = () => applyTurn(cancelAction({ phase, selected, touched }));
-
-  const onCancelSwap = () => applyTurn(cancelSwap({ phase, selected, touched }));
-
-  const onEndTurn = () => {
-    if (!canFinishTurn({ phase, selected, touched })) {
-      flash.show(`Hay que mover ${TOUCHES_PER_TURN} dados para acabar el turno`);
-      return;
-    }
-    audio.play('turn-end');
-    match.finishTurn(Array.from(touched));
-    resetTurn();
-    setLastAnimation(null);
-  };
-
-  const onGuess = () => {
-    if (guess.trim().length === 0) return;
-    match.guess(guess);
-  };
+  const onEndTurn = () => turnCtl.onEndTurn();
 
   const onRestart = () => {
-    fadeThroughBlack(() => {
-      match.restart();
-      resetTurn();
-      setGuess('');
-      setHandoffPlayerId(null);
-      setLastAnimation(null);
-    });
+    match.restart();
+    turnCtl.reset();
+    setGuessOpen(false);
+    setHandoffPlayerId(null);
   };
 
   if (state.finished) {
-    const won = state.outcome === 'p1-wins' ? 'p1' : 'p2';
-    const fullWord = state.players[otherPlayer(won)].secretWord.cards
-      .map((c) => c.letter)
-      .join('');
-    const winnerName = state.players[won].name;
+    const winner: PlayerId = state.outcome === 'p1-wins' ? 'p1' : 'p2';
+    const loser = otherPlayer(winner);
+    const failed = state.failedGuessBy !== null;
     return (
       <View style={styles.page}>
         <ParchmentBackground />
-        <EndScreen
-          won
-          word={fullWord}
-          onRestart={onRestart}
-          onHome={() => router.dismissTo('/')}
-        >
+        <EndScreen won word={plainText(state.players[loser].secretWord)} onRestart={onRestart} onHome={goHome}>
           <View style={styles.endStats}>
-            <Text style={styles.endStat}>Gana {winnerName}</Text>
-            <Text style={styles.endStat}>Palabra del rival</Text>
+            <Text style={styles.endStat}>Gana {state.players[winner].name}</Text>
+            <Text style={styles.endStat}>
+              {failed
+                ? `${state.players[loser].name} falló al adivinar. Era la palabra de ${state.players[winner].name}: ${plainText(state.players[winner].secretWord)}`
+                : `Descifró la palabra de ${state.players[loser].name}`}
+            </Text>
           </View>
         </EndScreen>
       </View>
     );
   }
 
-  const guessEligible = canGuess(opponent.secretWord);
-  const phaseHint = describePhase(phase, touched.size);
-  const mySlots = state.objectives.filter((s) => s.blockedBy === me);
-  const opponentSlots = state.objectives.filter((s) => s.blockedBy === opponent.id);
-  const availableSlots = state.objectives.filter((s) => s.blockedBy === null);
+  const firstTurn = state.turn === 0;
+  const hint = describePhase(turn.phase, turn.touched.size, firstTurn);
 
   return (
     <View style={styles.page}>
       <ParchmentBackground />
-      <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.topRow}>
-        <NewGameButton onConfirm={onRestart} />
-        <View style={styles.turnBadge}>
-          <Text style={styles.turnBadgeLabel}>Turno de</Text>
-          <Text style={styles.turnBadgeName} numberOfLines={1}>
-            {state.players[me].name}
+      <ScrollView style={styles.main} contentContainerStyle={styles.container}>
+        <View style={styles.topRow}>
+          <Text style={styles.turnBadge} numberOfLines={1}>
+            Turno de <Text style={styles.turnBadgeName}>{state.players[me].name}</Text>
           </Text>
         </View>
-      </View>
 
-      <ObjectiveBlockedZone
-        playerName={`Bloqueados de ${opponent.name}`}
-        slots={opponentSlots}
-        testID="blocked/opponent"
-      />
-
-      <Text style={styles.opponentLine}>
-        Palabra de {opponent.name}
-      </Text>
-      <Text style={styles.maskedWord}>{maskedText(opponent.secretWord)}</Text>
-      <WordTrack word={opponent.secretWord} />
-
-      {state.turn === 0 && (
-        <Text style={styles.firstTurnNotice} testID="first-turn-notice">
-          Primer turno: solo movimiento. No se pueden declarar objetivos.
-        </Text>
-      )}
-      <Text style={styles.phaseHint}>{phaseHint}</Text>
-
-      <View style={styles.boardRow}>
-        <View style={styles.grid}>
-          {rows.map((row, ri) => (
-            <View key={ri} style={styles.gridRow}>
-              {row.map((i) => (
-                <CubeView
-                  key={i}
-                  cube={state.board.cubes[i]}
-                  selected={selected === i}
-                  locked={state.board.lockedThisTurn.includes(i)}
-                  touched={touched.has(i)}
-                  animationKind={lastAnimation?.positions.has(i) ? lastAnimation.kind : null}
-                  onPress={() => onPressCube(i)}
-                  testID={`cube/${i}`}
-                />
-              ))}
-            </View>
-          ))}
-        </View>
-        <View style={styles.availableColumn}>
-          <Text style={styles.availableTitle}>Libres</Text>
-          {availableSlots.length === 0 ? (
-            <Text style={styles.empty}>—</Text>
-          ) : (
-            availableSlots.map((slot) => (
-              <ObjectiveCard key={slot.objective.id} slot={slot} compact />
-            ))
-          )}
-        </View>
-      </View>
-
-      {phase === 'choose-action' && (
-        <OrnateFrame padding={spacing.sm} cornerScale={0.7} style={styles.actionPanel}>
-          {ROTATIONS.map((r) => (
-            <View key={r.kind} style={styles.actionBtn}>
-              <ActionButton
-                label={r.label}
-                onPress={() => onRotate(r.kind)}
-                testID={`action/${r.kind}`}
-              />
-            </View>
-          ))}
-          <View style={styles.actionBtn}>
-            <ActionButton label="Intercambiar…" onPress={onStartSwap} testID="action/swap" />
-          </View>
-          <View style={styles.actionBtn}>
-            <ActionButton label="Cancelar" onPress={onCancelAction} testID="action/cancel" />
-          </View>
-        </OrnateFrame>
-      )}
-
-      {phase === 'select-second-cube' && (
-        <OrnateFrame padding={spacing.md} style={styles.swapNotice}>
-          <Text style={styles.swapText}>
-            Toca otro dado en la misma fila o columna para intercambiarlos.
-          </Text>
-          <ActionButton
-            label="Cancelar"
-            onPress={onCancelSwap}
-            testID="action/cancel-swap"
-          />
-        </OrnateFrame>
-      )}
-
-      {phase === 'declare' && (
-        <View style={styles.actionRow}>
-          <ActionButton
-            label="Acabar turno"
-            variant="primary"
-            onPress={onEndTurn}
-            testID="turn/end"
-          />
-        </View>
-      )}
-
-      <View style={styles.divider}>
-        <FiligreeDivider width={170} />
-      </View>
-      <ObjectiveBlockedZone
-        playerName={`Bloqueados de ${state.players[me].name}`}
-        slots={mySlots}
-        testID="blocked/me"
-      />
-      <Text style={[styles.opponentLine, styles.myWordLine]}>Tu palabra</Text>
-      <SignCounters word={state.players[me].secretWord} />
-
-      {guessEligible && (
-        <GuessBox
-          value={guess}
-          onChangeText={setGuess}
-          onSubmit={onGuess}
-          hint={`${state.players[me].name}, tienes ${revealedCount(opponent.secretWord)} letras de ${opponent.name}. Puedes intentar adivinar.`}
+        <Text style={styles.sectionLabel}>Palabra de {opponent.name}</Text>
+        <TourTarget id="word">
+          <WordTrack word={opponent.secretWord} compact />
+        </TourTarget>
+        <LockZone
+          slots={state.objectives.filter((slot) => slot.blockedBy !== null && slot.blockedBy !== me)}
+          label={`Zona de bloqueo de ${opponent.name}`}
+          testID="lock-zone/rival"
         />
-      )}
 
-      <Footer />
+        <View style={styles.boardRow}>
+          <TourTarget id="board">
+            <CubeGrid
+              board={state.board}
+              selected={turn.selected === null ? [] : [turn.selected]}
+              touched={turn.touched}
+              animation={turnCtl.animation}
+              onPress={turnCtl.onPressCube}
+            />
+          </TourTarget>
+          <TourTarget id="objectives">
+            <ObjectiveRail
+              slots={state.objectives}
+              ownerOf={(slot) => (slot.blockedBy === null ? 'free' : slot.blockedBy === me ? 'mine' : 'rival')}
+            />
+          </TourTarget>
+        </View>
+        <LockZone
+          slots={state.objectives.filter((slot) => slot.blockedBy === me)}
+          label="Tu zona de bloqueo"
+          testID="lock-zone/mine"
+        />
+
+        <TourTarget id="my-word" style={styles.myRow}>
+          <Text style={styles.sectionLabel}>Tu palabra, {state.players[me].name}</Text>
+          <SignCounters word={state.players[me].secretWord} />
+        </TourTarget>
       </ScrollView>
 
+      <TourTarget id="actions">
+        <TurnActions
+          phase={turn.phase}
+          hint={hint}
+          hintTestID={firstTurn ? 'first-turn-notice' : undefined}
+          enabled
+          onRotate={turnCtl.onRotate}
+          onStartSwap={turnCtl.onStartSwap}
+          onCancelAction={turnCtl.onCancelAction}
+          onCancelSwap={turnCtl.onCancelSwap}
+          onEndTurn={onEndTurn}
+          onGuess={match.canGuessNow ? () => setGuessOpen(true) : undefined}
+        />
+      </TourTarget>
+
+      <GuessSheet
+        visible={guessOpen && match.canGuessNow}
+        hint={`${state.players[me].name}, acabas de descubrir una letra y tienes ${revealedCount(opponent.secretWord)} de ${opponent.name}. Solo hay un intento.`}
+        onClose={() => setGuessOpen(false)}
+        onSubmit={(value) => {
+          setGuessOpen(false);
+          match.guess(value);
+        }}
+      />
+      <TourOverlay
+        step={tour.step}
+        index={tour.index}
+        total={tour.total}
+        onNext={tour.next}
+        onSkip={tour.skip}
+      />
+      {handoffPlayerId === null && (
+        <TutorialTip step={tutorial.step} onDismiss={tutorial.dismiss} onSkip={tutorial.skip} />
+      )}
       <FlashMessage message={flash.message} />
 
       {handoffPlayerId && (
@@ -423,132 +257,48 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
   },
-  container: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+  main: {
+    flex: 1,
   },
-  divider: {
-    alignItems: 'center',
-    marginTop: spacing.md,
-    opacity: 0.8,
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
   },
   turnBadge: {
-    alignItems: 'flex-end',
-  },
-  turnBadgeLabel: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  turnBadgeName: {
-    fontFamily: fonts.serif,
-    color: colors.accent,
-    fontSize: 18,
-    fontWeight: '800',
-    maxWidth: 180,
-  },
-  opponentLine: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 12,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  maskedWord: {
-    fontFamily: fonts.serif,
-    color: colors.accent,
-    textAlign: 'center',
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: 4,
-    marginTop: 2,
-    marginBottom: spacing.sm,
-  },
-  myWordLine: {
-    marginBottom: spacing.sm,
-  },
-  phaseHint: {
     fontFamily: fonts.serif,
     color: colors.textMuted,
     fontSize: 13,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: spacing.sm,
   },
-  firstTurnNotice: {
+  turnBadgeName: {
+    color: colors.accent,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  sectionLabel: {
     fontFamily: fonts.serif,
-    color: colors.danger,
+    color: colors.textMuted,
     fontSize: 12,
     fontStyle: 'italic',
     textAlign: 'center',
-    marginTop: spacing.sm,
-    marginHorizontal: spacing.lg,
-    opacity: 0.85,
+    marginBottom: spacing.xs,
   },
   boardRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: spacing.lg,
-  },
-  grid: {
     alignItems: 'center',
+    marginTop: spacing.md,
   },
-  gridRow: {
-    flexDirection: 'row',
-  },
-  availableColumn: {
-    marginLeft: spacing.sm,
-    alignItems: 'center',
-  },
-  availableTitle: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
-  },
-  actionPanel: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  actionBtn: {
-    marginBottom: spacing.xs,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginVertical: spacing.md,
-  },
-  swapNotice: {
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  swapText: {
-    fontFamily: fonts.serif,
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  empty: {
-    fontFamily: fonts.serif,
-    color: colors.textMuted,
-    fontStyle: 'italic',
-    fontSize: 13,
-    paddingHorizontal: spacing.sm,
+  myRow: {
+    marginTop: spacing.md,
   },
   endStats: {
     alignItems: 'center',

@@ -22,7 +22,7 @@ describe('duel playthrough', () => {
     // Turno 0 (p1): solo manipulación. Gira dos dados de la fila central.
     state = rotateMatchCube(state, 3, 'spin-cw');
     state = rotateMatchCube(state, 4, 'spin-cw');
-    state = endMatchTurn(state, [3, 4]);
+    state = endMatchTurn(state);
 
     expect(state.currentPlayerId).toBe('p2');
     expect(state.turn).toBe(1);
@@ -50,7 +50,7 @@ describe('duel playthrough', () => {
     expect(state.players.p1.secretWord.cards.filter((c) => c.markers === 1)).toHaveLength(2);
     expect(state.players.p2.secretWord.cards.every((c) => c.markers === 0)).toBe(true);
 
-    state = endMatchTurn(state, [0, 1]);
+    state = endMatchTurn(state);
     expect(state.currentPlayerId).toBe('p1');
     expect(state.board.lockedThisTurn).toEqual([0, 1]);
 
@@ -61,9 +61,11 @@ describe('duel playthrough', () => {
     state = p1Declare.state;
     expect(p1Declare.declared).toBe(0);
     expect(state.objectives.filter((s) => s.blockedBy === 'p2')).toHaveLength(2);
-    state = endMatchTurn(state, [8, 5]);
+    state = endMatchTurn(state);
 
     // Turno 3 (p2): mantener las líneas re-declara y revela dos letras de p1.
+    state = rotateMatchCube(state, 0, 'spin-cw');
+    state = rotateMatchCube(state, 1, 'spin-cw');
     const secondDeclare = declareMatchObjectives(state);
     state = secondDeclare.state;
     expect(secondDeclare.declared).toBe(2);
@@ -72,7 +74,7 @@ describe('duel playthrough', () => {
 
     // Con menos de 4 letras reveladas no se permite adivinar.
     expect(isMatchGuessAllowed(state)).toBe(false);
-    expect(guessMatchWord(state, 'CAMINO')).toBe(state);
+    expect(guessMatchWord(state, 'p2', 'CAMINO')).toBe(state);
     expect(state.finished).toBe(false);
   });
 });

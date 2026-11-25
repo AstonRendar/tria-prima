@@ -1,5 +1,5 @@
 import { Objective } from '@/domain/Objective';
-import { addMarkerForObjective } from '@/domain/SecretWord';
+import { addMarkerForObjective, MARKERS_TO_REVEAL } from '@/domain/SecretWord';
 import {
   decrementDeclared,
   incrementDeclared,
@@ -15,7 +15,10 @@ export type MarkResult = {
 export function markObjective(state: TrackerState, objective: Objective): MarkResult {
   if (state.finished) return { state, applied: false, revealedCardIndex: null };
   const result = addMarkerForObjective(state.secretWord, objective);
-  if (!result) return { state, applied: false, revealedCardIndex: null };
+  // Una carta ya revelada no admite más marcadores: no se cuenta la declaración.
+  if (!result || result.word === state.secretWord) {
+    return { state, applied: false, revealedCardIndex: null };
+  }
   return {
     state: {
       ...state,
@@ -27,9 +30,9 @@ export function markObjective(state: TrackerState, objective: Objective): MarkRe
   };
 }
 
-// Compensa una marca registrada por error: decrementa el contador y, si el
-// rival aún no había revelado la letra, quita el último marcador de la carta
-// correspondiente. Si ya estaba revelada, no se puede deshacer.
+// Compensa una marca registrada por error: decrementa el contador y quita el
+// último marcador de la carta. Si esa marca reveló la letra, la vuelve a
+// ocultar con el marcador que tenía antes.
 export function unmarkObjective(state: TrackerState, objective: Objective): TrackerState {
   if (state.finished) return state;
   const card = state.secretWord.cards.find(
@@ -38,11 +41,11 @@ export function unmarkObjective(state: TrackerState, objective: Objective): Trac
       c.faceSign.value === objective.value
   );
   if (!card) return state;
-  if (card.revealed) return state;
-  if (card.markers === 0) return state;
-  const cards = state.secretWord.cards.map((c) =>
-    c === card ? { ...c, markers: c.markers - 1 } : c
-  );
+  if (!card.revealed && card.markers === 0) return state;
+  const undone = card.revealed
+    ? { ...card, revealed: false, markers: MARKERS_TO_REVEAL - 1 }
+    : { ...card, markers: card.markers - 1 };
+  const cards = state.secretWord.cards.map((c) => (c === card ? undone : c));
   return {
     ...state,
     secretWord: { cards },

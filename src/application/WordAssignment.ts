@@ -1,4 +1,4 @@
-import { ALL_OBJECTIVES } from '@/domain/Objective';
+import { ALL_OBJECTIVES, Objective } from '@/domain/Objective';
 import { CardAssignment, FaceSign, WORD_LENGTH } from '@/domain/SecretWord';
 import { Random } from '@/infrastructure/Random';
 
@@ -16,8 +16,6 @@ export function buildAssignments(
   return letters.map((letter, i) => ({ letter, faceSign: signs[i] }));
 }
 
-function toFaceSign(o: { kind: 'symbol' | 'color'; value: string }): FaceSign {
-  return o.kind === 'symbol'
-    ? { kind: 'symbol', value: o.value as never }
-    : { kind: 'color', value: o.value as never };
+function toFaceSign(o: Objective): FaceSign {
+  return o.kind === 'symbol' ? { kind: 'symbol', value: o.value } : { kind: 'color', value: o.value };
 }

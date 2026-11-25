@@ -28,7 +28,7 @@ function boardWithRowOfSulfurs(): Board {
       cubeWithTop(8, { symbol: 'mercury', color: 'citrinitas' }),
     ],
     lockedThisTurn: [],
-    lockedNextTurn: [],
+    touchedThisTurn: [7, 8],
   };
 }
 

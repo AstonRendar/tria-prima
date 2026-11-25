@@ -1,6 +1,6 @@
 {
   "name": "tria-prima",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~56.0.4",
     "expo-audio": "~56.0.12",
     "expo-constants": "~56.0.15",
@@ -46,6 +47,8 @@
       "src/domain/**/*.ts",
       "src/application/**/*.ts",
       "src/ui/turnFlow.ts",
+      "src/ui/tutorial/tutorialSteps.ts",
+      "src/ui/tutorial/tourSteps.ts",
       "!**/__tests__/**"
     ],
     "projects": [
@@ -61,14 +64,16 @@
           "<rootDir>/src/application/**/__tests__/**/*.test.ts",
           "<rootDir>/src/infrastructure/**/__tests__/**/*.test.ts",
           "<rootDir>/src/ui/audio/__tests__/**/*.test.ts",
-          "<rootDir>/src/ui/__tests__/turnFlow.test.ts"
+          "<rootDir>/src/ui/__tests__/turnFlow.test.ts",
+          "<rootDir>/src/ui/tutorial/__tests__/**/*.test.ts"
         ]
       },
       {
         "displayName": "ui",
         "preset": "jest-expo",
         "moduleNameMapper": {
-          "^expo-audio$": "<rootDir>/src/ui/audio/__mocks__/expo-audio.ts"
+          "^expo-audio$": "<rootDir>/src/ui/audio/__mocks__/expo-audio.ts",
+          "^@react-native-async-storage/async-storage$": "<rootDir>/node_modules/@react-native-async-storage/async-storage/jest/async-storage-mock.js"
         },
         "testMatch": [
           "<rootDir>/src/ui/**/__tests__/**/*.test.tsx"

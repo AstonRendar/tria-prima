@@ -95,7 +95,8 @@ export function planAppTurn(
 // el rival mantiene bloqueadas puntúan en negativo mientras sigan formadas
 // (el rival las re-declara cada turno y gana un marcador), con -1 extra si
 // esa re-declaración revelaría una letra propia: romperlas vale tanto como
-// declarar.
+// declarar. En el primer turno no se declara: toda línea que quede formada
+// la aprovecha el rival, así que todas restan.
 function scoreBoard(board: Board, state: MatchState): number {
   const me = state.currentPlayerId;
   const opponentWord = currentOpponent(state).secretWord;
@@ -103,7 +104,9 @@ function scoreBoard(board: Board, state: MatchState): number {
   let score = 0;
   for (const slot of state.objectives) {
     if (findMatchedLine(board, slot.objective) === null) continue;
-    if (slot.blockedBy !== null && slot.blockedBy !== me) {
+    const opponentScoresIt =
+      !state.canDeclareThisTurn || (slot.blockedBy !== null && slot.blockedBy !== me);
+    if (opponentScoresIt) {
       score -= wouldRevealLetter(myWord, slot.objective) ? 2 : 1;
     } else {
       score += wouldRevealLetter(opponentWord, slot.objective) ? 2 : 1;
@@ -122,7 +125,7 @@ function wouldRevealLetter(word: SecretWord, objective: Objective): boolean {
 // Decide si la app intenta adivinar. Juega limpio: solo usa las letras
 // reveladas del rival y la lista pública de palabras.
 //   - 6 letras reveladas → la palabra es conocida (ambos niveles).
-//   - maestro: una única candidata → la arriesga; 5 letras y varias → una al azar.
+//   - maestro: con 5 letras, una única candidata → la arriesga; varias → una al azar.
 //   - aprendiz: solo arriesga la única candidata con 5+ letras reveladas.
 export function chooseAppGuess(
   state: MatchState,
@@ -143,8 +146,11 @@ export function chooseAppGuess(
     if (candidates.length === 1 && revealed >= WORD_LENGTH - 1) return candidates[0];
     return null;
   }
+  // Con solo 4 letras no se fía de la única candidata: la palabra del rival
+  // puede no estar en la lista.
+  if (revealed < WORD_LENGTH - 1) return null;
   if (candidates.length === 1) return candidates[0];
-  if (candidates.length > 1 && revealed >= WORD_LENGTH - 1) {
+  if (candidates.length > 1) {
     return candidates[random.pickIndex(candidates.length)];
   }
   return null;

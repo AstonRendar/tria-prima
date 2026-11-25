@@ -8,7 +8,7 @@ export interface WordRepository {
 // Vocabulario común en castellano, sin tildes (se almacena ya normalizado) y
 // apto para todos los públicos: nada de insultos ni palabras malsonantes o
 // inapropiadas (ver AGENTS.md).
-const WORDS_6: ReadonlyArray<string> = [
+export const WORDS_6: ReadonlyArray<string> = [
   'ABEJAS', 'ABRAZO', 'ABRIGO', 'ABUELO', 'ACEITE', 'ACELGA',
   'ACENTO', 'ACORDE', 'ACTRIZ', 'ADUANA', 'ADULTO', 'AGENDA',
   'AGENTE', 'AGUILA', 'AGUJAS', 'AHORRO', 'ALDEAS', 'ALIADO',
@@ -104,7 +104,7 @@ const WORDS_6: ReadonlyArray<string> = [
   'VENENO', 'VERANO', 'VERDAD', 'VERDES', 'VEREDA', 'VERSOS',
   'VIAJES', 'VIDRIO', 'VIEJOS', 'VIENTO', 'VIOLIN', 'VOLCAN',
   'VUELOS', 'YEGUAS', 'YERNOS', 'ZAGUAN', 'ZAPATO', 'ZORROS',
-].filter((w) => w.length === 6);
+];
 
 export class InMemoryWordRepository implements WordRepository {
   constructor(private readonly random: Random) {}

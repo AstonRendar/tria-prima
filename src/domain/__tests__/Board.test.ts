@@ -1,11 +1,4 @@
-import {
-  advanceLocks,
-  Board,
-  isLocked,
-  lockTouchedCubes,
-  rotateCubeAt,
-  swapPositions,
-} from '@/domain/Board';
+import { Board, closeTurn, isLocked, rotateCubeAt, swapPositions } from '@/domain/Board';
 import { Cube } from '@/domain/Cube';
 import { Face } from '@/domain/Face';
 
@@ -29,7 +22,7 @@ function buildBoard(overrides: Partial<Board> = {}): Board {
   return {
     cubes,
     lockedThisTurn: [],
-    lockedNextTurn: [],
+    touchedThisTurn: [],
     ...overrides,
   };
 }
@@ -71,21 +64,46 @@ describe('Board', () => {
     expect(rotateCubeAt(board, 3, 'roll-forward')).toBe(board);
   });
 
-  it('lockTouchedCubes stores deduped positions for next turn', () => {
-    const board = buildBoard();
-    const locked = lockTouchedCubes(board, [1, 4, 1, 4]);
-    expect(locked.lockedNextTurn).toEqual([1, 4]);
+  it('rotateCubeAt records the moved cube', () => {
+    const board = rotateCubeAt(buildBoard(), 3, 'spin-cw');
+    expect(board.touchedThisTurn).toEqual([3]);
   });
 
-  it('advanceLocks promotes lockedNextTurn to lockedThisTurn', () => {
-    const board = buildBoard({ lockedNextTurn: [2, 5] });
-    const next = advanceLocks(board);
-    expect(next.lockedThisTurn).toEqual([2, 5]);
-    expect(next.lockedNextTurn).toEqual([]);
+  it('rotateCubeAt refuses to move the same cube twice in a turn', () => {
+    const board = rotateCubeAt(buildBoard(), 3, 'roll-forward');
+    expect(rotateCubeAt(board, 3, 'roll-forward')).toBe(board);
+  });
+
+  it('rotateCubeAt refuses a third cube in the same turn', () => {
+    const board = rotateCubeAt(rotateCubeAt(buildBoard(), 0, 'spin-cw'), 1, 'spin-cw');
+    expect(rotateCubeAt(board, 2, 'spin-cw')).toBe(board);
+  });
+
+  it('swapPositions records both cubes and is the only action of the turn', () => {
+    const swapped = swapPositions(buildBoard(), 0, 2);
+    expect(swapped.touchedThisTurn).toEqual([0, 2]);
+    const afterRotation = rotateCubeAt(buildBoard(), 4, 'spin-cw');
+    expect(swapPositions(afterRotation, 0, 2)).toBe(afterRotation);
+  });
+
+  it('swapPositions refuses to swap a cube with itself', () => {
+    const board = buildBoard();
+    expect(swapPositions(board, 4, 4)).toBe(board);
+  });
+
+  it('closeTurn locks the moved cubes for the next turn', () => {
+    const board = rotateCubeAt(rotateCubeAt(buildBoard(), 2, 'spin-cw'), 5, 'spin-cw');
+    const next = closeTurn(board);
+    expect(next?.lockedThisTurn).toEqual([2, 5]);
+    expect(next?.touchedThisTurn).toEqual([]);
+  });
+
+  it('closeTurn refuses a turn that did not move 2 cubes', () => {
+    expect(closeTurn(rotateCubeAt(buildBoard(), 2, 'spin-cw'))).toBe(null);
   });
 
   it('isLocked checks lockedThisTurn only', () => {
-    const board = buildBoard({ lockedThisTurn: [0], lockedNextTurn: [1] });
+    const board = buildBoard({ lockedThisTurn: [0], touchedThisTurn: [1] });
     expect(isLocked(board, 0)).toBe(true);
     expect(isLocked(board, 1)).toBe(false);
   });

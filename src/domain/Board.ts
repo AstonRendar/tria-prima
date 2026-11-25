@@ -1,50 +1,55 @@
 import { applyRotation, Cube, RotationKind } from './Cube';
 import { Position, sameRowOrColumn } from './Position';
 
+// `lockedThisTurn`: los dados que movió el rival en su turno (no se tocan).
+// `touchedThisTurn`: los dados ya movidos en el turno en curso.
 export type Board = {
   readonly cubes: ReadonlyArray<Cube>;
   readonly lockedThisTurn: ReadonlyArray<Position>;
-  readonly lockedNextTurn: ReadonlyArray<Position>;
+  readonly touchedThisTurn: ReadonlyArray<Position>;
 };
 
 // Regla del juego: cada turno toca exactamente 2 dados distintos
 // (un intercambio o dos giros).
 export const TOUCHES_PER_TURN = 2;
 
-export function isValidTurnTouch(touched: ReadonlyArray<Position>): boolean {
-  return new Set(touched).size === TOUCHES_PER_TURN;
-}
-
 export function isLocked(board: Board, position: Position): boolean {
   return board.lockedThisTurn.includes(position);
 }
 
-export function rotateCubeAt(board: Board, position: Position, kind: RotationKind): Board {
-  if (isLocked(board, position)) return board;
-  const cubes = board.cubes.map((c, i) => (i === position ? applyRotation(c, kind) : c));
-  return { ...board, cubes };
+export function isTurnComplete(board: Board): boolean {
+  return board.touchedThisTurn.length === TOUCHES_PER_TURN;
 }
 
+function canRotate(board: Board, position: Position): boolean {
+  return (
+    !isLocked(board, position) &&
+    !board.touchedThisTurn.includes(position) &&
+    board.touchedThisTurn.length < TOUCHES_PER_TURN
+  );
+}
+
+export function rotateCubeAt(board: Board, position: Position, kind: RotationKind): Board {
+  if (!canRotate(board, position)) return board;
+  const cubes = board.cubes.map((c, i) => (i === position ? applyRotation(c, kind) : c));
+  return { ...board, cubes, touchedThisTurn: [...board.touchedThisTurn, position] };
+}
+
+// El intercambio es la única acción del turno: solo con ningún dado movido.
 export function swapPositions(board: Board, a: Position, b: Position): Board {
-  if (!sameRowOrColumn(a, b)) return board;
+  if (a === b || !sameRowOrColumn(a, b)) return board;
+  if (board.touchedThisTurn.length > 0) return board;
   if (isLocked(board, a) || isLocked(board, b)) return board;
   const cubes = board.cubes.slice();
   const tmp = cubes[a];
   cubes[a] = cubes[b];
   cubes[b] = tmp;
-  return { ...board, cubes };
+  return { ...board, cubes, touchedThisTurn: [a, b] };
 }
 
-export function lockTouchedCubes(board: Board, touched: ReadonlyArray<Position>): Board {
-  return { ...board, lockedNextTurn: dedupe(touched) };
-}
-
-export function advanceLocks(board: Board): Board {
-  return { ...board, lockedThisTurn: board.lockedNextTurn, lockedNextTurn: [] };
-}
-
-function dedupe(values: ReadonlyArray<Position>): Position[] {
-  const out: Position[] = [];
-  for (const v of values) if (!out.includes(v)) out.push(v);
-  return out;
+// Cierra el turno: los dados movidos quedan bloqueados para el rival. Null si
+// el turno no ha movido exactamente 2 dados distintos.
+export function closeTurn(board: Board): Board | null {
+  if (!isTurnComplete(board)) return null;
+  return { ...board, lockedThisTurn: board.touchedThisTurn, touchedThisTurn: [] };
 }

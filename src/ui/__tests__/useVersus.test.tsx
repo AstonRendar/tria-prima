@@ -31,7 +31,7 @@ describe('useVersus', () => {
       result.current.rotate(4, 'spin-cw');
     });
     await act(async () => {
-      result.current.finishTurn([3, 4]);
+      result.current.finishTurn();
     });
 
     expect(result.current.state?.currentPlayerId).toBe('p2');
