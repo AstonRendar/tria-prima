@@ -47,6 +47,26 @@ npm run typecheck
 Jest en multi-proyecto: **logic** (ts-jest, tests unitarios y funcionales de dominio y
 aplicación) y **ui** (jest-expo + Testing Library, smoke tests de pantallas).
 
+## Google Play
+
+La app está en **prueba cerrada** en Google Play (paquete `com.astonrendar.triaprima`).
+Los testers se unen desde <https://play.google.com/apps/testing/com.astonrendar.triaprima>.
+
+```bash
+cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew bundleRelease
+# → android/app/build/outputs/bundle/release/app-release.aab
+```
+
+- `/android` no se versiona: se genera con `npx expo prebuild --platform android` y los
+  ajustes de release (R8, firma) viven en `plugins/withAndroidRelease.js`.
+- La clave de subida está **fuera del repositorio**; su ruta y contraseña se leen de
+  `~/.gradle/gradle.properties` (`TRIAPRIMA_UPLOAD_*`).
+- Antes de cada subida, incrementar `version` y `android.versionCode` en `app.json`
+  (checklist completo en [AGENTS.md](./AGENTS.md)).
+- Política de privacidad: <https://astonrendar.github.io/tria-prima/privacy.html>
+  (`docs/privacy.html`, GitHub Pages). Textos, formularios y gráficos de la ficha en
+  [`store/`](./store/google-play.md).
+
 ## Flujo de trabajo
 
 Git flow: `main` (releases) ← `release/*` ← `develop` ← `feature/*`. El trabajo diario
