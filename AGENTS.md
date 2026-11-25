@@ -383,10 +383,19 @@ con el turno completo (`isTurnComplete`) y `closeTurn` convierte los movidos en
 - `renderRouter` activa fake timers: restaurar con `jest.useRealTimers()` en `afterEach`.
 
 ### Política TDD
-- Toda regla del dominio o caso de uso lleva su test.
+- El test se escribe **antes** que el código y se ve fallar; después se implementa lo
+  mínimo para ponerlo en verde y se refactoriza con la suite en verde.
 - No se mockean las funciones del dominio; los tests de aplicación usan stubs solo de
   `Random` y `WordRepository` (en `src/application/__tests__/testdoubles.ts`).
 - Convenciones: `Method.test.ts`, descripciones en inglés, estilo BDD.
+- Datos de test ficticios: palabras y nombres inventados, nunca de personas reales ni
+  material del juego original.
+
+### Verificación en dispositivo
+Todo cambio visible se comprueba además en un emulador o móvil Android real, con
+captura (`adb exec-out screencap -p`) o lectura de la pantalla (`uiautomator dump`).
+Conviene probar también con la navegación de **tres botones** (safe areas inferiores).
+Lo que no se haya podido ver en dispositivo se dice explícitamente al entregar.
 
 ### Comandos
 ```bash
@@ -397,8 +406,9 @@ npm run typecheck   # tsc --noEmit
 
 ## Publicación en Google Play
 
-- Paquete `com.astonrendar.triaprima` (proyecto personal). `versionCode`
-  en `app.json` (`android.versionCode`): incrementarlo antes de cada subida.
+- Paquete `com.astonrendar.triaprima` (proyecto personal).
+- Compilación oficial **en local** (no EAS): `cd android && ./gradlew bundleRelease`
+  → `android/app/build/outputs/bundle/release/app-release.aab`.
 - `/android` se genera con `npx expo prebuild --platform android` (está en `.gitignore`).
   Los ajustes de release viven en el config plugin `plugins/withAndroidRelease.js`:
   minificación R8 + `shrinkResources` y firma con la clave de subida, leída de
@@ -408,8 +418,30 @@ npm run typecheck   # tsc --noEmit
 - Compilar con **JDK 17** (`JAVA_HOME=/opt/homebrew/opt/openjdk@17/...`); con el JDK 25 de
   Android Studio falla el plugin foojay de Gradle 9.
 - `docs/privacy.html` es la política de privacidad (GitHub Pages, carpeta `/docs` de
-  `main`); `store/google-play.md` tiene los textos de la ficha, los formularios y los
+  `develop`); `store/google-play.md` tiene los textos de la ficha, los formularios y los
   pasos de firma.
+
+### Checklist de cada subida a Play
+1. Subir `expo.version` (semver) y `android.versionCode` (+1) en `app.json`.
+2. `npm test` y `npm run typecheck` en verde.
+3. Generar el AAB firmado y probar el build de release en un dispositivo.
+4. Si sale de `release/x.y.z` o `hotfix/*`: fusionar en `main`, etiquetar `vx.y.z` y
+   fusionar de vuelta en `develop`. Las subidas a pistas de prueba pueden salir de
+   `develop`; producción, solo de `main`.
+
+### Secretos y firma
+- Nunca se versionan el keystore (`*.jks`, `*.keystore`), sus contraseñas, el
+  `gradle.properties` con `TRIAPRIMA_UPLOAD_*` ni credenciales de Play Console.
+  La clave de subida vive en `~/keys/` y su contraseña en `~/.gradle/gradle.properties`.
+- Si se pierde la clave de subida se solicita su restablecimiento en Play Console; no se
+  genera otra sin avisar al mantenedor.
+
+### Privacidad y permisos
+- La app no recoge, envía ni registra datos personales: sin analítica, anuncios ni SDK
+  de terceros con red. AsyncStorage guarda solo preferencias y flags de tutorial.
+- Cualquier cambio en permisos o en lo que se guarda obliga a actualizar
+  `docs/privacy.html` y el formulario de seguridad de datos de `store/google-play.md`.
+- Sin `console.log` en código de producción.
 
 ## Flujo de trabajo git
 
@@ -424,18 +456,50 @@ Repositorio: <https://github.com/AstonRendar/tria-prima>. Se sigue **git flow**:
 - `feature/<nombre>` — una rama por funcionalidad, sale de `develop` y vuelve a `develop`.
 - `release/<versión>` — preparación de release, de `develop` a `main` (+ merge de vuelta a `develop`).
 - `hotfix/<nombre>` — arreglos urgentes sobre `main` (+ merge de vuelta a `develop`).
+- Las ramas se fusionan en local con `merge --no-ff` y se borran tras fusionarse.
+- Sin `push --force`, sin reescribir historia publicada y sin `reset --hard` sobre
+  trabajo sin commitear salvo confirmación del mantenedor.
+
+### Commits
+- Pequeños y autocontenidos: la suite pasa en cada uno.
+- Mensaje breve en castellano que explique el propósito, no la mecánica; prefijo tipo
+  Conventional Commits cuando ayude (`fix(home): …`).
+
+## Flujo de trabajo por tarea
+1. Leer el código afectado; preguntar si algo es ambiguo.
+2. Si el enfoque no es evidente, proponerlo y esperar confirmación.
+3. Escribir los tests y verlos fallar (ver Política TDD).
+4. Implementar lo mínimo y refactorizar con la suite en verde.
+5. Pasar `npm test` y `npm run typecheck` completos.
+6. Verificar en dispositivo si el cambio es visible.
+7. Actualizar en el mismo commit lo que el cambio deje desfasado: `AGENTS.md` (tabla de
+   `testID`, rutas, resumen de reglas), `app/instructions.tsx` / `RulesBook` y
+   `store/google-play.md`.
+8. Commit.
 
 ## Principios de desarrollo
 - **Castellano** en mensajes de UI y textos al usuario. **Inglés** en código.
 - **SOLID + DDD + TDD + YAGNI + KISS**.
 - Sin comentarios obvios. El *porqué*, no el *qué*.
-- Sin documentación extra fuera de `AGENTS.md` / `CLAUDE.md` salvo que se pida.
+- Sin documentación extra fuera de `AGENTS.md` / `CLAUDE.md` salvo que se pida
+  (excepción: `docs/privacy.html` y `store/`, necesarios para Google Play).
+- **Accesibilidad**: todo elemento interactivo nuevo lleva `accessibilityRole`,
+  `accessibilityLabel` (con su estado si es un interruptor) y `testID` según la
+  convención; los colores nuevos mantienen contraste legible sobre el pergamino.
+
+### Dependencias
+- No se añaden dependencias ni se cambia el stack sin aprobación del mantenedor; se
+  proponen con su justificación.
+- Se instalan con `npx expo install` para respetar la compatibilidad con el SDK.
+- Tras añadir un módulo nativo, revisar los permisos resultantes y
+  `android.blockedPermissions`.
 - Sin manejo de errores defensivo ni features no pedidas.
 
 ## Lo que NO hacer
 - No mezclar lógica de juego en componentes UI (vive en `domain/` y `application/`).
 - No invocar `Math.random` desde dominio/aplicación; usar la interfaz `Random`.
-- No usar `expo eject`.
+- No versionar `/android` ni editarlo a mano: los cambios nativos van en config plugins
+  (`plugins/`).
 - No incluir gráficos, logos, textos literales ni nombres del juego original más allá
   de la atribución mínima del footer.
 - No introducir backend ni almacenamiento remoto.
@@ -448,3 +512,6 @@ convención), actualiza `AGENTS.md` proactivamente.
 - `AGENTS.md` — contrato común entre agentes.
 - `CLAUDE.md` — solo lo específico de Claude Code; apunta a `AGENTS.md` para el resto.
 - No duplicar contenido.
+- Este fichero recoge **decisiones tomadas**: las nuevas se anotan con su fecha
+  (`decisión del AAAA-MM-DD`). No se revierten sin aprobación del mantenedor; si una
+  tarea lo exige, se para y se pregunta.
