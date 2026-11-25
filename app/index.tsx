@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionButton } from '@/ui/components/ActionButton';
 import { Footer } from '@/ui/components/Footer';
 import { FiligreeDivider, Ouroboros, ParchmentBackground } from '@/ui/ornaments';
@@ -7,52 +8,55 @@ import { colors, fonts, spacing } from '@/ui/styles/tokens';
 
 export default function Home() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.container}>
+    <View style={styles.screen}>
       <ParchmentBackground />
-      <View style={styles.hero}>
-        <Ouroboros size={130} color={colors.text} accent={colors.gold} />
+      <View style={styles.container}>
+        <View style={styles.hero}>
+          <Ouroboros size={130} color={colors.text} accent={colors.gold} />
+        </View>
+        <Text style={styles.title}>Tria Prima</Text>
+        <Text style={styles.subtitle}>
+          Bajo la mirada de Paracelso, descifra la palabra del rival antes que él la tuya.
+        </Text>
+        <View style={styles.rule}>
+          <FiligreeDivider width={220} variant="fleuron" />
+        </View>
+        <View style={styles.actions}>
+          <ActionButton
+            label="Contra el maestro"
+            variant="primary"
+            onPress={() => router.push('/versus')}
+            testID="home/versus"
+          />
+          <View style={{ height: spacing.md }} />
+          <ActionButton
+            label="Duelo a dos"
+            onPress={() => router.push('/play')}
+            testID="home/play"
+          />
+          <View style={{ height: spacing.md }} />
+          <ActionButton
+            label="Desafío"
+            onPress={() => router.push('/solo')}
+            testID="home/solo"
+          />
+          <View style={{ height: spacing.md }} />
+          <ActionButton
+            label="Con el juego físico"
+            onPress={() => router.push('/tracker')}
+            testID="home/tracker"
+          />
+          <View style={{ height: spacing.md }} />
+          <ActionButton
+            label="Reglas del cifrado"
+            onPress={() => router.push('/instructions')}
+            testID="home/instructions"
+          />
+        </View>
       </View>
-      <Text style={styles.title}>Tria Prima</Text>
-      <Text style={styles.subtitle}>
-        Bajo la mirada de Paracelso, descifra la palabra del rival antes que él la tuya.
-      </Text>
-      <View style={styles.rule}>
-        <FiligreeDivider width={220} variant="fleuron" />
-      </View>
-      <View style={styles.actions}>
-        <ActionButton
-          label="Contra el maestro"
-          variant="primary"
-          onPress={() => router.push('/versus')}
-          testID="home/versus"
-        />
-        <View style={{ height: spacing.md }} />
-        <ActionButton
-          label="Duelo a dos"
-          onPress={() => router.push('/play')}
-          testID="home/play"
-        />
-        <View style={{ height: spacing.md }} />
-        <ActionButton
-          label="Desafío"
-          onPress={() => router.push('/solo')}
-          testID="home/solo"
-        />
-        <View style={{ height: spacing.md }} />
-        <ActionButton
-          label="Con el juego físico"
-          onPress={() => router.push('/tracker')}
-          testID="home/tracker"
-        />
-        <View style={{ height: spacing.md }} />
-        <ActionButton
-          label="Reglas del cifrado"
-          onPress={() => router.push('/instructions')}
-          testID="home/instructions"
-        />
-      </View>
-      <View style={styles.footerWrap}>
+      <View style={[styles.footerWrap, { paddingBottom: spacing.sm + insets.bottom }]} testID="home/footer">
         <Footer />
       </View>
     </View>
@@ -60,6 +64,9 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     alignItems: 'center',
@@ -92,10 +99,9 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     alignItems: 'stretch',
   },
+  // En el flujo y no superpuesto: así nunca tapa los botones ni queda bajo
+  // la barra de navegación del sistema (botones de Android).
   footerWrap: {
-    position: 'absolute',
-    bottom: spacing.sm,
-    left: 0,
-    right: 0,
+    paddingTop: spacing.sm,
   },
 });
