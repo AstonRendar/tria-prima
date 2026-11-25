@@ -24,9 +24,8 @@ npx expo start
 npx expo start --ios
 npx expo start --android
 
-# Build nativa en la nube (requiere cuenta EAS)
-eas build --platform ios
-eas build --platform android
+# AAB de release para Google Play (local, JDK 17)
+cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew bundleRelease
 
 # Tests y tipos
 npm test
@@ -38,8 +37,6 @@ npm run typecheck
 - Idioma de comunicación con el usuario: **castellano**.
 - **No firmar nada como autor**: sin `Co-Authored-By` en commits ni "Generated with"
   en PRs o documentos. Ver la regla común en `AGENTS.md` (aplica a todos los agentes).
-- No instalar dependencias nuevas sin confirmación previa salvo que sean evidentes.
-- No proponer cambios de stack sin confirmar con el usuario.
 - Mantener `AGENTS.md` actualizado de forma proactiva ante cualquier decisión nueva del proyecto.
 - **Propiedad intelectual**: no usar el nombre "Kryptex" como identidad del producto, no incluir
   gráficos del juego original, no copiar textos literales del manual. Ver sección dedicada en
