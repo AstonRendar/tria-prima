@@ -11,37 +11,37 @@ export const RULE_SECTIONS: ReadonlyArray<Section> = [
   {
     title: 'La idea',
     body:
-      'Paracelso, viejo alquimista y maestro del laboratorio, deja a dos de sus aprendices a solas con el experimento más delicado: cifrar una palabra con la materia. Cada uno esconde una palabra de seis letras detrás de seis cartas selladas. Sobre la mesa, nueve cubos combinan los tres principios (azufre, mercurio, sal) con los tres colores de la Gran Obra (nigredo, citrinitas, rubedo). Manipulándolos por turnos, cada aprendiz busca alinear los principios y descifrar la palabra del rival antes de que el rival descifre la suya.',
+      'Paracelso, viejo alquimista y maestro del laboratorio, deja a dos de sus aprendices a solas con el experimento más delicado: cifrar una palabra con la materia. Cada uno esconde una palabra de seis letras detrás de seis cartas selladas. En el laboratorio, nueve dados combinan los tres principios (azufre, mercurio, sal) con los tres colores de la Gran Obra (nigredo, citrinitas, rubedo). Manipulándolos por turnos, cada aprendiz busca alinear los principios y descifrar la palabra del rival antes de que el rival descifre la suya.',
   },
   {
-    title: 'Lo que hay en juego',
+    title: 'Lo que ves en pantalla',
     body:
-      '· Nueve cubos. Cada cara muestra un símbolo alquímico (azufre 🜍, mercurio ☿ o sal 🜔) sobre uno de los tres colores de la Gran Obra (nigredo, citrinitas o rubedo).\n· Seis cartas de objetivo: una por cada símbolo y una por cada color.\n· Doce cartas de jugador (seis por aprendiz). Cada carta lleva una letra oculta por detrás y, por delante, una insignia única: o bien uno de los tres símbolos, o bien uno de los tres colores.\n· Doce marcadores (seis por jugador).\n· Dos anillos de bloqueo y un indicador.',
+      '· El tablero: nueve dados en una cuadrícula de 3×3. Cada cara muestra un símbolo alquímico (azufre 🜍, mercurio ☿ o sal 🜔) sobre uno de los tres colores de la Gran Obra (nigredo, citrinitas o rubedo).\n· La columna de objetivos: seis cartas, una por cada símbolo y una por cada color.\n· La palabra de cada aprendiz: seis cartas con la letra oculta. Por delante, cada carta muestra una insignia única: uno de los tres símbolos o uno de los tres colores.\n· La zona de bloqueo de cada aprendiz, junto a su palabra, donde van los objetivos que cumple.',
   },
   {
     title: 'Antes de empezar',
     body:
-      '1. Tirad los nueve cubos sobre el centro de la mesa y disponedlos formando una cuadrícula de 3×3.\n\n2. Colocad las seis cartas de objetivo donde ambos aprendices puedan verlas.\n\n3. Pensad cada uno una palabra clave: un sustantivo común, en singular o en plural, de seis letras exactas, sin nombres propios.\n\n4. Sin que el rival lo vea, escribid vuestra palabra en el dorso de vuestras seis cartas de jugador, una letra por carta.\n\n5. Colocad esas seis cartas boca abajo frente al rival, ordenadas en su sentido de lectura. La insignia de cada carta queda a la vista de ambos; la letra queda oculta.\n\n6. Coged vuestros seis marcadores y dejadlos a mano.\n\n7. Por mandato del maestro, empieza el aprendiz que haya leído algo nuevo más recientemente. Su primer turno será un poco distinto, como veréis.',
+      'Cada aprendiz piensa una palabra clave: un sustantivo común, en singular o en plural, de seis letras exactas, sin nombres propios, y la escribe sin que el rival la vea. La app reparte las letras entre sus seis cartas y coloca los dados al azar. Elegid quién empieza: su primer turno será un poco distinto, como veréis.',
   },
   {
     title: 'Cómo se juega un turno',
     body:
-      'Cada turno tiene dos fases en este orden:\n\n1. Manipulación de los cubos.\n2. Declaración de objetivos cumplidos.\n\nEn el primer turno del aprendiz inicial se omite la segunda fase: solo puede manipular los cubos, para evitar que se aproveche de las alineaciones que hayan salido al azar.',
+      'Cada turno tiene dos fases en este orden:\n\n1. Manipulación de los dados.\n2. Declaración de objetivos cumplidos.\n\nEn el primer turno del aprendiz inicial se omite la segunda fase: solo puede manipular los dados, para evitar que se aproveche de las alineaciones que hayan salido al azar.',
   },
   {
-    title: 'Fase 1 — manipular los cubos',
+    title: 'Fase 1 — manipular los dados',
     body:
-      'Debes elegir UNA de estas dos acciones y solo una:\n\n· Intercambiar la posición de dos cubos que estén en la misma fila o columna (no hace falta que sean adyacentes). No se giran al moverlos.\n\n· Girar dos cubos diferentes. Cada uno puede voltearse hacia adelante o hacia atrás para cambiar la cara superior, o girarse sobre sí mismo sin cambiar la cara superior. No se permite voltearlos lateralmente.\n\nSiempre dos cubos. Al terminar la fase, coloca los anillos sobre esos dos cubos para indicar al rival que durante su próximo turno no podrá tocarlos.',
+      'Debes elegir UNA de estas dos acciones y solo una:\n\n· Intercambiar la posición de dos dados que estén en la misma fila o columna (no hace falta que sean adyacentes). No se giran al moverlos.\n\n· Girar dos dados diferentes. Cada uno puede voltearse hacia adelante o hacia atrás para cambiar la cara superior, o rotarse sobre sí mismo sin cambiar la cara superior. No se permite voltearlos lateralmente.\n\nSiempre dos dados. Los dos que muevas quedan atenuados y marcados con ⊘: durante su próximo turno, el rival no podrá tocarlos.',
   },
   {
     title: 'Fase 2 — declarar objetivos',
     body:
-      'Un objetivo se cumple cuando, en una fila o columna del tablero, las caras superiores de los tres cubos comparten el mismo símbolo o el mismo color. Repasa el tablero y declara TODOS los objetivos cumplidos que veas; puedes anunciar varios a la vez, siempre que sean distintos.\n\nLa carta de cada objetivo que declares pasa a tu zona de bloqueo. Mientras esté allí, tu rival no puede declararlo.\n\nAl llegar a tu fase de declaración, primero devuelves a la mesa las cartas de tu zona y después declaras todo lo que esté cumplido. Si una alineación tuya ha sobrevivido —el rival no la ha deshecho y tú tampoco—, vuelves a declararla y vuelve a puntuar. Por eso conviene romper las alineaciones del rival antes de que le vuelva el turno.',
+      'Un objetivo se cumple cuando, en una fila o columna del tablero, las caras superiores de los tres dados comparten el mismo símbolo o el mismo color. Al mover tu segundo dado, la app declara por ti TODOS los objetivos cumplidos.\n\nLa carta de cada objetivo cumplido pasa a tu zona de bloqueo. Mientras esté allí, tu rival no puede cumplirlo.\n\nAl empezar tu siguiente turno, las cartas de tu zona vuelven a la columna de objetivos. Si una alineación tuya ha sobrevivido —el rival no la ha deshecho y tú tampoco—, vuelve a declararse y vuelve a puntuar. Por eso conviene romper las alineaciones del rival antes de que le vuelva el turno.',
   },
   {
     title: 'Marcar y revelar letras',
     body:
-      'Cada vez que declaras un objetivo, el rival debe colocar uno de tus marcadores sobre la carta suya cuya insignia coincida con la del objetivo. Cuando una carta acumule dos marcadores, retiradlos y dadle la vuelta: la letra oculta queda al descubierto.',
+      'Cada objetivo que cumples pone un marcador en la carta del rival cuya insignia coincide con la del objetivo. Cuando una carta acumula dos marcadores, su letra oculta queda al descubierto.',
   },
   {
     title: 'Cómo se gana',
@@ -56,17 +56,22 @@ export const RULE_SECTIONS: ReadonlyArray<Section> = [
   {
     title: 'Modo «Duelo a dos»',
     body:
-      'Dos personas comparten el dispositivo. Cada una escribe su palabra sin que la otra mire. Se juega igual que en la mesa, pero la app declara automáticamente al mover el segundo dado. Al acabar cada turno aparece un aviso para pasar el dispositivo al rival.',
+      'Dos personas comparten el dispositivo. Cada una escribe su palabra sin que la otra mire. Se juega con las mismas reglas. Al acabar cada turno aparece un aviso para pasar el dispositivo al rival.',
   },
   {
     title: 'Modo «Desafío» (digital)',
     body:
-      'Sin rival, frente al athanor de Paracelso. La app esconde la palabra, gestiona los cubos en pantalla y aplica los marcadores conforme cumples objetivos. Tu meta: descifrar la palabra antes de quedarte sin paciencia. Al final se cuenta una puntuación (turnos jugados + objetivos cumplidos en la disposición inicial). Cuanto menor, mejor: por debajo de 8, genio; de 8 a 10, el alumno supera al maestro; de 11 a 14, sigue practicando; más de 14, vuelve a intentarlo.',
+      'Sin rival, frente al athanor de Paracelso. La app esconde la palabra, gestiona los dados en pantalla y aplica los marcadores conforme cumples objetivos. Tu meta: descifrar la palabra antes de quedarte sin paciencia. Al final se cuenta una puntuación (turnos jugados + objetivos cumplidos en la disposición inicial). Cuanto menor, mejor: por debajo de 8, genio; de 8 a 10, el alumno supera al maestro; de 11 a 14, sigue practicando; más de 14, vuelve a intentarlo.',
   },
   {
     title: 'Modo «Con el juego físico»',
     body:
       'Una versión más austera para acompañar al juego de mesa real. El maestro sella una palabra y muestra sus seis cartas con sus insignias en la app; tú juegas físicamente con los cubos sobre la mesa. Cada vez que cumplas un objetivo, pulsa ＋ en la app y el maestro irá colocando los marcadores y revelando las letras cuando toque. El botón − sirve para deshacer un marcado erróneo.',
+  },
+  {
+    title: 'Si tienes el juego de mesa',
+    body:
+      'Las reglas son las mismas; lo que en la app ocurre solo, en la mesa lo hacéis a mano.\n\n· Componentes: nueve cubos, seis cartas de objetivo, doce cartas de jugador (seis por aprendiz), doce marcadores y dos anillos de bloqueo.\n\n· Preparación: tirad los cubos y formad la cuadrícula de 3×3; dejad las cartas de objetivo a la vista. Cada uno escribe su palabra en el dorso de sus seis cartas, una letra por carta, y las coloca boca abajo frente al rival, en su sentido de lectura, con la insignia a la vista. Por mandato del maestro, empieza quien haya leído algo nuevo más recientemente.\n\n· Bloqueo de cubos: al acabar la fase 1, colocad los anillos sobre los dos cubos movidos.\n\n· Objetivos: declarad en voz alta todos los cumplidos y poned sus cartas en vuestra zona; al llegar vuestra fase de declaración, primero las devolvéis a la mesa.\n\n· Marcadores: por cada objetivo declarado, el rival coloca uno de vuestros marcadores sobre su carta con esa insignia. Con dos marcadores, retiradlos y dadle la vuelta a la carta.',
   },
   {
     title: 'Atribución',
